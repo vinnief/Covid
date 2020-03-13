@@ -34,12 +34,18 @@ library(reshape2)
 #  require(DDply)
 #}
 ```
-Note: the data is in csv format, and i thought it needed transposing before it can be used, because i want to get rid of the values below a minimum. 
-then the 4 first columns need to be converted into a possible column label. I do that by deleting the latitude and longitude, and by concatenating province and country levels into one.
+Note: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
+(here downloaded to the relative path 'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
+is in csv format, and i thought it needed transposing before it can be used, because i want to get rid of the values below a minimum. 
+Then the 4 first columns need to be converted into a possible column label. I do that in Excel, by deleting the latitude and longitude, and by concatenating province and country levels into one. THen save it in this folder as Co <- read.csv('time_series_19-covid Confirmed yyyymmdd.csv'). 
 Now prepare somefunctions to determine the lags
 ```{r} 
-fetch('./COVID-19','upstream') #does not work. 
-Co <- read.csv('time_series_19-covid 20200313.csv')
+#fetch(repo = ".", name = NULL, credentials = NULL, verbose = TRUE,
+  refspec = NULL)
+fetch(".\\COVID-19","upstream") 
+#error authenticating. even after deleting id-rsa pasword,
+: error authenticating: failed connecting agent
+Co <- read.csv('time_series_19-covid-confirmed-20200313.csv')
 #Co0 <-'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
 #co0$row.names<-
 #apply(co0[c("Country.Region","Province.State")],2,function(x,y){paste(x,y,sep="_")})
@@ -92,36 +98,51 @@ findcolnames <- function(tentcolnames=c("LL"),df=Co) {
 ```
 Now plot
 ```{r}
-graphthem<- function(tentcountries,minval=minv,wpdf=Co){
+graphthem<- function(tentcountries,minval=minv,wpdf=Co,loga=TRUE){
   colnames <- findcolnames(tentcountries,wpdf)
   #xes<- nrow(wpdf)-lags(wpdf)
   #xes<- xes[xes>0]
   #print(t(colnames))
   ldaydf <- synclags(wpdf,minval,colnames)
-  lin<- ggplot(ldaydf,aes(x=day,y=value,colour=colname,group=colname)) + geom_line()+ylab("confirmed")
-  #lin
-  lin+ scale_y_continuous(trans='log2')+
-  #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
-  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),"last.points", cex = 0.8))+
+  lin<- ggplot(ldaydf,aes(x=day,y=value,colour=colname,group=colname)) + geom_line()+ylab(paste("confirmed", ifelse(loga," (log scale)","")))+xlab(paste("days after the first ",minval," cases"))+
+  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),
+          "last.points", cex = 0.8))+  
   scale_color_discrete(guide = FALSE)
+  #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
+  ifelse(loga,return(lin+scale_y_continuous(trans='log2')),return(lin))
 }
-EUEast<- c("Italy","Iran","Korea","Germany","FranceF","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands","Egypt", "Romania","Singapore","Japan","Austria")
+WestvsEast<- c("Italy","Iran","Korea","Germany","FranceF","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands", "Romania","Singapore","Japan","Austria","Shanghai")
 
 EU<- c("Italy","Germany","FranceF","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denma","Norway","Finland","Bulga","Portugal","Greece","Croat","Slov","Cze","Esto","Lithua","Latv","Malta","Luxem","Cyprus","mUK")
 
-CAsia<-c("Russia", "Kaz", "Kirg", "Uzbek", "Georgia", "Armen", "Azerb", "Ukrai","Tadji","stan","desh","india")
-findcolnames(CIS)
-graphthem(CIS,1)
+WCAsia<-c("Rus", "Georgia", "Armen", "Azerb", "Ukrai","stan","desh","india","Irak","Syria","Lebanon","Turk","Israel","Pal","Bhu","Terr")
+findcolnames(WCAsia)
+graphthem(WCAsia,1)
 findcolnames(EU)
 graphthem(EU,50)
+graphthem(EU,50,loga=FALSE)
 graphthem(countries,10)
-graphthem(EUEast,10)
+graphthem(WestvsEast,10)
+graphthem(WestvsEast,50)
+graphthem(WestvsEast,50,loga=FALSE)
 graphthem(c("..CA"),20)
+graphthem(c("Canada"),20)
 graphthem(c("..NY"),10)
-graphthem(c("US"),10)
-findcolnames("india")
-graphthem("india")
-
+graphthem(c("US"),1)
+SAsiaIO<-c("India","Pakistan","Bangladesh","Sri","Comoros","Maldives","Madagascar","Mauritius","Seychelles")
+findcolnames(SAsiaIO)
+graphthem(SAsiaIO,8)
+MENA<-c("Egypt", "Marocco","Alger","Tunes","Lib","Syr","Turk","Saudi","Kuwait","Oman","arab","UAE","Yemen","Bahrain","Qatar","Irak","Iran")
+graphthem(MENA,50)
+Africa<- c("Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic (CAR)","Chad","Comoros", "Congo, Democratic Republic of the", "Congo, Republic of the", "Cote d'Ivoire", "Djibouti", "Egypt", 
+"Equatorial Guinea", "Eritrea", "Eswatini (formerly Swaziland)", "Ethiopia", 
+"Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", 
+"Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", 
+"Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe")
+graphthem(Africa,3)
+graphthem("Australia",10)
+SAmerica<-c("Chile","Brazil","Argenti","Peru","Colombia","Venezuela","Mexico","Honduras","Salvador","Panama","Ecuador","Surinam","Guyan","Beliz","Guatemals", "Antill")
+graphthem(SAmerica,10)
 #save.plot(logtoday()) #syntax? 
 
 ```
