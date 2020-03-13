@@ -26,7 +26,7 @@ if(!require(directlabels)){
   install.packages("directlabels")
   require(directlabels)
 }
-
+# note ggrepel also does similar labels. 
 
 library(reshape2)
 #if(!require(DDply)){
@@ -56,10 +56,13 @@ delaggedcol <- function(kol,minval=minv){
 lags<- function(wpdf) {
   as.data.frame(t(apply(wpdf,2,lagcount)))
 }
+#how long is the dataset actually? 
 nonmis.len<- function(wpdf){
  nrow(wpdf) - min(lags(wpdf))
 }
+
 countries<- c("Vietnam","Thailand","Indonesia","Japan")
+#calculate the lagged dataset, from the first day each country has more than minval cases
 synclags<- function(wpdf=Co, minval=minv,cols=countries, 
       rowindexname="day",variables="colname"){
   wpdf = wpdf[,cols,drop = FALSE]
@@ -75,12 +78,8 @@ synclags<- function(wpdf=Co, minval=minv,cols=countries,
         delaggedcol(wpdf[i],minval)
   }
   return( melt(daywpdf,id=rowindexname, variable=variables) )
-}  
-
-```
-Now calculate the lagged version and plot
-```{r}
-
+} 
+#make sure we have the right column names
 findcolnames <- function(tentcolnames=c("LL"),df=Co) {
     colnames <- tentcolnames[1]
     for (coun in tentcolnames[1:length(tentcolnames)]){
@@ -90,7 +89,9 @@ findcolnames <- function(tentcolnames=c("LL"),df=Co) {
     colnames[2:length(colnames)]
   }
 
-
+```
+Now plot
+```{r}
 graphthem<- function(tentcountries,minv1=minv,wpdf=Co){
   colnames <- findcolnames(tentcountries,wpdf)
   #xes<- nrow(wpdf)-lags(wpdf)
@@ -101,11 +102,12 @@ graphthem<- function(tentcountries,minv1=minv,wpdf=Co){
   lin
   lin+ scale_y_continuous(trans='log2')+
   #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
-  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),"last.points", cex = 0.8))
+  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),"last.points", cex = 0.8))+
+  scale_color_discrete(guide = FALSE)
 }
 EUEast<- c("Italy","Iran","Korea","Germany","FranceF","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands","Egypt", "Romania","Singapore","Japan","Austria")
 
-
+find
 graphthem(countries)
 graphthem(EUEast,50)
 graphthem(c("..CA"),20)
