@@ -45,7 +45,7 @@ Co <- read.csv('time_series_19-covid 20200313.csv')
 #apply(co0[c("Country.Region","Province.State")],2,function(x,y){paste(x,y,sep="_")})
 #co2<-transpose(co1[3:ncol(co0)])
 
-minv=30
+minv=1
 lagcount <- function(kol=c(0,0,1,2,3),minval=minv){
   return (sum(kol < minval))
   }
@@ -53,12 +53,12 @@ delaggedcol <- function(kol,minval=minv){
  return(  c(kol[ kol >= minval ],rep(NA,lagcount(kol,minval))  ))
 }
 
-lags<- function(wpdf) {
-  as.data.frame(t(apply(wpdf,2,lagcount)))
+lags<- function(wpdf,minval=minv) {
+  as.data.frame(t(apply(wpdf,2,lagcount,minval)))
 }
 #how long is the dataset actually? 
-nonmis.len<- function(wpdf){
- nrow(wpdf) - min(lags(wpdf))
+abovemin.len<- function(wpdf,minval=minv){
+ nrow(wpdf) - min(lags(wpdf,minval))
 }
 
 countries<- c("Vietnam","Thailand","Indonesia","Japan")
@@ -66,25 +66,25 @@ countries<- c("Vietnam","Thailand","Indonesia","Japan")
 synclags<- function(wpdf=Co, minval=minv,cols=countries, 
       rowindexname="day",variables="colname"){
   wpdf = wpdf[,cols,drop = FALSE]
-  lagscounts<- lags(wpdf)
+  lagscounts<- lags(wpdf,minval)
   len<- nrow(wpdf) - min(lagscounts)
   print("removing columns:")
   print(names((wpdf[,lagscounts==nrow(wpdf)])))
-  wpdf<- wpdf[1:len,lags(wpdf)<nrow(wpdf),drop = FALSE]
+  wpdf<- wpdf[,lags(wpdf)<nrow(wpdf),drop = FALSE]
   daywpdf<-as.data.frame(1:nrow(wpdf))
   colnames(daywpdf) <-rowindexname
   for (i in 1:ncol(wpdf)){
     daywpdf[[names(wpdf)[i]]] <-  
         delaggedcol(wpdf[i],minval)
   }
-  return( melt(daywpdf,id=rowindexname, variable=variables) )
+  return( melt(daywpdf[1:len,],id=rowindexname, variable=variables) )
 } 
 #make sure we have the right column names
 findcolnames <- function(tentcolnames=c("LL"),df=Co) {
     colnames <- tentcolnames[1]
     for (coun in tentcolnames[1:length(tentcolnames)]){
       #print (paste( coun, names(df[grep(coun,names(df))]),sep =" -> "))
-      colnames<-c(colnames, names(df[grep(coun,names(df))]))
+      colnames<-c(colnames, names(df[grep(tolower(coun),tolower(names(df)))]))
     }
     colnames[2:length(colnames)]
   }
@@ -92,14 +92,14 @@ findcolnames <- function(tentcolnames=c("LL"),df=Co) {
 ```
 Now plot
 ```{r}
-graphthem<- function(tentcountries,minv1=minv,wpdf=Co){
+graphthem<- function(tentcountries,minval=minv,wpdf=Co){
   colnames <- findcolnames(tentcountries,wpdf)
   #xes<- nrow(wpdf)-lags(wpdf)
   #xes<- xes[xes>0]
   #print(t(colnames))
-  ldaydf <- synclags(wpdf,minv1,colnames)
+  ldaydf <- synclags(wpdf,minval,colnames)
   lin<- ggplot(ldaydf,aes(x=day,y=value,colour=colname,group=colname)) + geom_line()+ylab("confirmed")
-  lin
+  #lin
   lin+ scale_y_continuous(trans='log2')+
   #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
   geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),"last.points", cex = 0.8))+
@@ -107,12 +107,20 @@ graphthem<- function(tentcountries,minv1=minv,wpdf=Co){
 }
 EUEast<- c("Italy","Iran","Korea","Germany","FranceF","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands","Egypt", "Romania","Singapore","Japan","Austria")
 
-find
-graphthem(countries)
-graphthem(EUEast,50)
+EU<- c("Italy","Germany","FranceF","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denma","Norway","Finland","Bulga","Portugal","Greece","Croat","Slov","Cze","Esto","Lithua","Latv","Malta","Luxem","Cyprus","mUK")
+
+CAsia<-c("Russia", "Kaz", "Kirg", "Uzbek", "Georgia", "Armen", "Azerb", "Ukrai","Tadji","stan","desh","india")
+findcolnames(CIS)
+graphthem(CIS,1)
+findcolnames(EU)
+graphthem(EU,50)
+graphthem(countries,10)
+graphthem(EUEast,10)
 graphthem(c("..CA"),20)
 graphthem(c("..NY"),10)
 graphthem(c("US"),10)
+findcolnames("india")
+graphthem("india")
 
 #save.plot(logtoday()) #syntax? 
 
@@ -123,8 +131,10 @@ We need to test the functions before running the whole thing
 ###testcases
 names(Co[grep("South",names(Co))])
 
-nonmis.len( Co[findcolnames(c("US"))])
+a<- Co[findcolnames(EU)]
+View(a)
 min(lags(a))
+View(a[min(lags(a)):nrow(a),])
 nonmis.len(Co[findcolnames(c("..CA"))])
 nonmis.len(Co[findcolnames(c("..NY"))])
 nonmis.len(Co[findcolnames(EUEast,Co)])
