@@ -27,16 +27,18 @@ if(!require(directlabels)){
   require(directlabels)
 }
 
+
 library(reshape2)
 #if(!require(DDply)){
 #  install.packages("DDply")
 #  require(DDply)
 #}
 ```
-
+Note: the data is in csv format, and i thought it needed transposing before it can be used, because i want to get rid of the values below a minimum. 
+then the 4 first columns need to be converted into a possible column label. I do that by deleting the latitude and longitude, and by concatenating province and country levels into one.
 Now prepare somefunctions to determine the lags
 ```{r} 
-fetch('./COVID-19','upstream')
+fetch('./COVID-19','upstream') #does not work. 
 Co <- read.csv('time_series_19-covid 20200313.csv')
 #Co0 <-'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
 #co0$row.names<-
@@ -110,7 +112,7 @@ graphthem(c("..CA"),20)
 graphthem(c("..NY"),10)
 graphthem(c("US"),10)
 
-save.plot(logtoday())
+#save.plot(logtoday()) #syntax? 
 
 ```
 We need to test the functions before running the whole thing 
