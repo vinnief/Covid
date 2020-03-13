@@ -1702,58 +1702,89 @@ $(document).ready(function () {
 <p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
 <p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
 <p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed. <code>{r init} Co &lt;- read.csv('time_series_19-covid 20200312.csv') #names(Co) if(!require(ggplot2)){   install.packages(&quot;ggplot2&quot;)   require(ggplot2) } library(reshape2) #if(!require(DDply)){ #  install.packages(&quot;DDply&quot;) #  require(DDply) #}</code></p>
+<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed. ```{r init} require(git2r)</p>
+<p>#names(Co) if(!require(ggplot2)){ install.packages(“ggplot2”) require(ggplot2) } if(!require(directlabels)){ install.packages(“directlabels”) require(directlabels) }</p>
+<p>library(reshape2) #if(!require(DDply)){ # install.packages(“DDply”) # require(DDply) #} ```</p>
 <p>Now prepare somefunctions to determine the lags</p>
-<pre class="{r}"><code>min=2
-lagcount &lt;- function(column=c(0,0,1,2,3),minval=min){
-  return (sum(column &lt; minval))
+<pre class="{r}"><code>fetch('./COVID-19','upstream')
+Co &lt;- read.csv('time_series_19-covid 20200313.csv')
+#Co0 &lt;-'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
+#co0$row.names&lt;-
+#apply(co0[c(&quot;Country.Region&quot;,&quot;Province.State&quot;)],2,function(x,y){paste(x,y,sep=&quot;_&quot;)})
+#co2&lt;-transpose(co1[3:ncol(co0)])
+
+minv=30
+lagcount &lt;- function(kol=c(0,0,1,2,3),minval=minv){
+  return (sum(kol &lt; minval))
   }
-delaggedcol &lt;- function(kol,minval=min){
- return(kol [ kol &gt;= minval ] )
+delaggedcol &lt;- function(kol,minval=minv){
+ return(  c(kol[ kol &gt;= minval ],rep(NA,lagcount(kol,minval))  ))
 }
+
 lags&lt;- function(wpdf) {
-  as.data.frame(t(apply(wpdf[2:ncol(wpdf)],2,lagcount,...)))
+  as.data.frame(t(apply(wpdf,2,lagcount)))
 }
-names(Co[grep(&quot;France&quot;,names(Co))])
-countries&lt;- c(&quot;Thailand&quot;,&quot;Japan&quot;,&quot;Belgium&quot;,&quot;Netherlands&quot;,&quot;Germany&quot;,&quot;China_Hunan&quot;)
-synclags&lt;- function(wpdf=Co, minval=min,cols=countries, 
-      rowindexname=&quot;day&quot;,variables=&quot;country&quot;){
-  wpdf = wpdf[cols]
+nonmis.len&lt;- function(wpdf){
+ nrow(wpdf) - min(lags(wpdf))
+}
+countries&lt;- c(&quot;Vietnam&quot;,&quot;Thailand&quot;,&quot;Indonesia&quot;,&quot;Japan&quot;)
+synclags&lt;- function(wpdf=Co, minval=minv,cols=countries, 
+      rowindexname=&quot;day&quot;,variables=&quot;colname&quot;){
+  wpdf = wpdf[,cols,drop = FALSE]
+  lagscounts&lt;- lags(wpdf)
+  len&lt;- nrow(wpdf) - min(lagscounts)
+  print(&quot;removing columns:&quot;)
+  print(names((wpdf[,lagscounts==nrow(wpdf)])))
+  wpdf&lt;- wpdf[1:len,lags(wpdf)&lt;nrow(wpdf),drop = FALSE]
   daywpdf&lt;-as.data.frame(1:nrow(wpdf))
   colnames(daywpdf) &lt;-rowindexname
   for (i in 1:ncol(wpdf)){
     daywpdf[[names(wpdf)[i]]] &lt;-  
-        c(delaggedcol(wpdf[i],minval),rep(NA,lagcount(wpdf[i],minval)))
+        delaggedcol(wpdf[i],minval)
   }
-  return(melt(daywpdf,id=rowindexname, variable=variables))
+  return( melt(daywpdf,id=rowindexname, variable=variables) )
 }  
 </code></pre>
 <p>Now calculate the lagged version and plot</p>
-<pre class="{r}"><code>names(Co[grep(&quot;Jiangsu&quot;,names(Co))])
-mdayCo &lt;- synclags(Co,10)
-countries&lt;- c(&quot;Japan&quot;,&quot;China_Jiangsu&quot;,&quot;China_Hunan&quot;,&quot;Belgium&quot;,&quot;Netherlands&quot;,&quot;Egypt&quot;,&quot;Spain&quot;,&quot;Germany&quot;,&quot;France_France&quot;,&quot;Italy&quot;, &quot;Iran&quot;)
-mdayCo &lt;- synclags(Co,50,countries)
-ggplot(mdayCo,aes(x=day,y=value,colour=country,group=country)) + geom_line()+ylab(&quot;confirmed&quot;)
+<pre class="{r}"><code>
+findcolnames &lt;- function(tentcolnames=c(&quot;LL&quot;),df=Co) {
+    colnames &lt;- tentcolnames[1]
+    for (coun in tentcolnames[1:length(tentcolnames)]){
+      #print (paste( coun, names(df[grep(coun,names(df))]),sep =&quot; -&gt; &quot;))
+      colnames&lt;-c(colnames, names(df[grep(coun,names(df))]))
+    }
+    colnames[2:length(colnames)]
+  }
 
-lags(Co[c(&quot;Date&quot;,countries)])
-head(dayCo[countries])
 
-
-#geom_point
- ylab('Nr infections') +
-  #Change x-axis label
-xlab('Date')
-+
-  #Change legend format
-labs(color= 'Above or\nBelow Mean') +
-  #Add a title
-  ggtitle(&quot;2012 NATO GDP per Capita Valuations&quot;)
+graphthem&lt;- function(tentcountries,minv1=minv,wpdf=Co){
+  colnames &lt;- findcolnames(tentcountries,wpdf)
+  #xes&lt;- nrow(wpdf)-lags(wpdf)
+  #xes&lt;- xes[xes&gt;0]
+  #print(t(colnames))
+  ldaydf &lt;- synclags(wpdf,minv1,colnames)
+  lin&lt;- ggplot(ldaydf,aes(x=day,y=value,colour=colname,group=colname)) + geom_line()+ylab(&quot;confirmed&quot;)
+  lin
+  lin+ scale_y_continuous(trans='log2')+
+  #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
+  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),&quot;last.points&quot;, cex = 0.8))
 }
+EUEast&lt;- c(&quot;Italy&quot;,&quot;Iran&quot;,&quot;Korea&quot;,&quot;Germany&quot;,&quot;FranceF&quot;,&quot;Spain&quot;,&quot;Norway&quot;,&quot;Jiangsu&quot;,&quot;Hunan&quot;,&quot;Belgium&quot;,&quot;Netherlands&quot;,&quot;Egypt&quot;, &quot;Romania&quot;,&quot;Singapore&quot;,&quot;Japan&quot;,&quot;Austria&quot;)
 
 
+graphthem(countries)
+graphthem(EUEast,50)
+graphthem(c(&quot;..CA&quot;),20)
+graphthem(c(&quot;..NY&quot;),10)
+graphthem(c(&quot;US&quot;),10)
+
+save.plot(logtoday())
 </code></pre>
+<p>We need to test the functions before running the whole thing ```{r testing} ######################## ###testcases names(Co[grep(“South”,names(Co))])</p>
+<p>nonmis.len( Co[findcolnames(c(“US”))]) min(lags(a)) nonmis.len(Co[findcolnames(c(“..CA”))]) nonmis.len(Co[findcolnames(c(“..NY”))]) nonmis.len(Co[findcolnames(EUEast,Co)]) mdayCo &lt;- synclags(Co,10)</p>
+<p>```</p>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkNvdmlkIFIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiANCg0KVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkN0cmwrU2hpZnQrRW50ZXIqLiANCg0KQWRkIGEgbmV3IGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqSW5zZXJ0IENodW5rKiBidXR0b24gb24gdGhlIHRvb2xiYXIgb3IgYnkgcHJlc3NpbmcgKkN0cmwrQWx0K0kqLg0KDQpXaGVuIHlvdSBzYXZlIHRoZSBub3RlYm9vaywgYW4gSFRNTCBmaWxlIGNvbnRhaW5pbmcgdGhlIGNvZGUgYW5kIG91dHB1dCB3aWxsIGJlIHNhdmVkIGFsb25nc2lkZSBpdCAoY2xpY2sgdGhlICpQcmV2aWV3KiBidXR0b24gb3IgcHJlc3MgKkN0cmwrU2hpZnQrSyogdG8gcHJldmlldyB0aGUgSFRNTCBmaWxlKS4NCg0KVGhlIHByZXZpZXcgc2hvd3MgeW91IGEgcmVuZGVyZWQgSFRNTCBjb3B5IG9mIHRoZSBjb250ZW50cyBvZiB0aGUgZWRpdG9yLiBDb25zZXF1ZW50bHksIHVubGlrZSAqS25pdCosICpQcmV2aWV3KiBkb2VzIG5vdCBydW4gYW55IFIgY29kZSBjaHVua3MuIEluc3RlYWQsIHRoZSBvdXRwdXQgb2YgdGhlIGNodW5rIHdoZW4gaXQgd2FzIGxhc3QgcnVuIGluIHRoZSBlZGl0b3IgaXMgZGlzcGxheWVkLg0KYGBge3IgaW5pdH0NCkNvIDwtIHJlYWQuY3N2KCd0aW1lX3Nlcmllc18xOS1jb3ZpZCAyMDIwMDMxMi5jc3YnKQ0KI25hbWVzKENvKQ0KaWYoIXJlcXVpcmUoZ2dwbG90Mikpew0KICBpbnN0YWxsLnBhY2thZ2VzKCJnZ3Bsb3QyIikNCiAgcmVxdWlyZShnZ3Bsb3QyKQ0KfQ0KbGlicmFyeShyZXNoYXBlMikNCiNpZighcmVxdWlyZShERHBseSkpew0KIyAgaW5zdGFsbC5wYWNrYWdlcygiRERwbHkiKQ0KIyAgcmVxdWlyZShERHBseSkNCiN9DQpgYGANCg0KTm93IHByZXBhcmUgc29tZWZ1bmN0aW9ucyB0byBkZXRlcm1pbmUgdGhlIGxhZ3MNCmBgYHtyfSANCm1pbj0yDQpsYWdjb3VudCA8LSBmdW5jdGlvbihjb2x1bW49YygwLDAsMSwyLDMpLG1pbnZhbD1taW4pew0KICByZXR1cm4gKHN1bShjb2x1bW4gPCBtaW52YWwpKQ0KICB9DQpkZWxhZ2dlZGNvbCA8LSBmdW5jdGlvbihrb2wsbWludmFsPW1pbil7DQogcmV0dXJuKGtvbCBbIGtvbCA+PSBtaW52YWwgXSApDQp9DQpsYWdzPC0gZnVuY3Rpb24od3BkZikgew0KICBhcy5kYXRhLmZyYW1lKHQoYXBwbHkod3BkZlsyOm5jb2wod3BkZildLDIsbGFnY291bnQsLi4uKSkpDQp9DQpuYW1lcyhDb1tncmVwKCJGcmFuY2UiLG5hbWVzKENvKSldKQ0KY291bnRyaWVzPC0gYygiVGhhaWxhbmQiLCJKYXBhbiIsIkJlbGdpdW0iLCJOZXRoZXJsYW5kcyIsIkdlcm1hbnkiLCJDaGluYV9IdW5hbiIpDQpzeW5jbGFnczwtIGZ1bmN0aW9uKHdwZGY9Q28sIG1pbnZhbD1taW4sY29scz1jb3VudHJpZXMsIA0KICAgICAgcm93aW5kZXhuYW1lPSJkYXkiLHZhcmlhYmxlcz0iY291bnRyeSIpew0KICB3cGRmID0gd3BkZltjb2xzXQ0KICBkYXl3cGRmPC1hcy5kYXRhLmZyYW1lKDE6bnJvdyh3cGRmKSkNCiAgY29sbmFtZXMoZGF5d3BkZikgPC1yb3dpbmRleG5hbWUNCiAgZm9yIChpIGluIDE6bmNvbCh3cGRmKSl7DQogICAgZGF5d3BkZltbbmFtZXMod3BkZilbaV1dXSA8LSAgDQogICAgICAgIGMoZGVsYWdnZWRjb2wod3BkZltpXSxtaW52YWwpLHJlcChOQSxsYWdjb3VudCh3cGRmW2ldLG1pbnZhbCkpKQ0KICB9DQogIHJldHVybihtZWx0KGRheXdwZGYsaWQ9cm93aW5kZXhuYW1lLCB2YXJpYWJsZT12YXJpYWJsZXMpKQ0KfSAgDQoNCmBgYA0KTm93IGNhbGN1bGF0ZSB0aGUgbGFnZ2VkIHZlcnNpb24gYW5kIHBsb3QNCmBgYHtyfQ0KbmFtZXMoQ29bZ3JlcCgiSmlhbmdzdSIsbmFtZXMoQ28pKV0pDQptZGF5Q28gPC0gc3luY2xhZ3MoQ28sMTApDQpjb3VudHJpZXM8LSBjKCJKYXBhbiIsIkNoaW5hX0ppYW5nc3UiLCJDaGluYV9IdW5hbiIsIkJlbGdpdW0iLCJOZXRoZXJsYW5kcyIsIkVneXB0IiwiU3BhaW4iLCJHZXJtYW55IiwiRnJhbmNlX0ZyYW5jZSIsIkl0YWx5IiwgIklyYW4iKQ0KbWRheUNvIDwtIHN5bmNsYWdzKENvLDUwLGNvdW50cmllcykNCmdncGxvdChtZGF5Q28sYWVzKHg9ZGF5LHk9dmFsdWUsY29sb3VyPWNvdW50cnksZ3JvdXA9Y291bnRyeSkpICsgZ2VvbV9saW5lKCkreWxhYigiY29uZmlybWVkIikNCg0KbGFncyhDb1tjKCJEYXRlIixjb3VudHJpZXMpXSkNCmhlYWQoZGF5Q29bY291bnRyaWVzXSkNCg0KDQojZ2VvbV9wb2ludA0KIHlsYWIoJ05yIGluZmVjdGlvbnMnKSArDQogICNDaGFuZ2UgeC1heGlzIGxhYmVsDQp4bGFiKCdEYXRlJykNCisNCiAgI0NoYW5nZSBsZWdlbmQgZm9ybWF0DQpsYWJzKGNvbG9yPSAnQWJvdmUgb3JcbkJlbG93IE1lYW4nKSArDQogICNBZGQgYSB0aXRsZQ0KICBnZ3RpdGxlKCIyMDEyIE5BVE8gR0RQIHBlciBDYXBpdGEgVmFsdWF0aW9ucyIpDQp9DQoNCg0KDQpgYGANCg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkNvdmlkIFIgTm90ZWJvb2siDQpvdXRwdXQ6IA0KICBodG1sX25vdGVib29rOiANCiAgICB0b2M6IHllcw0KLS0tDQoNClRoaXMgaXMgYW4gW1IgTWFya2Rvd25dKGh0dHA6Ly9ybWFya2Rvd24ucnN0dWRpby5jb20pIE5vdGVib29rLiBXaGVuIHlvdSBleGVjdXRlIGNvZGUgd2l0aGluIHRoZSBub3RlYm9vaywgdGhlIHJlc3VsdHMgYXBwZWFyIGJlbmVhdGggdGhlIGNvZGUuIA0KDQpUcnkgZXhlY3V0aW5nIHRoaXMgY2h1bmsgYnkgY2xpY2tpbmcgdGhlICpSdW4qIGJ1dHRvbiB3aXRoaW4gdGhlIGNodW5rIG9yIGJ5IHBsYWNpbmcgeW91ciBjdXJzb3IgaW5zaWRlIGl0IGFuZCBwcmVzc2luZyAqQ3RybCtTaGlmdCtFbnRlciouIA0KDQpBZGQgYSBuZXcgY2h1bmsgYnkgY2xpY2tpbmcgdGhlICpJbnNlcnQgQ2h1bmsqIGJ1dHRvbiBvbiB0aGUgdG9vbGJhciBvciBieSBwcmVzc2luZyAqQ3RybCtBbHQrSSouDQoNCldoZW4geW91IHNhdmUgdGhlIG5vdGVib29rLCBhbiBIVE1MIGZpbGUgY29udGFpbmluZyB0aGUgY29kZSBhbmQgb3V0cHV0IHdpbGwgYmUgc2F2ZWQgYWxvbmdzaWRlIGl0IChjbGljayB0aGUgKlByZXZpZXcqIGJ1dHRvbiBvciBwcmVzcyAqQ3RybCtTaGlmdCtLKiB0byBwcmV2aWV3IHRoZSBIVE1MIGZpbGUpLg0KDQpUaGUgcHJldmlldyBzaG93cyB5b3UgYSByZW5kZXJlZCBIVE1MIGNvcHkgb2YgdGhlIGNvbnRlbnRzIG9mIHRoZSBlZGl0b3IuIENvbnNlcXVlbnRseSwgdW5saWtlICpLbml0KiwgKlByZXZpZXcqIGRvZXMgbm90IHJ1biBhbnkgUiBjb2RlIGNodW5rcy4gSW5zdGVhZCwgdGhlIG91dHB1dCBvZiB0aGUgY2h1bmsgd2hlbiBpdCB3YXMgbGFzdCBydW4gaW4gdGhlIGVkaXRvciBpcyBkaXNwbGF5ZWQuDQpgYGB7ciBpbml0fQ0KcmVxdWlyZShnaXQycikNCg0KI25hbWVzKENvKQ0KaWYoIXJlcXVpcmUoZ2dwbG90Mikpew0KICBpbnN0YWxsLnBhY2thZ2VzKCJnZ3Bsb3QyIikNCiAgcmVxdWlyZShnZ3Bsb3QyKQ0KfQ0KaWYoIXJlcXVpcmUoZGlyZWN0bGFiZWxzKSl7DQogIGluc3RhbGwucGFja2FnZXMoImRpcmVjdGxhYmVscyIpDQogIHJlcXVpcmUoZGlyZWN0bGFiZWxzKQ0KfQ0KDQpsaWJyYXJ5KHJlc2hhcGUyKQ0KI2lmKCFyZXF1aXJlKEREcGx5KSl7DQojICBpbnN0YWxsLnBhY2thZ2VzKCJERHBseSIpDQojICByZXF1aXJlKEREcGx5KQ0KI30NCmBgYA0KDQpOb3cgcHJlcGFyZSBzb21lZnVuY3Rpb25zIHRvIGRldGVybWluZSB0aGUgbGFncw0KYGBge3J9IA0KZmV0Y2goJy4vQ09WSUQtMTknLCd1cHN0cmVhbScpDQpDbyA8LSByZWFkLmNzdigndGltZV9zZXJpZXNfMTktY292aWQgMjAyMDAzMTMuY3N2JykNCiNDbzAgPC0nQ09WSUQtMTlcXGNzc2VfY292aWRfMTlfZGF0YVxcY3NzZV9jb3ZpZF8xOV90aW1lX3Nlcmllc1xcdGltZV9zZXJpZXNfMTktY292aWQtQ29uZmlybWVkLmNzdicpDQojY28wJHJvdy5uYW1lczwtDQojYXBwbHkoY28wW2MoIkNvdW50cnkuUmVnaW9uIiwiUHJvdmluY2UuU3RhdGUiKV0sMixmdW5jdGlvbih4LHkpe3Bhc3RlKHgseSxzZXA9Il8iKX0pDQojY28yPC10cmFuc3Bvc2UoY28xWzM6bmNvbChjbzApXSkNCg0KbWludj0zMA0KbGFnY291bnQgPC0gZnVuY3Rpb24oa29sPWMoMCwwLDEsMiwzKSxtaW52YWw9bWludil7DQogIHJldHVybiAoc3VtKGtvbCA8IG1pbnZhbCkpDQogIH0NCmRlbGFnZ2VkY29sIDwtIGZ1bmN0aW9uKGtvbCxtaW52YWw9bWludil7DQogcmV0dXJuKCAgYyhrb2xbIGtvbCA+PSBtaW52YWwgXSxyZXAoTkEsbGFnY291bnQoa29sLG1pbnZhbCkpICApKQ0KfQ0KDQpsYWdzPC0gZnVuY3Rpb24od3BkZikgew0KICBhcy5kYXRhLmZyYW1lKHQoYXBwbHkod3BkZiwyLGxhZ2NvdW50KSkpDQp9DQpub25taXMubGVuPC0gZnVuY3Rpb24od3BkZil7DQogbnJvdyh3cGRmKSAtIG1pbihsYWdzKHdwZGYpKQ0KfQ0KY291bnRyaWVzPC0gYygiVmlldG5hbSIsIlRoYWlsYW5kIiwiSW5kb25lc2lhIiwiSmFwYW4iKQ0Kc3luY2xhZ3M8LSBmdW5jdGlvbih3cGRmPUNvLCBtaW52YWw9bWludixjb2xzPWNvdW50cmllcywgDQogICAgICByb3dpbmRleG5hbWU9ImRheSIsdmFyaWFibGVzPSJjb2xuYW1lIil7DQogIHdwZGYgPSB3cGRmWyxjb2xzLGRyb3AgPSBGQUxTRV0NCiAgbGFnc2NvdW50czwtIGxhZ3Mod3BkZikNCiAgbGVuPC0gbnJvdyh3cGRmKSAtIG1pbihsYWdzY291bnRzKQ0KICBwcmludCgicmVtb3ZpbmcgY29sdW1uczoiKQ0KICBwcmludChuYW1lcygod3BkZlssbGFnc2NvdW50cz09bnJvdyh3cGRmKV0pKSkNCiAgd3BkZjwtIHdwZGZbMTpsZW4sbGFncyh3cGRmKTxucm93KHdwZGYpLGRyb3AgPSBGQUxTRV0NCiAgZGF5d3BkZjwtYXMuZGF0YS5mcmFtZSgxOm5yb3cod3BkZikpDQogIGNvbG5hbWVzKGRheXdwZGYpIDwtcm93aW5kZXhuYW1lDQogIGZvciAoaSBpbiAxOm5jb2wod3BkZikpew0KICAgIGRheXdwZGZbW25hbWVzKHdwZGYpW2ldXV0gPC0gIA0KICAgICAgICBkZWxhZ2dlZGNvbCh3cGRmW2ldLG1pbnZhbCkNCiAgfQ0KICByZXR1cm4oIG1lbHQoZGF5d3BkZixpZD1yb3dpbmRleG5hbWUsIHZhcmlhYmxlPXZhcmlhYmxlcykgKQ0KfSAgDQoNCmBgYA0KTm93IGNhbGN1bGF0ZSB0aGUgbGFnZ2VkIHZlcnNpb24gYW5kIHBsb3QNCmBgYHtyfQ0KDQpmaW5kY29sbmFtZXMgPC0gZnVuY3Rpb24odGVudGNvbG5hbWVzPWMoIkxMIiksZGY9Q28pIHsNCiAgICBjb2xuYW1lcyA8LSB0ZW50Y29sbmFtZXNbMV0NCiAgICBmb3IgKGNvdW4gaW4gdGVudGNvbG5hbWVzWzE6bGVuZ3RoKHRlbnRjb2xuYW1lcyldKXsNCiAgICAgICNwcmludCAocGFzdGUoIGNvdW4sIG5hbWVzKGRmW2dyZXAoY291bixuYW1lcyhkZikpXSksc2VwID0iIC0+ICIpKQ0KICAgICAgY29sbmFtZXM8LWMoY29sbmFtZXMsIG5hbWVzKGRmW2dyZXAoY291bixuYW1lcyhkZikpXSkpDQogICAgfQ0KICAgIGNvbG5hbWVzWzI6bGVuZ3RoKGNvbG5hbWVzKV0NCiAgfQ0KDQoNCmdyYXBodGhlbTwtIGZ1bmN0aW9uKHRlbnRjb3VudHJpZXMsbWludjE9bWludix3cGRmPUNvKXsNCiAgY29sbmFtZXMgPC0gZmluZGNvbG5hbWVzKHRlbnRjb3VudHJpZXMsd3BkZikNCiAgI3hlczwtIG5yb3cod3BkZiktbGFncyh3cGRmKQ0KICAjeGVzPC0geGVzW3hlcz4wXQ0KICAjcHJpbnQodChjb2xuYW1lcykpDQogIGxkYXlkZiA8LSBzeW5jbGFncyh3cGRmLG1pbnYxLGNvbG5hbWVzKQ0KICBsaW48LSBnZ3Bsb3QobGRheWRmLGFlcyh4PWRheSx5PXZhbHVlLGNvbG91cj1jb2xuYW1lLGdyb3VwPWNvbG5hbWUpKSArIGdlb21fbGluZSgpK3lsYWIoImNvbmZpcm1lZCIpDQogIGxpbg0KICBsaW4rIHNjYWxlX3lfY29udGludW91cyh0cmFucz0nbG9nMicpKw0KICAjZ2VvbV90ZXh0KGRhdGEgPSBsZGF5ZGYsIGFlcyhsYWJlbCA9IGNvbG5hbWUsIGNvbG91ciA9IGNvbG5hbWUsIHggPUluZiwgeSA9bWF4KHZhbHVlKSApLCBoanVzdCA9IC0xMCkgDQogIGdlb21fZGwoYWVzKGxhYmVsID0gY29sbmFtZSkgLCBtZXRob2QgPSBsaXN0KGRsLnRyYW5zKHggPSB4ICsgMC4yKSwibGFzdC5wb2ludHMiLCBjZXggPSAwLjgpKQ0KfQ0KRVVFYXN0PC0gYygiSXRhbHkiLCJJcmFuIiwiS29yZWEiLCJHZXJtYW55IiwiRnJhbmNlRiIsIlNwYWluIiwiTm9yd2F5IiwiSmlhbmdzdSIsIkh1bmFuIiwiQmVsZ2l1bSIsIk5ldGhlcmxhbmRzIiwiRWd5cHQiLCAiUm9tYW5pYSIsIlNpbmdhcG9yZSIsIkphcGFuIiwiQXVzdHJpYSIpDQoNCg0KZ3JhcGh0aGVtKGNvdW50cmllcykNCmdyYXBodGhlbShFVUVhc3QsNTApDQpncmFwaHRoZW0oYygiLi5DQSIpLDIwKQ0KZ3JhcGh0aGVtKGMoIi4uTlkiKSwxMCkNCmdyYXBodGhlbShjKCJVUyIpLDEwKQ0KDQpzYXZlLnBsb3QobG9ndG9kYXkoKSkNCg0KYGBgDQpXZSBuZWVkIHRvIHRlc3QgdGhlIGZ1bmN0aW9ucyBiZWZvcmUgcnVubmluZyB0aGUgd2hvbGUgdGhpbmcgDQpgYGB7ciB0ZXN0aW5nfQ0KIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjDQojIyN0ZXN0Y2FzZXMNCm5hbWVzKENvW2dyZXAoIlNvdXRoIixuYW1lcyhDbykpXSkNCg0Kbm9ubWlzLmxlbiggQ29bZmluZGNvbG5hbWVzKGMoIlVTIikpXSkNCm1pbihsYWdzKGEpKQ0Kbm9ubWlzLmxlbihDb1tmaW5kY29sbmFtZXMoYygiLi5DQSIpKV0pDQpub25taXMubGVuKENvW2ZpbmRjb2xuYW1lcyhjKCIuLk5ZIikpXSkNCm5vbm1pcy5sZW4oQ29bZmluZGNvbG5hbWVzKEVVRWFzdCxDbyldKQ0KbWRheUNvIDwtIHN5bmNsYWdzKENvLDEwKQ0KDQpgYGA=</div>
 
 
 
