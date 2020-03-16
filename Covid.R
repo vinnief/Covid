@@ -1,14 +1,15 @@
----
-title: "Covid R Notebook"
-output: 
-  html_notebook: 
-    toc: yes
----
+#---
+#Title: "Covid R Notebook"
+#output: 
+#  html_notebook: 
+#    toc: yes
+#---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-```{r}
+#This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within #the notebook, the results appear beneath the code. Note this whole markdown notebook thingy #does not work in my setup, so y am just commenting out all text to rus the whole file at #once!
+
+#When you save the notebook, an HTML file containing the code and output will be saved #alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+#The preview shows you a rendered HTML copy of the contents of the editor. Consequently, #unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk #when it was last run in the editor is displayed.
+#```{r}
 
 #names(Co)
 if(!require(ggplot2)){
@@ -24,33 +25,37 @@ require(plyr)
 require(reshape2)
 
 
-```
-**optional more packages, not used yet**
-```{r } 
-#require(git2r)
+#```
+#**optional more packages, not used yet**
+#```{r } 
+
 #if(!require(data.table)){
 #  install.packages("data.table")
 #  require(data.table)
 #}
 
-```
-*Note*: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
-(here downloaded to the relative path 'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
-is in csv format, and the 4 first columns can be seen as an id of the data. However, There is no need in line graphs for the location data so we separate those. It can be  done in Excel, by deleting the latitude and longitude, and by concatenating province and country levels into one. But this is cumbersome as everyday the data is updated. The Excel conversion used to be saved it in this script's folder as and could be read with
+#```
+#*Note*: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
+#(here downloaded to the relative path #'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv#')
+#is in csv format, and the 4 first columns can be seen as an id of the data. However, There #is no need in line graphs for the location data so we separate those. It can be  done in #Excel, by deleting the latitude and longitude, and by concatenating province and country #levels into one. But this is cumbersome as everyday the data is updated. The Excel #conversion used to be saved it in this script's folder as and could be read with
 
 
-First, lets read the original data: 
-```{r} 
-#fetch(repo = ".", name = NULL, credentials = NULL, verbose = TRUE,
-  refspec = NULL)
-fetch(".\\COVID-19","upstream") #should update the data from Git. 
+#First, lets read the original data with something like from git2R
+#fetch(repo = ".", name = NULL, credentials = NULL, verbose = TRUE, refspec = NULL)
+#if(!require(git2r)){  install.packages("git2r");  require(git2r)}
+#fetch(".\\COVID-19","upstream") #should update the data from Git. 
 #error authenticating. even after deleting id-rsa pasword: error authenticating: failed connecting agent
-
-readdata <-function(dataversion="Confirmed",coltype="date", values.name="nr"){ #"Deaths", "Recovered"
-  filename<- paste('COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-',dataversion,".csv",sep="") 
+readdata2<-function(dataversion="Confirmed"){
+  filename<- paste('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-',
+                    dataversion,".csv",sep="")
+  #local path if you download first: COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-'
   tryCatch( wpdf <-read.csv(filename) ,
-    error= function(e) print(paste(e," The data was not found: Are you sure this file exists? ",filename))
-    )
+            error= function(e) print(paste(e," The data was not found: Are you sure this file exists? ",filename))
+  )
+  return(wpdf)
+}
+c<-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
+convertdata <-function(wpdf,coltype="date", values.name="nr"){ #"Deaths", "Recovered"
   wpdf$CRPS <- as.factor(ifelse(""==wpdf$Province.State, 
                     paste(wpdf$Country.Region,"",sep=""),
                     paste(wpdf$Country.Region,wpdf$Province.State,sep=', ')))
@@ -63,26 +68,31 @@ readdata <-function(dataversion="Confirmed",coltype="date", values.name="nr"){ #
   return(lpdf)
 }#note if data.table package is added, it has its own "melt" function
 
-confirmed<- readdata("Confirmed",values.name="confirmed")
+wc<-readdata2("Confirmed")
+confirmed<- convertdata(wc,values.name="confirmed")
 confirmed$date<- NULL
-deaths<- readdata("Deaths",values.name="deaths")
+wd<-readdata2("Deaths")
+deaths<- convertdata(wd,values.name="deaths")
 deaths$date<- NULL
-recovered<- readdata("Recovered",values.name="recovered")
+wr<-readdata2("Recovered")
+recovered<- convertdata(wr,values.name="recovered")
 recovered$date<- NULL
 alldata<- merge(confirmed,recovered,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
 alldata<- merge(alldata,deaths,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
+alldata$recoveredOverDead <- alldata$recovered/alldata$death
+alldata$confirmedOverRecovered<- alldata$confirmed/alldata$recovered
+alldata$recoveredOverConfirmed<- alldata$recovered/alldata$confirmed
+
 #alldata$date<-as.Date(alldata$date,format="X%m.%d.%Y")  
-#alldata<-alldata[with(alldata, order(CRPS, date)), ]  #get the dates sorted out, later we use the rownames!
+alldata<-alldata[with(alldata, order(CRPS, Date)), ]  #get the dates sorted out, later we use the rownames!
 alldata[11:22,]
 rownames(alldata)<- NULL
 alldata[11:22,]
-rm(confirmed,deaths,recovered)
+rm(wc,wd,wr,confirmed,deaths,recovered)
 sum(is.na(alldata)) #on 20200315: returns 0, i.e. no NA's created or read in!
-```
-
-Next, prepare functions to select data we want to line graph, determined by the minimum value and CRPS
-
-```{r}
+#```
+#Next, prepare functions to select data we want to line graph, determined by the minimum value and CRPS
+#```{r}
 minv=1
 testcountries<- c("Be","Vietnam","Thailand","ind","Japan","France","Ger", "Nethe", "Hunan")
 
@@ -116,9 +126,9 @@ addcounter<-function(lpdf=alldata,id="CRPS",counter="day"){
     return(lpdf)
 }
 
-```
-*Now plot*
-```{r}
+#```
+#*Now plot*
+#```{r}
 graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname="confirmed",
                     lpdf=alldata, countname="counter", needfuzzy=TRUE,  loga=TRUE,
                     saveit=FALSE, legend=FALSE){
@@ -141,9 +151,6 @@ graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname
 #paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
  #       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
 #####
-alldata$recoveredOverDead <- alldata$recovered/alldata$death
-alldata$confirmedOverRecovered<- alldata$confirmed/alldata$recovered
-alldata$recoveredOverConfirmed<- alldata$recovered/alldata$confirmed
 ##########################################################
 #Use it:
 graphit(minval=4000,loga=FALSE)
@@ -151,15 +158,16 @@ WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway
 graphit(WestvsEast,10)
 graphit(WestvsEast,50)
 graphit(WestvsEast,500,saveit=TRUE)#,loga=FALSE)
-graphit(WestvsEast,loga=FALSE)
+graphit(WestvsEast,10,loga=FALSE)
 
 EU<- c("Italy","Germany","France, France","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway")
 findIDnames(EU)
 graphit(EU,50,loga=FALSE)
 graphit(EU,50,varname="confirmed")
-graphit(EU,1,varname="deaths")
+graphit(EU,1,varname="deaths",loga=FALSE)
 graphit(EU,1,varname="recovered")
 graphit(EU,0,varname="recoveredOverDead",loga=FALSE)
+graphit(EU,0,varname="recoveredOverConfirmed",loga=FALSE)
 graphit(EU,50,loga=FALSE)
 
 WCAsia<-c("Rus", "Georgia", "Armen", "Azerb", "Ukrai","stan","desh","india","Irak","Syria","Lebanon","Turk","Israel","Pal","Bhu","Palest")
