@@ -6,16 +6,9 @@ output:
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-```{r init}
-require(git2r)
+```{r}
 
 #names(Co)
 if(!require(ggplot2)){
@@ -27,138 +20,173 @@ if(!require(directlabels)){
   require(directlabels)
 }
 # note ggrepel also does similar labels. 
+require(plyr)
+require(reshape2)
 
-library(reshape2)
-#if(!require(DDply)){
-#  install.packages("DDply")
-#  require(DDply)
-#}
+
 ```
-Note: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
+**optional more packages, not used yet**
+```{r } 
+#require(git2r)
+#if(!require(data.table)){
+#  install.packages("data.table")
+#  require(data.table)
+#}
+
+```
+*Note*: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
 (here downloaded to the relative path 'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
-is in csv format, and i thought it needed transposing before it can be used, because i want to get rid of the values below a minimum. 
-Then the 4 first columns need to be converted into a possible column label. I do that in Excel, by deleting the latitude and longitude, and by concatenating province and country levels into one. THen save it in this folder as Co <- read.csv('time_series_19-covid Confirmed yyyymmdd.csv'). 
-Now prepare somefunctions to determine the lags
+is in csv format, and the 4 first columns can be seen as an id of the data. However, There is no need in line graphs for the location data so we separate those. It can be  done in Excel, by deleting the latitude and longitude, and by concatenating province and country levels into one. But this is cumbersome as everyday the data is updated. The Excel conversion used to be saved it in this script's folder as and could be read with
+
+
+First, lets read the original data: 
 ```{r} 
 #fetch(repo = ".", name = NULL, credentials = NULL, verbose = TRUE,
   refspec = NULL)
-fetch(".\\COVID-19","upstream") 
-#error authenticating. even after deleting id-rsa pasword,
-: error authenticating: failed connecting agent
-Co <- read.csv('time_series_19-covid-confirmed-20200313.csv')
-#Co0 <-'COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-Confirmed.csv')
-#co0$row.names<-
-#apply(co0[c("Country.Region","Province.State")],2,function(x,y){paste(x,y,sep="_")})
-#co2<-transpose(co1[3:ncol(co0)])
+fetch(".\\COVID-19","upstream") #should update the data from Git. 
+#error authenticating. even after deleting id-rsa pasword: error authenticating: failed connecting agent
 
+readdata <-function(dataversion="Confirmed",coltype="date", values.name="nr"){ #"Deaths", "Recovered"
+  filename<- paste('COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-',dataversion,".csv",sep="") 
+  tryCatch( wpdf <-read.csv(filename) ,
+    error= function(e) print(paste(e," The data was not found: Are you sure this file exists? ",filename))
+    )
+  wpdf$CRPS <- as.factor(ifelse(""==wpdf$Province.State, 
+                    paste(wpdf$Country.Region,"",sep=""),
+                    paste(wpdf$Country.Region,wpdf$Province.State,sep=', ')))
+  geo.location <- wpdf[c("Country.Region","Province.State","CRPS","Lat","Long")]
+  wpdf$Lat<- NULL
+  wpdf$Long<- NULL
+  lpdf<-reshape2::melt(wpdf,id=c("CRPS","Province.State","Country.Region"),
+                    variable.name=coltype, value.name=values.name) 
+  lpdf$Date<- as.Date(paste(lpdf[,coltype],"20",sep=""),format="X%m.%d.%Y") 
+  return(lpdf)
+}#note if data.table package is added, it has its own "melt" function
+
+confirmed<- readdata("Confirmed",values.name="confirmed")
+confirmed$date<- NULL
+deaths<- readdata("Deaths",values.name="deaths")
+deaths$date<- NULL
+recovered<- readdata("Recovered",values.name="recovered")
+recovered$date<- NULL
+alldata<- merge(confirmed,recovered,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
+alldata<- merge(alldata,deaths,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
+#alldata$date<-as.Date(alldata$date,format="X%m.%d.%Y")  
+#alldata<-alldata[with(alldata, order(CRPS, date)), ]  #get the dates sorted out, later we use the rownames!
+alldata[11:22,]
+rownames(alldata)<- NULL
+alldata[11:22,]
+rm(confirmed,deaths,recovered)
+sum(is.na(alldata)) #on 20200315: returns 0, i.e. no NA's created or read in!
+```
+
+Next, prepare functions to select data we want to line graph, determined by the minimum value and CRPS
+
+```{r}
 minv=1
-lagcount <- function(kol=c(0,0,1,2,3),minval=minv){
-  return (sum(kol < minval))
-  }
-delaggedcol <- function(kol,minval=minv){
- return(  c(kol[ kol >= minval ],rep(NA,lagcount(kol,minval))  ))
-}
+testcountries<- c("Be","Vietnam","Thailand","ind","Japan","France","Ger", "Nethe", "Hunan")
 
-lags<- function(wpdf,minval=minv) {
-  as.data.frame(t(apply(wpdf,2,lagcount,minval)))
-}
-#how long is the dataset actually? 
-abovemin.len<- function(wpdf,minval=minv){
- nrow(wpdf) - min(lags(wpdf,minval))
-}
-
-countries<- c("Vietnam","Thailand","Indonesia","Japan")
-#calculate the lagged dataset, from the first day each country has more than minval cases
-synclags<- function(wpdf=Co, minval=minv,cols=countries, 
-      rowindexname="day",variables="colname"){
-  wpdf = wpdf[,cols,drop = FALSE]
-  lagscounts<- lags(wpdf,minval)
-  len<- nrow(wpdf) - min(lagscounts)
-  print("removing columns:")
-  print(names((wpdf[,lagscounts==nrow(wpdf)])))
-  wpdf<- wpdf[,lags(wpdf)<nrow(wpdf),drop = FALSE]
-  daywpdf<-as.data.frame(1:nrow(wpdf))
-  colnames(daywpdf) <-rowindexname
-  for (i in 1:ncol(wpdf)){
-    daywpdf[[names(wpdf)[i]]] <-  
-        delaggedcol(wpdf[i],minval)
-  }
-  return( melt(daywpdf[1:len,],id=rowindexname, variable=variables) )
-} 
 #make sure we have the right column names
-findcolnames <- function(tentcolnames=c("LL"),df=Co) {
-    colnames <- tentcolnames[1]
-    for (coun in tentcolnames[1:length(tentcolnames)]){
-      #print (paste( coun, names(df[grep(coun,names(df))]),sep =" -> "))
-      colnames<-c(colnames, names(df[grep(tolower(coun),tolower(names(df)))]))
-    }
-    colnames[2:length(colnames)]
+
+multigrep<- function( smalllist,biglist,ignorecase=FALSE){
+  unlist(llply(smalllist,function(a) grep(a,biglist, value=TRUE,ignore.case=ignorecase)))
   }
+
+#this one finds exact names when needed
+findIDnames <- function(testIDnames=c("Neth","India"), idcol="CRPS",
+                      lpdf=alldata, fuzzy=TRUE){ 
+    allIDs<- drop(unique(lpdf[,idcol]))
+    if (!fuzzy) {return(intersect(testIDnames,allIDs))}
+    allIDs[unlist(llply(testIDnames,function(a) grep(a,allIDs, ignore.case=TRUE)))]
+} 
+datasel<- function(countries=testcountries, minval= minv, lpdf=alldata, var="confirmed",
+                  id="CRPS", fuzzy=FALSE){
+  if(fuzzy) countries <- findIDnames(countries,"CRPS",lpdf)
+  return( lpdf[ (lpdf[var]>=minval)&(lpdf[,id] %in% countries) , ]) # with id=CRPS and var=confirmed it should work.
+}
+addrownrs<-function(ts,sortby="") {
+  #if !(sortby=="") ts[order(ts[,sortby])]
+  ts$counter<-as.numeric(row.names(ts))
+  return(ts)
+}# two problems: if rownames change to chr, errors occur. if they get out of order because of a sort, the graphs will be a mess. 
+addcounter<-function(lpdf=alldata,id="CRPS",counter="day"){
+    lpdf$counter <- 0 #just to add a column, with a value that will be filled next. otherwise we get too many columns. 
+    lpdf<- ddply(lpdf,id, addrownrs)
+    #names(lpdf)["counter"]<- counter
+    return(lpdf)
+}
 
 ```
-Now plot
+*Now plot*
 ```{r}
-graphthem<- function(tentcountries,minval=minv,wpdf=Co,loga=TRUE){
-  colnames <- findcolnames(tentcountries,wpdf)
-  #xes<- nrow(wpdf)-lags(wpdf)
-  #xes<- xes[xes>0]
-  #print(t(colnames))
-  ldaydf <- synclags(wpdf,minval,colnames)
-  lin<- ggplot(ldaydf,aes(x=day,y=value,colour=colname,group=colname)) + geom_line()+ylab(paste("confirmed", ifelse(loga," (log scale)","")))+xlab(paste("days after the first ",minval," cases"))+
-  geom_dl(aes(label = colname) , method = list(dl.trans(x = x + 0.2),
+graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname="confirmed",
+                    lpdf=alldata, countname="counter", needfuzzy=TRUE, loga=TRUE,saveit=FALSE){
+  lpdf<- addcounter(
+        datasel(countries,minval,var=varname,id=ID, lpdf=lpdf, fuzzy=needfuzzy),
+        ID,countname)
+  lin<- ggplot(lpdf,aes_string(x=countname,y=varname,color=ID,group=ID)) +  
+    geom_line()+geom_point(size=0.7,shape=1)+ylab(paste(varname, ifelse(loga," (log scale)","")))+xlab(paste("days after the first",minval,varname))+
+  geom_dl(aes_string(label = ID) , method = list(dl.trans(x = x + 0.2),
           "last.points", cex = 0.8))+  
-  scale_color_discrete(guide = FALSE)
-  #geom_text(data = ldaydf, aes(label = colname, colour = colname, x =Inf, y =max(value) ), hjust = -10) 
+  scale_color_discrete(guide = FALSE) #FALSE , "colorbar" or "legend"
+  #geom_text(data = ldaydf, aes_string(label = ID, colour = ID, x =Inf, y =max(value) ), hjust = -10) 
   ifelse(loga,return(lin+scale_y_continuous(trans='log2')),return(lin))
+  if (saveit) save.plot(paste("plots/",varname,format(Sys.Date(),format="%Y%m%d")," in ( ", 
+                        paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " )," )"),
+                        type= "png")
 }
-WestvsEast<- c("Italy","Iran","Korea","Germany","FranceF","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands", "Romania","Singapore","Japan","Austria","Shanghai")
+paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
+        paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
 
-EU<- c("Italy","Germany","FranceF","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denma","Norway","Finland","Bulga","Portugal","Greece","Croat","Slov","Cze","Esto","Lithua","Latv","Malta","Luxem","Cyprus","mUK")
+#### test
+alldata$recoveredOverDead <- alldata$recovered/alldata$death
+##########################################################
+#Use it:
+graphit(minval=4000,loga=FALSE)
+WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","China, Jiangsu","China,_Hunan","Belgium","Netherlands", "Romania","Singapore","Japan","Austria","China, Shanghai")
+graphit(WestvsEast,10)
+graphit(WestvsEast,50)
+graphit(WestvsEast,500,saveit=TRUE)#,loga=FALSE)
+graphit(WestvsEast,loga=FALSE)
 
-WCAsia<-c("Rus", "Georgia", "Armen", "Azerb", "Ukrai","stan","desh","india","Irak","Syria","Lebanon","Turk","Israel","Pal","Bhu","Terr")
-findcolnames(WCAsia)
-graphthem(WCAsia,1)
-findcolnames(EU)
-graphthem(EU,50)
-graphthem(EU,50,loga=FALSE)
-graphthem(countries,10)
-graphthem(WestvsEast,10)
-graphthem(WestvsEast,50)
-graphthem(WestvsEast,50,loga=FALSE)
-graphthem(c("..CA"),20)
-graphthem(c("Canada"),20)
-graphthem(c("..NY"),10)
-graphthem(c("US"),1)
+EU<- c("Italy","Germany","France, France","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway")
+findIDnames(EU)
+graphit(EU,50,loga=FALSE)
+graphit(EU,50,varname="confirmed")
+graphit(EU,1,varname="deaths")
+graphit(EU,1,varname="recovered")
+graphit(EU,0,varname="recoveredOverDead",loga=FALSE)
+graphit(EU,50,loga=FALSE)
+
+WCAsia<-c("Rus", "Georgia", "Armen", "Azerb", "Ukrai","stan","desh","india","Irak","Syria","Lebanon","Turk","Israel","Pal","Bhu","Palest")
+
+findIDnames(WCAsia)
+graphit(WCAsia,10)
+graphit(countries,10)
+graphit(c("..CA"),20)
+graphit(c("Canada"),20)
+graphit(c("..NY"),10)
+graphit(c("US"),1)
 SAsiaIO<-c("India","Pakistan","Bangladesh","Sri","Comoros","Maldives","Madagascar","Mauritius","Seychelles")
-findcolnames(SAsiaIO)
-graphthem(SAsiaIO,8)
+findIDnames(SAsiaIO)
+graphit(SAsiaIO,8)
 MENA<-c("Egypt", "Marocco","Alger","Tunes","Lib","Syr","Turk","Saudi","Kuwait","Oman","arab","UAE","Yemen","Bahrain","Qatar","Irak","Iran")
-graphthem(MENA,50)
+graphit(MENA,50)
 Africa<- c("Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic (CAR)","Chad","Comoros", "Congo, Democratic Republic of the", "Congo, Republic of the", "Cote d'Ivoire", "Djibouti", "Egypt", 
 "Equatorial Guinea", "Eritrea", "Eswatini (formerly Swaziland)", "Ethiopia", 
 "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", 
 "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", 
 "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe")
-graphthem(Africa,3)
-graphthem("Australia",10)
+graphit(Africa,3)
+graphit("Australia",10)
 SAmerica<-c("Chile","Brazil","Argenti","Peru","Colombia","Venezuela","Mexico","Honduras","Salvador","Panama","Ecuador","Surinam","Guyan","Beliz","Guatemals", "Antill")
-graphthem(SAmerica,10)
-#save.plot(logtoday()) #syntax? 
-
+graphit(SAmerica,10)
+graphit(minval=500)
+graphit(minval=10, varname="deaths")
+graphit(minval=100, varname="recovered")
 ```
 We need to test the functions before running the whole thing 
 ```{r testing}
-########################
-###testcases
-names(Co[grep("South",names(Co))])
-
-a<- Co[findcolnames(EU)]
-View(a)
-min(lags(a))
-View(a[min(lags(a)):nrow(a),])
-nonmis.len(Co[findcolnames(c("..CA"))])
-nonmis.len(Co[findcolnames(c("..NY"))])
-nonmis.len(Co[findcolnames(EUEast,Co)])
-mdayCo <- synclags(Co,10)
+###########################testcases
 
 ```
