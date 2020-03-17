@@ -1,7 +1,10 @@
 ---
-title: "Covid R Notebook"
-output: 
-  html_notebook: 
+title: "Covid19 R Notebook"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
     toc: yes
 ---
 

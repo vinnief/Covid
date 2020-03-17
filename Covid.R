@@ -1,7 +1,7 @@
 #---
-#Title: "Covid R Notebook"
+#Title: "Covid19 R Notebook"
 #output: 
-#  html_notebook: 
+#  html_notebook: Covid19.html
 #    toc: yes
 #---
 
@@ -19,6 +19,20 @@ if(!require(ggplot2)){
 if(!require(directlabels)){
   install.packages("directlabels")
   require(directlabels)
+}
+getpackage<- function(pname){
+  if(!require(eval(name))){
+    install.packages(pname)
+    require(eval(pname))
+  }}
+#getpackage(RColorBrewer)
+
+if (!require(RColorbrewer)) {install.packages("RColorBrewer"); require(RColorBrewer)}
+if (!require(ggthemes)) {  installed.packages("ggthemes"); require(ggthemes)}
+require(ggthemes)
+if(!require(ggrepel)){
+  install.packages("ggrepel")
+  require(ggrepel)
 }
 # note ggrepel also does similar labels. 
 require(plyr)
@@ -54,29 +68,30 @@ readdata2<-function(dataversion="Confirmed"){
   )
   return(wpdf)
 }
-c<-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
+#c<-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
 convertdata <-function(wpdf,coltype="date", values.name="nr"){ #"Deaths", "Recovered"
   wpdf$CRPS <- as.factor(ifelse(""==wpdf$Province.State, 
                     paste(wpdf$Country.Region,"",sep=""),
-                    paste(wpdf$Country.Region,wpdf$Province.State,sep=', ')))
+                    paste(wpdf$Province.State,wpdf$Country.Region,sep=', ')))
   geo.location <- wpdf[c("Country.Region","Province.State","CRPS","Lat","Long")]
   wpdf$Lat<- NULL
   wpdf$Long<- NULL
   lpdf<-reshape2::melt(wpdf,id=c("CRPS","Province.State","Country.Region"),
                     variable.name=coltype, value.name=values.name) 
   lpdf$Date<- as.Date(paste(lpdf[,coltype],"20",sep=""),format="X%m.%d.%Y") 
+  lpdf$date<- NULL
   return(lpdf)
 }#note if data.table package is added, it has its own "melt" function
 
 wc<-readdata2("Confirmed")
 confirmed<- convertdata(wc,values.name="confirmed")
-confirmed$date<- NULL
+#confirmed$date<- NULL
 wd<-readdata2("Deaths")
 deaths<- convertdata(wd,values.name="deaths")
-deaths$date<- NULL
+#deaths$date<- NULL
 wr<-readdata2("Recovered")
 recovered<- convertdata(wr,values.name="recovered")
-recovered$date<- NULL
+#recovered$date<- NULL
 alldata<- merge(confirmed,recovered,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
 alldata<- merge(alldata,deaths,all=TRUE,by=c("CRPS","Country.Region","Province.State","Date"))
 alldata$recoveredOverDead <- alldata$recovered/alldata$death
@@ -114,7 +129,7 @@ datasel<- function(countries=testcountries, minval= minv, lpdf=alldata, var="con
   if(fuzzy) countries <- findIDnames(countries,"CRPS",lpdf)
   return( lpdf[ (lpdf[var]>=minval)&(lpdf[,id] %in% countries) , ]) # with id=CRPS and var=confirmed it should work.
 }
-addrownrs<-function(ts,sortby="") {
+addrownrs<-function(ts,counter="day", sortby="") {
   #if !(sortby=="") ts[order(ts[,sortby])]
   ts$counter<-as.numeric(row.names(ts))
   return(ts)
@@ -127,68 +142,116 @@ addcounter<-function(lpdf=alldata,id="CRPS",counter="day"){
 }
 
 #```
-#*Now plot*
+#*Now plot* 
 #```{r}
 graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname="confirmed",
-                    lpdf=alldata, countname="counter", needfuzzy=TRUE,  loga=TRUE,
-                    saveit=FALSE, legend=FALSE){
+                    lpdf=alldata, countname="counter", needfuzzy=TRUE,  logy=TRUE,
+                    saveit=FALSE, legend=FALSE, size=1){
+  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
   lpdf<- addcounter(
-        datasel(countries,minval,var=varname,id=ID, lpdf=lpdf, fuzzy=needfuzzy),
+        datasel(countries,minval,var=varname,id=ID, lpdf=lpdf, fuzzy=FALSE),
         ID,countname)
-  lin<- ggplot(lpdf,aes_string(x=countname,y=varname,color=ID,group=ID)) +  
-    geom_line()+geom_point(size=0.7,shape=1)+ylab(paste(varname, ifelse(loga," (log scale)","")))+xlab(paste("days after the first",minval,varname))+
-  geom_dl(aes_string(label = ID) , method = list(dl.trans(x = x + 0.2),
-          "last.points", cex = 0.8))+  
-  scale_color_discrete(guide = ifelse(legend,"legend",FALSE)) #FALSE , "colorbar" or "legend"
-  #geom_text(data = ldaydf, aes_string(label = ID, colour = ID, x =Inf, y =max(value) ), hjust = -10) 
-  ifelse(loga,return(lin+scale_y_continuous(trans='log2')),return(lin))
-  if (saveit) save.plot(paste("plots/",varname,format(Sys.Date(),format="%Y%m%d")," in ( ", 
-                        paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " )," )"),
-                        type= "png")
+  myplot<- ggplot(lpdf,aes_string(x=countname,y=varname,color=ID,group=ID)) +  
+    geom_line(size=size, alpha=0.2)+geom_point(size=0.7,shape=1)+
+    ylab(paste(varname, ifelse(logy," (log scale)","")))+
+    xlab("days")+
+    ggtitle(paste("Covid-19 evolution after the first",minval,varname)) +
+    theme_light() + #
+    theme(plot.title = element_text(size = 12, face="bold"))+
+    geom_dl(aes_string(label = ID) , method = list(dl.trans(x = x + 0.2),
+          "last.points", cex = 0.8))
+  if (length(countries)<12) 
+    myplot<- myplot + scale_color_brewer(palette="Spectral",guide = ifelse(legend,"legend",FALSE)) 
+  else myplot<- myplot + scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
+  #if (saveit) savePlot(paste("plots/",varname,format(Sys.Date(),format="%Y%m%d")," in ( ", 
+   #                     paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " )," )"),
+    #                    type= "png")
+  return(myplot)
 }
+#scale_color_brewer(palette="Set3",guide = ifelse(legend,"legend",FALSE)) #Dark2
+#geom_text(data = lpdf, aes_string(label = ID,color = ID,x =Inf,y =max(value) ), hjust = -10) 
 
+graphit2 <- function(countries=unique(alldata$CRPS), minval1=1, ID="CRPS", 
+                     varnames=c("confirmed", "recovered"), lpdf=alldata, countname="counter",
+                     needfuzzy=TRUE,  logy=TRUE, saveit=FALSE, legend=FALSE, size=1){
+  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
+  lpdf <-  addcounter(datasel(countries,minval1,var=varnames[1],id=ID, lpdf=lpdf, fuzzy=FALSE),
+                  ID,countname)
+  for (varname in varnames)  lpdf[lpdf[,varname]==0,varname]<- NA
+  myplot<- ggplot(lpdf) 
+  for (varname in varnames) {myplot<- myplot +  
+    geom_line(aes_string(x=countname,y=varname,color=c(ID),group=c(ID)),alpha=0.2,size=size)+
+    geom_point(aes_string(x=countname,y=varname,color=c(ID),group=c(ID)),size=0.7*size,shape=match(varname,varnames))+
+    geom_dl(aes_string(x=countname,y=varname,label = ID) , #paste(ID,varname,sep="_") #,color=ID,group=ID)
+            method = list(dl.trans(x = x + 0.2),"last.points", cex = 0.8))
+  }  
+  myplot<-myplot + ylab(paste(paste(varnames,collapse=", "), ifelse(logy,"(log scale)","")))+
+            xlab("day")+ 
+            ggtitle(paste("Covid-19 evolution after the first",minval1,varnames[1])) +
+            theme_light() + theme(plot.title = element_text(size = 12, face="bold"))
+  if (length(countries)*length(varnames)<12) 
+    myplot<- myplot + scale_color_brewer(palette="Spectral",guide = ifelse(legend,"legend",FALSE)) 
+  else myplot<- myplot + scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+           #scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
+  if (saveit) save.plot(paste("plots/",paste(varnames,collapse=",",format(Sys.Date(),format="%Y%m%d")," in ( ", 
+                              paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " )," )"),
+                        type= "png"))
+return(myplot)
+}
+############################## end of WIP
 #### test
 #paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
  #       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
 #####
 ##########################################################
 #Use it:
-graphit(minval=4000,loga=FALSE)
-WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","China, Jiangsu","China,_Hunan","Belgium","Netherlands", "Romania","Singapore","Japan","Austria","China, Shanghai")
+graphit2("San Marino" ,0,size=4)
+graphit("San Marino" ,0,size=4)
+graphit(minval=4000,logy=FALSE)
+graphit2(minval=4000,logy=FALSE,size=2)
+WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Jiangsu","Hunan","Belgium","Netherlands","Singapore","Japan","China, Shanghai")
 graphit(WestvsEast,10)
-graphit(WestvsEast,50)
-graphit(WestvsEast,500,saveit=TRUE)#,loga=FALSE)
-graphit(WestvsEast,10,loga=FALSE)
-
+graphit2(WestvsEast,1000,size=3)
+graphit(WestvsEast,50,size=1)
+graphit(WestvsEast,500,saveit=TRUE)#,logy=FALSE)
+graphit(WestvsEast,10,logy=FALSE)
+smallEU <- c("Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway")
 EU<- c("Italy","Germany","France, France","Spain","Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway")
 findIDnames(EU)
-graphit(EU,50,loga=FALSE)
-graphit(EU,50,varname="confirmed")
-graphit(EU,1,varname="deaths",loga=FALSE)
+graphit2(EU,50,logy=FALSE)
+graphit(EU,50,varname="confirmed",size=0.2)
+graphit(EU,50,varname="confirmed",Amir=TRUE)
+graphit(EU,1,varname="deaths",logy=FALSE)
 graphit(EU,1,varname="recovered")
-graphit(EU,0,varname="recoveredOverDead",loga=FALSE)
-graphit(EU,0,varname="recoveredOverConfirmed",loga=FALSE)
-graphit(EU,50,loga=FALSE)
-
+graphit(EU,0,varname="recoveredOverDead",logy=FALSE)
+graphit(EU,0,varname="recoveredOverConfirmed",logy=FALSE)
+graphit(smallEU,50,logy=FALSE)
+graphit2(c("Netherlands, Ne","Belg", "France, Fra","Germany","Italy"),100,size=2)
+tail(alldata[alldata$CRPS %in%findIDnames(smallEU)])
 WCAsia<-c("Rus", "Georgia", "Armen", "Azerb", "Ukrai","stan","desh","india","Irak","Syria","Lebanon","Turk","Israel","Pal","Bhu","Palest")
 findIDnames(WCAsia)
-graphit(WCAsia,10)
+graphit2(WCAsia,10,size=2)
 
 graphit(countries,10)
+graphit2("china", 1000,size=1)
+graphit("china", 1000,size=1)
+
 graphit("china",0,varname="recoveredOverDead")
 graphit("china",10,varname="recovered")
 graphit("china",0,varname="confirmedOverRecovered")
-graphit("china, h",0,varname="recoveredOverConfirmed",loga=FALSE,legend=TRUE)
+graphit("china, h",0,varname="recoveredOverConfirmed",logy=FALSE,legend=TRUE)
 
 graphit(c("..CA"),20)
-graphit(c("Canada"),20)
-graphit(c("..NY"),10)
-graphit(c("US"),1)
+graphit2(c("Canada"),20)
+graphit2(c("..NY"),10,size=3)
+graphit(c("US,"),100,size=2)
 SAsiaIO<-c("India","Pakistan","Bangladesh","Sri","Comoros","Maldives","Madagascar","Mauritius","Seychelles")
-findIDnames(SAsiaIO)
-graphit(SAsiaIO,8)
-MENA<-c("Egypt", "Marocco","Alger","Tunes","Lib","Syr","Turk","Saudi","Kuwait","Oman","arab","UAE","Yemen","Bahrain","Qatar","Irak","Iran")
-graphit(MENA,50)
+#findIDnames(SAsiaIO)
+graphit2(SAsiaIO,8)
+  MENA<-c("Egypt", "Marocco","Alger","Tunes","Lib","Syr","Turk","Saudi","Kuwait","Oman","arab","UAE","Yemen","Bahrain","Qatar","Irak","Iran")
+  graphit(MENA,50)
 Africa<- c("Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic (CAR)","Chad","Comoros", "Congo, Democratic Republic of the", "Congo, Republic of the", "Cote d'Ivoire", "Djibouti", "Egypt", 
 "Equatorial Guinea", "Eritrea", "Eswatini (formerly Swaziland)", "Ethiopia", 
 "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", 
@@ -198,12 +261,6 @@ graphit(Africa,3)
 graphit("Australia",10)
 SAmerica<-c("Chile","Brazil","Argenti","Peru","Colombia","Venezuela","Mexico","Honduras","Salvador","Panama","Ecuador","Surinam","Guyan","Beliz","Guatemals", "Antill")
 graphit(SAmerica,10)
-graphit(minval=500)
+graphit2(minval=500)
 graphit(minval=10, varname="deaths")
 graphit(minval=100, varname="recovered")
-```
-We need to test the functions before running the whole thing 
-```{r testing}
-###########################testcases
-
-```
