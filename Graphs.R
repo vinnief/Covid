@@ -5,15 +5,16 @@ graphit2(c("San Marino","vatican","andorra",'Monaco','Malta','Liechtenstein' ),1
 WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","denmark")
 
 #for publication
-graphit2(WestvsEast,500,size=3,legend=TRUE,savename="West vs East")
-graphit2(WestvsEast,10,logy=FALSE,size=3,legend=TRUE,savename="West.vs East")
-graphit2(MENA,20,varnames=c("confirmed","recovered"), size=1,needfuzzy=FALSE)
-graphit2(c(Africa),3,size=2,varnames="confirmed",size=3,legend=TRUE,savename="Africa")
-graphit2(c(Africa,"Japan","Italy"),3,size=2,varnames="confirmed",size=3,legend=TRUE,savename="Africa+Japan+Italy")
-graphit2(smallEurope,50,size=2,varnames=c("confirmed","deaths"),size=3,legend=TRUE,savename="Europe, less touched countries" )
-smallEurope <- c("Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway","Iceland")
+graphit2(WestvsEast,500,savename="West vs East")
+graphit2(WestvsEast,10,logy=FALSE,savename="West vs East")
+graphit2(MENA,20,varnames=c("confirmed","recovered"), size=1,needfuzzy=FALSE,savename="MENA")
+graphit2(c(Africa),100,size=3,varnames="confirmed",savename="Africa")
+graphit2(c(Africa),10,size=3,varnames="confirmed",savename="Africa")
+graphit2(c(Africa,"Japan","Italy"),3,varnames="confirmed",savename="Africa+Japan+Italy")
+graphit2(EU,100,savename="EU")
+graphit2(smallEurope,50,varnames=c("confirmed","deaths"),savename="Europe, less touched countries" )
 graphit2("Australia",10,size=2,legend=TRUE,savename="Australia" )
-graphit(SAmerica,10,size=3,legend=TRUE,savename="South America" )
+graphit2(SAmerica,10,size=3,legend=TRUE,savename="South America" )
 graphit2(c(", US"),100,varname=c("confirmed"), ID="CRPS",needfuzzy=TRUE,legend=TRUE,savename="USA states") #,"deaths","recovered"
 graphit(c(", US"),100,varname=c("confirmed"), ID="CRPS",needfuzzy=TRUE,legend=TRUE,savename="USA states") #,"deaths","recovered"
 graphit2(c(", US","Hubei"),100,varname=c("confirmed"),size=.7,needfuzzy=TRUE)

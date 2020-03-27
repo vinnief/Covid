@@ -1,4 +1,9 @@
 alldata<- makeGroups( mklpdf())
+
+#### test
+#paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
+#       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
+#####
 sum(is.na(deaths))
 unique(confirmed$CRPS)
 unique(recovered$CRPS)

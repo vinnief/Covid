@@ -1,17 +1,3 @@
-#---
-#Title: "Covid19 R Notebook"
-#output: 
-#  html_notebook: Covid19.html
-#    toc: yes
-#---
-
-#This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within #the notebook, the results appear beneath the code. Note this whole markdown notebook thingy #does not work in my setup, so y am just commenting out all text to rus the whole file at #once!
-
-#When you save the notebook, an HTML file containing the code and output will be saved #alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-#The preview shows you a rendered HTML copy of the contents of the editor. Consequently, #unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk #when it was last run in the editor is displayed.
-#```{r}
-
-#names(Co)
 if(!require(ggplot2)){
   install.packages("ggplot2")
   require(ggplot2)
@@ -25,7 +11,6 @@ if(!require(directlabels)){
 #    install.packages(pname)
 ##    require(eval(pname))
 #  }}
-#getpackage(RColorBrewer)
 
 if (!require(RColorBrewer)) {install.packages("RColorBrewer"); require(RColorBrewer)}
 if (!require(ggthemes)) {  installed.packages("ggthemes"); require(ggthemes)}
@@ -78,8 +63,7 @@ readdata<-function(dataversion="confirmed"){#deaths and recovered are the other 
 
 US<- read.csv("states.csv",stringsAsFactors=FALSE)
 US$Abbrev<-NULL
-#correctgeos <-function(wpdf){wpdf} # not needed, deleted the counties. see Seprecated! 
-
+#correctgeos <-function(wpdf){wpdf} # not needed, they deleted the counties. see deprecated.R! 
 convertdata <-function(wpdf,coltype="date", values.name="count"){ 
   wpdf$CRPS <- (ifelse(""==wpdf$Province.State, 
                               as.character(wpdf$Country.Region),
@@ -121,11 +105,11 @@ mklpdf <- function() {
 #alldata<-  mklpdf();print(paste("missing values:",sum(is.na(alldata))))
 
 ######## make state groups, also useful in tableau
+WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","denmark")
   EU<- c("Italy","Germany","France","Spain","Poland","Belgium","Netherlands","Austria","Romania","Hungary","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus")
   EFTA<-c("Iceland","United K","Swit","Norway")
   Europe<- c(EU,EFTA,c("Serbia","Bosnia", "Russia", "Ukraine", "Belarus","Moldova","Georgia", "Armenia", "Azerbaijan", "Monaco", "San Marino", "Vatican", "Albania", "North Macedonia"))
   smallEurope <- c("Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway","Iceland")
-  
     CIS<- c("Russia", "Belarus","Georgia", "Armenia", "Azerbaijan", "Ukraine","Kazakhstan","Kirgizstan","Turkmenistan", "Tadjikistan")
   CAsia<-c("Pakistan","Afganistan","Iran","Irak","Syria","Lebanon","Turkey","Israel","Palestine")
   SouthEastAsia<- c("Indonesia","Thailand","Vietnam","Laos","Malaysia","Cambodia","Taiwan", "Hong Kong","Singapore","Papua New Guinea","Myanmar")
@@ -201,11 +185,11 @@ addcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
 
 graphit2 <- function(countries=NULL, minval=1, ID="CRPS", 
                      varnames=c("confirmed", "recovered"), lpdf=alldata, countname="counter",
-                     needfuzzy=TRUE,  logy=TRUE, savename="", legend=FALSE, size=3){
+                     needfuzzy=TRUE,  logy=TRUE, savename="", legend=TRUE, size=3){
   if (length(countries)==0) countries<- unique(lpdf[,ID])
   countries<- findIDnames(countries,ID,lpdf,needfuzzy)
   lpdf <- addcounterfrommin(minval,datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE),id=ID,counter=countname)
-  countries=unique(lpdf[ID])
+  countries=unique(lpdf[,ID])
   if (logy) for (varname in varnames)  lpdf[lpdf[,varname]<=0,varname]<- 1 #NA
   myplot<- ggplot(lpdf[,c(countname, ID,varnames)]) 
   for (varname in varnames) {myplot<- myplot +  
@@ -214,30 +198,24 @@ graphit2 <- function(countries=NULL, minval=1, ID="CRPS",
     geom_dl(aes_string(x=countname,y=varname,color=ID,label = ID) , 
             method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
   }  
+  mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), savename, paste(varnames,collapse="&"),
+                  "after", minval,varnames[1])
   myplot<-myplot + ylab(paste(paste(varnames,collapse=", "), ifelse(logy,"(log scale)","")))+
             xlab("day")+ 
-            ggtitle(paste("Covid-19",ifelse(length(varnames)>1,paste(varnames,collapse=", "),"")," after the first", minval,varnames[1])) +
+            ggtitle(mytitle) +
             theme_light() + theme(plot.title = element_text(size = 20, face="bold"))
-  if (length(countries)*length(varnames)<12) 
-    myplot<- myplot + scale_color_brewer(palette="Spectral",guide = ifelse(legend,"legend",FALSE)) 
-  else myplot<- myplot + scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+  if (length(countries)<12)
+    myplot<- myplot + scale_color_brewer(palette="Spectral",guide = ifelse(legend,"legend",FALSE)) else 
+    myplot<- myplot + scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
   if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
   if (savename!="") 
     {png(filename=paste("plots/",
-                        format(Sys.Date(),format="%Y%m%d"),
-                        savename,#paste( countries,collapse="-"),
-                        "after",
-                        minval, 
-                        paste(varnames,collapse=","), 
+                        mytitle,
                         ".png",sep=" "),
          width=1600,height=1200)
-    print(myplot);dev.off()}
-return(myplot)
+    print(myplot);dev.off();print(paste("Plot saved:",mytitle))}
+  else return(myplot)
 }
-#### test
-#paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
- #       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
-#####
 ##########################################################
 ##update the data, save it and count the NA's:
 alldata<- makeGroups( mklpdf());
