@@ -211,7 +211,8 @@ graphit2 <- function(countries=NULL, minval=1, ID="CRPS",
   if (savename!="") 
     {png(filename=paste("plots/",
                         mytitle,
-                        ".png",sep=" "),
+                        ifelse(logy,"log scale",""),
+                        ".png",sep=""),
          width=1600,height=1200)
     print(myplot);dev.off();print(paste("Plot saved:",mytitle))}
   else return(myplot)

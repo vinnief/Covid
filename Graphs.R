@@ -2,7 +2,6 @@ source("definitions2.R")
 alldata<- (makeGroups( mklpdf()))
 
 graphit2(c("San Marino","vatican","andorra",'Monaco','Malta','Liechtenstein' ),1,size=4)
-WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","denmark")
 
 #for publication
 graphit2(WestvsEast,500,savename="West vs East")
@@ -13,7 +12,11 @@ graphit2(c(Africa),10,size=3,varnames="confirmed",savename="Africa")
 graphit2(c(Africa,"Japan","Italy"),3,varnames="confirmed",savename="Africa+Japan+Italy")
 graphit2(EU,100,savename="EU")
 graphit2(smallEurope,50,varnames=c("confirmed","deaths"),savename="Europe, less touched countries" )
-graphit2("Australia",10,size=2,legend=TRUE,savename="Australia" )
+graphit2(SAsiaIO,50,savename="South Asia and Indian Ocean")
+graphit2(CAsia,100,savename="West and Central ASia")
+graphit2(CIS,50,savename="CIS and Georgia(s)")
+graphit2(SouthEastAsia,50,savename="South East Asia")
+graphit2("Australia",10,savename="Australia" )
 graphit2(SAmerica,10,size=3,legend=TRUE,savename="South America" )
 graphit2(c(", US"),100,varname=c("confirmed"), ID="CRPS",needfuzzy=TRUE,legend=TRUE,savename="USA states") #,"deaths","recovered"
 graphit(c(", US"),100,varname=c("confirmed"), ID="CRPS",needfuzzy=TRUE,legend=TRUE,savename="USA states") #,"deaths","recovered"
