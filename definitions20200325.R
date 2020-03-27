@@ -73,7 +73,7 @@ require(reshape2)
 #fetch(".\\COVID-19","upstream") #should update the data from Git. 
 #error authenticating. even after deleting id-rsa pasword: error authenticating: failed connecting agent
 readdata<-function(dataversion="Confirmed"){
-  filename<- paste('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-',
+  filename<- paste('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/archived_data/archived_time_series/time_series_19-covid-',
                     dataversion,".csv",sep="")
   #local path if you download first: COVID-19\\csse_covid_19_data\\csse_covid_19_time_series\\time_series_19-covid-'
   tryCatch( wpdf <-read.csv(filename) ,
@@ -108,27 +108,33 @@ convertdata <-function(wpdf,coltype="date", values.name="count"){ #"Deaths", "Re
 } #note if data.table package is added, it has its own "melt" function
 
 mklpdf <- function() {
-  wc<-readdata("Confirmed")
+  wc<-readdata("Confirmed_archived_0325")
   geo.location <- wc[c("Country.Region","Province.State","Lat","Long")]
   write.csv(geo.location,file="geo.location",na="")
   wc<-correctgeos(wc)
   confirmed<- convertdata(wc,values.name="confirmed")
-  wd<-readdata("Deaths")
+  wd<-readdata("Deaths_archived_0325")
   wd<-correctgeos(wd)
   deaths<- convertdata(wd,values.name="deaths")
-  wr<-readdata("Recovered")
+  wr<-readdata("Recovered_archived_0325")
   wr<-correctgeos(wr)
   recovered<- convertdata(wr,values.name="recovered")
   alldata<- merge(confirmed,recovered,all=TRUE,by=c("CRPS","Country.Region","State","County","Date","Lat","Long"))
   alldata<- merge(alldata,deaths,all=TRUE,by=c("CRPS","Country.Region","State","County","Date","Lat","Long"))
   
-  alldata$recoveredOverDeaths <-     ifelse(alldata$deaths>0,     alldata$recovered/alldata$deaths,     NA)#lag the deaths by 10 days as recovery takes longer?
+  ###### make diffs this should happen only AFTER PLM
+  alldata$new_confirmed<- c(0,diff(alldata$confirmed))
+  alldata$new_deaths<- c(0,diff(alldata$deaths))
+  alldata$new_recovered<- c(0,diff(alldata$recovered))
+  alldata$recoveredOverDeaths <-ifelse(alldata$deaths>0,alldata$recovered/alldata$deaths,     NA)#lag the deaths by 10 days as recovery takes longer?
   alldata$recoveredOverConfirmed<- ifelse(alldata$confirmed>0, alldata$recovered/alldata$confirmed, NA)# lag the confirmed by 30 days as recovery takes a while.... 
+  
   alldata<-alldata[with(alldata, order(CRPS, Date)), ]  
 }
+#alldata<- makeGroups( mklpdf())#)    
 
 #alldata<- mklpdf()
-
+print(paste("missing values:",sum(is.na(alldata))))
 ######## make state groups, also useful in tableau
   EU<- c("Italy","Germany","France","Spain","Poland","Belgium","Netherlands","Austria","Romania","Hungary","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus")
   EFTA<-c("Iceland","United K","Swit","Norway")
@@ -158,7 +164,7 @@ makeGroups <- function(alldata=alldata,varname="Region") {
   alldata[alldata$Country.Region %in% CIS, varname] <-"CIS"
   alldata[alldata$Country.Region %in% c("US","Canada","Mexico"), varname] <-"North America"
   alldata[alldata$Country.Region %in% SAsiaIO, varname] <-"South Asia & Indian Ocean"
-  write.csv(alldata,"Covid19.csv",na="")
+  write.csv(alldata,"Covid19-20200325.csv",na="")
   alldata
 }
 
@@ -185,21 +191,10 @@ findIDnames <- function(testIDnames=c("Neth","India"), idcol="CRPS",
 datasel<- function(countries=testcountries, minval= 0, lpdf=alldata, varname="confirmed",
                   id="CRPS", fuzzy=FALSE){
   if(fuzzy) countries <- findIDnames(countries,"CRPS",lpdf)
-  return( lpdf[ (lpdf[varname]>=minval)&(lpdf[,id] %in% countries) , ]) # with id=CRPS and var=confirmed it should work.
+  return( lpdf[ (lpdf[varname]>=minval)&(lpdf[,id] %in% countries) , ])
 }
-######################### old, works. but not elegant. 
-addrownrs0<-function(lpdf, sortby="") {
-  #if !(sortby=="") lpdf[order(lpdf[,sortby])]
-  lpdf$counter<-as.numeric(row.names(lpdf))
-  return(lpdf)
-}# two problems: if rownames change to chr, errors occur. if they get out of order because of a sort, the graphs will be a mess. 
-addcounter0<-function(lpdf=alldata,id="CRPS",counter="day"){
-  lpdf$counter <- 0 #just to add a column, with a value that will be filled next. otherwise we get too many columns. 
-  lpdf<- ddply(lpdf,id, addrownrs0)
-  names(lpdf)[names(lpdf)=="counter"] <- counter
-  return(lpdf)
-}
-######################### new, works
+
+
 addrownrs<-function(lpdf,counter="day", sortby="") {
   if (sortby!="") lpdf[order(lpdf[,sortby]),]
   lpdf[,counter]<-as.numeric(row.names(lpdf))
@@ -221,14 +216,15 @@ addcounterfrommin<-function(minv=0,lpdf=alldata,varname="confirmed",id="CRPS",co
 }
 ### make dayvars for tableau
 mkcountname <- function(countname,minv){paste(countname,minv,sep="_")}
-addcounters<- function(lpdf=alldata){
+addcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
+  lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
   for (minv in c(1,20,100,400,1000,2000,5000,10000)){
-    lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,counter=mkcountname("day",minv))
+    lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,counter=mkcountname("day",minv))
   }
-  write.csv(lpdf,file="Covid19_days.csv", na="")
+  write.csv(lpdf,file="Covid19_days20200325.csv", na="")
   lpdf
 }
-#alldata<- addcounters(makeGroups( mklpdf())) #,"Region")
+#alldata<- addcounters(makeGroups( mklpdf())) 
 
 
 #*Now plot* note graphit is just here for legacy reasons. it is deprecated. graphit2 will become graphit soon. 
@@ -298,96 +294,3 @@ return(myplot)
 ##########################################################
 ##update the data and Use it:
 alldata<-alldata<- addcounters(makeGroups( mklpdf())) #,"Region")
-
-graphit2(c("San Marino","vatican","andorra",'Monaco','Malta','Liechtenstein' ),1,size=4)
-WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","denmark")
-
-#for publication
-graphit2(WestvsEast,500,size=3)
-graphit2(WestvsEast,10,logy=FALSE)
-graphit2(MENA,20,varnames=c("confirmed","recovered"), size=1,needfuzzy=FALSE)
-graphit2(c(Africa),3,size=2,varnames="confirmed")
-graphit2(c(Africa,"Japan","Italy"),3,size=2,varnames="confirmed")
-graphit2(smallEurope,50,size=2,varnames=c("confirmed","deaths"))
-smallEurope <- c("Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway","Iceland")
-graphit2("Australia",10,size=2)
-graphit(SAmerica,10,size=3)
-graphit2(c(", US"),100,varname=c("confirmed"), ID="CRPS",size=.5,needfuzzy=TRUE) #,"deaths","recovered"
-graphit(c(", US"),100,varname=c("confirmed"), ID="CRPS",size=.5,needfuzzy=TRUE) #,"deaths","recovered"
-graphit2(c(", US","Hubei"),100,varname=c("confirmed"),size=.7,needfuzzy=TRUE)
-
-graphit2(c("France", "Belgium","Netherlands","Italy","Germany","United Kingdom"),minval=100, size=2,ID="Country.Region", varnames=c("confirmed" , "deaths"))#,logy=FALSE)
-#####
-
-
-graphit2(EU,50,logy=FALSE)
-graphit2(EU,100,size=3,varnames=c("confirmed","deaths"))
-graphit2(EU,500,varnames="confirmed",size=2)
-graphit(EU,500,varname="confirmed",size=2)
-graphit2(EU,10,varnames="deaths")
-graphit2(EU,20,varnames="recovered")
-graphit2(EU,0,varnames="recoveredOverDead",logy=FALSE)
-graphit2(EU,0,varnames="recoveredOverConfirmed",logy=FALSE)
-graphit2(smallEurope,50,size=2,varnames=c("confirmed","deaths"))
-graphit2(c("Germany","France","Italy","Netherlands","Belgium","Japan", "Korea, South"),ID="Country.Region", varnames=c("recovered","deaths"),size=2)#,logy=FALSE)
-
-graphit2(c("Netherlands, Ne","Belg", "France, Fra","Germany","Italy"),100,size=2)
-graphit2("France",varnames=c("confirmed","deaths","recovered"))
-lpdf=totals(rows="France", id="Country.Region")
-names(lpdf)
-lpdf <- addcounterfrommin(10,
-            datasel("France",minval=0,id=, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
-                          ,id=ID,counter=countname)
-graphit2("France",100)
-graphit2("France",100,lpdf=lpdf,ID="Country.Region")
-graphit2("France",ID="Country.Region",lpdf=totals(rows="France", id="Country.Region"))
-graphit2(c("Belgium","Netherlands"),minval=100,varnames=c("confirmed","deaths"),ID="CRPS",needfuzzy=TRUE)
-
-graphit2(testcountries, ID="Country.Region",varnames=c("confirmed","deaths","recovered"),needfuzzy=TRUE)
-graphit2(EU,minval=100,varnames="confirmed",logy=FALSE,size=2)
-graphit2(Europe,minval=100,varnames="confirmed",logy=FALSE,size=2)
-
-graphit2(WestvsEast,100,size=1,varnames="confirmed")
-graphit2(CIS,10,varnames=c("confirmed"))
-
-
-
-
-graphit2(WestvsEast,0,size=1,varnames=c("confirmed"))
-graphit2(WestvsEast,0,size=1,varnames=c("confirmed", "deaths"))
-graphit2(WestvsEast,100,size=1,varnames=c("confirmed", "recovered"))
-
-graphit2(WCAsia,10,size=2)
-
-graphit2("china", 1000,size=1)
-graphit2("china", 1000,size=2)
-
-graphit("china",0,varname="recoveredOverDeaths")
-graphit2("china",10,varname="recovered", logy=FALSE)
-names(alldata)
-graphit("china",0,varname="recoveredOverConfirmed",logy=FALSE,legend=TRUE)
-graphit(EU,0.25,varname="recoveredOverConfirmed",logy=FALSE,legend=TRUE)
-####### Canada
-graphit2(c("Canada"),20)
-
-
-##### USA
-
-graphit2(c("US","China"),10,varname=c("confirmed"), ID="Country.Region",size=.5,needfuzzy=FALSE) #,"deaths","recovered"
-graphit2(c(", US","Hubei"),100,varname=c("confirmed","deaths","recovered"),size=.7,needfuzzy=TRUE)
-names(totals(rows="US", id="Country.Region"))
-graphit2("California", minval=1, lpdf=totals(rows="California", id="State"), ID="State")
-graphit2(c("California","New York"),lpdf=totals(rows="US", id="CRPS"),ID="State")
-graphit2("US",ID="Country.Region",lpdf=totals(rows="US", id="Country.Region"))
-
-
-#findIDnames(SAsiaIO)
-graphit2(SAsiaIO,8, size=2)
-graphit2(CIS,10,varnames=c("confirmed"))
-graphit2(MENA,20,varnames=c("confirmed","recovered"), size=1,needfuzzy=FALSE)
-graphit2(c(Africa),3,size=2,varnames="confirmed")
-graphit2(c(Africa,"Japan","Italy"),3,size=2,varnames="confirmed")
-graphit2("Italy" , minval=500)
-graphit("Italy" ,minval=10, varname="deaths")
-graphit("Italy" ,minval=500, varname="recovered")
-graphit2(CIS,minval=10)
