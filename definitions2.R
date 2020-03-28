@@ -19,6 +19,9 @@ if(!require(ggrepel)){
   install.packages("ggrepel")
   require(ggrepel)
 }# note ggrepel also does labels next to lines. 
+if (!require(devEMF)){
+  install.packages('devEMF') # just once
+  require(devEMF)}
 
 if(!require(plm)){
   install.packages("plm")
@@ -78,7 +81,7 @@ convertdata <-function(wpdf,coltype="date", values.name="count"){
 mklpdf <- function() {
   wc<-readdata('confirmed') #"Confirmed")
   geo.location <- wc[c("Country.Region","Province.State","Lat","Long")]
-  write.csv(geo.location,file="geo.location",na="")
+  write.csv(geo.location,file="geo.location.csv",na="")
   #wc<-correctgeos(wc)
   confirmed<- convertdata(wc,values.name="confirmed")
   wd<-readdata("deaths")
@@ -112,8 +115,8 @@ WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway
   smallEurope <- c("Poland","Belgium","Netherlands","Austria","Romani","Hunga","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Luxembourg","Cyprus","United K","Swit","Norway","Iceland")
     CIS<- c("Russia", "Belarus","Georgia", "Armenia", "Azerbaijan", "Ukraine","Kazakhstan","Kirgizstan","Turkmenistan", "Tadjikistan")
   CAsia<-c("Pakistan","Afganistan","Iran","Irak","Syria","Lebanon","Turkey","Israel","Palestine")
-  SouthEastAsia<- c("Indonesia","Thailand","Vietnam","Laos","Malaysia","Cambodia","Taiwan", "Hong Kong","Singapore","Papua New Guinea","Myanmar")
-  SAsiaIO<-c("India","Pakistan","Bangladesh","Sri","Comoros","Maldives","Madagascar","Mauritius","Seychelles","Bhutan","Nepal")
+  SouthEastAsia<- c("Indonesia","Thailand","Vietnam","Laos","Malaysia","Cambodia","Taiwan", "Hong Kong","Singapore","Papua New Guinea","Myanmar", "Philippines")
+  SAsiaIO<-c ("India","Pakistan","Bangladesh","Sri","Comoros", "Maldives","Madagascar","Mauritius", "Seychelles","Bhutan","Nepal")
   
   MENA<-c("Egypt", "Marocco","Algeria","Tunesia","Libia","Syria","Turkey","Saudi Arabia","Kuwait","Oman","United Arab Emirates","UAE","Yemen","Bahrain","Qatar","Irak","Iran","Afghanistan")
   SAmerica<-c("Chile","Brazil","Argenti","Peru","Colombia","Venezuela","Mexico","Honduras","Salvador","Panama","Ecuador","Surinam","Guyan","Beliz","Guatemals", "Antilles")
@@ -165,6 +168,7 @@ datasel<- function(countries=testcountries, minval= 0, lpdf=alldata, varname="co
 
 ############### used in graphit2 and for saving to csv
 addcounterfrommin<-function(minv=0,lpdf=alldata,varname="confirmed",id="CRPS",counter="day"){
+  lpdf<- lpdf[!is.na(lpdf[,varname]),]
   lpdf[,counter]<-NA
   lpdf[lpdf[,varname]>=minv,]<- 
       ddply(lpdf[lpdf[,varname]>=minv,],id, 
@@ -173,15 +177,15 @@ addcounterfrommin<-function(minv=0,lpdf=alldata,varname="confirmed",id="CRPS",co
 }
 ### make dayvars for tableau
 mkcountname <- function(countname,minv){paste(countname,minv,sep="_")}
-addcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
+writewithcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
   lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
   for (minv in c(1,20,100,400,1000,2000,5000,10000)){
-    lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,counter=mkcountname("day",minv))
+    lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,
+                             counter=mkcountname("day",minv))
   }
   write.csv(lpdf,file="Covid19_days.csv", na="")
   print("Written the current data with counters to disk as CSV. Use in Tableau or Excel")
 }
-
 
 graphit2 <- function(countries=NULL, minval=1, ID="CRPS", 
                      varnames=c("confirmed", "recovered"), lpdf=alldata, countname="counter",
@@ -210,15 +214,65 @@ graphit2 <- function(countries=NULL, minval=1, ID="CRPS",
   if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
   if (savename!="") 
     {png(filename=paste("plots/",
-                        mytitle,
-                        ifelse(logy,"log scale",""),
-                        ".png",sep=""),
+                        mytitle, ifelse(logy,", log scale",""),
+                        ".png",sep=" "),
          width=1600,height=1200)
     print(myplot);dev.off();print(paste("Plot saved:",mytitle))}
   else return(myplot)
+}
+
+
+graphit3 <- function(countries=NULL, minval=1, ID="CRPS", 
+                     varnames=c("confirmed", "recovered"), lpdf=alldata, xvar="day",
+                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", legend=TRUE, size=3){
+  if (length(countries)==0) countries<- unique(lpdf[,ID])
+  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
+  lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
+  yvars<- varnames
+  if (!(xvar %in% names(lpdf))) {
+    lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
+    extratext<- paste( "for ", minval,"+ ",varnames[1],sep="")}
+  else extratext <- paste("by",xvar)
+  countries=unique(lpdf[,ID])
+  if (logy) for (varname in yvars)  lpdf[lpdf[,varname]<=0,varname]<- 1 #NA
+  if(logx) lpdf[lpdf[,xvar]<=0,xvar]<- 1 
+  myplot<- ggplot(lpdf[,c(xvar, ID,yvars)]) 
+  for (varname in yvars) {myplot<- myplot +  
+    geom_line(aes_string(x=xvar,y=varname,color=c(ID),group=c(ID)),alpha=0.2,size=size)+
+    geom_point(aes_string(x=xvar,y=varname,color=c(ID),group=c(ID)),
+               size=0.7*size,shape=match(varname,yvars))+
+    geom_dl(aes_string(x=xvar,y=varname,color=ID,label = ID) , 
+            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
+  }  
+  mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), 
+                  savename, paste(varnames,collapse="&"),extratext)
+  if (length(countries)<12) {
+    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(legend,"legend",FALSE)) #"Spectral
+    }  else myscale<- scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+  myplot<-myplot + 
+    ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
+    xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
+    ggtitle(mytitle) +
+    theme_light() + theme(plot.title = element_text(size = 20, face="bold")) +
+    myscale
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
+  if(logx) myplot<- myplot+scale_x_continuous(trans='log2')
+  if (savename!="") {
+    png(filename=paste("plots/",
+                      mytitle, ifelse(logy,", log scale",""),
+                      ".png",sep=""),
+        width=1600,height=900)
+    print(myplot);dev.off();
+    #png(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),"300.png",sep=""),
+       # width=1600,height=900,res=300) ;print(myplot);dev.off()
+    svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+                       ".svg",sep=""), width=16,height=9)
+    print(myplot);dev.off()
+    print(paste("Plot saved:",mytitle))
+  }else return(myplot)
 }
 ##########################################################
 ##update the data, save it and count the NA's:
 alldata<- makeGroups( mklpdf());
 print(paste("missing values:",sum(is.na(alldata))))
-addcounters(alldata)
+writewithcounters(alldata)

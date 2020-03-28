@@ -3,7 +3,7 @@ alldata<- makeGroups( mklpdf())
 #### test
 #paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
 #       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
-#####
+##### unitTESTS
 sum(is.na(deaths))
 unique(confirmed$CRPS)
 unique(recovered$CRPS)
@@ -14,25 +14,34 @@ sum(is.na(alldata))
 View(alldata[is.na(alldata$confirmed),])
 View(alldata[is.na(alldata$recovered),])
 View(confirmed[is.na(alldata$recovered),])
-  
-  
+
+
+## colors and plots
+emf("simple_graphic.emf", width=10, height=8)
+plot(c(1.1,2,2,3,3));#plot(2.2);#plot("hello")
+dev.off()
+svg(filename="simple_graphic.svg", width=10, height=8)
+plot(c(1.1,2,2,3,3));plot(2.2);#plot("hello")
+dev.off()
+
+
+display.brewer.all(colorblindFriendly = TRUE)
+display.brewer.all(colorblindFriendly = FALSE)
+display.brewer.pal(1,palette)
+display.brewer.pal(2,"Paired")
+## automate country abbrevs  
 Cabbrevs<- data.frame(abr=abbreviate(unique(alldata$Country.Region),minlength=1,method="left.kept"),
                       country=unique(alldata$Country.Region))
 Pabbrevs<- data.frame(abr=abbreviate(unique(alldata$Province.State),minlength=1,method="left.kept"),
                       country=unique(alldata$Province.State))
-
+#while at it, maybe also make population a variable, and then cases/pop
+## making a unique index
   coltype="date"; values.name="count"
 wpdf=wc
 wc$CRPS <- (ifelse(""==wpdf$Province.State, 
                      as.character(wpdf$Country.Region),
                      paste(wpdf$Province.State,wpdf$Country.Region,sep=', ')))
 
-
-lpdf <- addcounterfrommin(minval,
-                          View(
-                            datasel(countries,minval=20,id=ID, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
-                          )
-                          ,id=ID,counter=countname)
 
 
 ######################### ################  wip make totals. actually useless: Tableau does it better. 
@@ -61,16 +70,41 @@ totals(c("Germany","France, France"))#,varnames="confirmed")
 totals("US",id="Country.Region")
 (alldata[alldata$Country.Region=="France","State"])
 
-################pdataframe
-require(plm)
-#lpdf<- pdata.frame(alldata,index=c("CRPS", "Date"))
-lpdf$currentc<- diff(lpdf$confirmed)
+lpdf=totals(rows="France", id="Country.Region")
+names(lpdf)
+lpdf <- addcounterfrommin(10,
+                          datasel("France",minval=0,id=, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
+                          ,id=ID,counter=countname)
+graphit2("France",100)
+graphit2("France",100,lpdf=lpdf,ID="Country.Region")
+graphit2("France",ID="Country.Region",lpdf=totals(rows="France", id="Country.Region"))
+graphit2(c("Belgium","Netherlands"),minval=100,varnames=c("confirmed","deaths"),ID="CRPS",needfuzzy=TRUE)
 
-alldata$newc<- c(0,diff(alldata$confirmed))
-  alldata$newd<- c(0,diff(alldata$deaths))
-  alldata$newr<- c(0,diff(alldata$recovered))
-graphit2(WestvsEast,varnames=c("confirmed","newc"),size=2)
-graphit2(smallEurope,varnames=c("confirmed","newc"),size=2)
-lpdf$recoveredOverDeaths <-with ( lpdf, ifelse(deaths>0,recovered/lag(deaths,10), NA))
-graphit2("Germany", 500, lpdf = lpdf,varnames="recoveredOverDeaths") 
-graphit2("Germany", 500,            ,varnames="recoveredOverDeaths")
+
+
+
+
+
+################pdataframe
+
+#alldata$new_confirmed<- c(0,diff(alldata$confirmed)) # without Pdf, the first data point disappears. 
+#  alldata$new_d<- c(0,diff(alldata$deaths))
+#  alldata$new_r<- c(0,diff(alldata$recovered))
+require(plm)
+lpdf<- datasel(c("Italy","France"),id="CRPS",lpdf=alldata)
+typeof(lpdf$Date)
+lpdf$fDate<-lpdf$Date
+typeof(lpdf$fDate)
+lpdf<- pdata.frame(alldata,index=c("CRPS", "fDate"),stringsAsFactors=FALSE)
+lpdf$oDate<- as.ordered(lpdf$Date)
+
+lpdf$new_confirmed<- diff(lpdf$confirmed)
+lpdf$new_deaths<- diff(lpdf$deaths)
+lpdf$new_recovered<- diff(lpdf$recovered)
+
+names(lpdf)
+lpdf$rod<- lag(lpdf$recovered,-10)/lpdf$deaths
+lpdf$roc<- lpdf$recovered/lag(lpdf$confirmed,21)
+lag.plot(lpdf[lpdf$Country.Region=="Italy",c("new_confirmed","new_recovered","new_deaths")],4,na.omit=TRUE)
+graphit2("Italy",10,lpdf=lpdf,varnames=c("roc","rod"),legend=FALSE)
+                
