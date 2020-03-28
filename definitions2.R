@@ -276,8 +276,12 @@ graphit3 <- function(countries=NULL, minval=1, ID="Country.Region",
 
 
 graphit4 <- function(countries=NULL, minval=1, ID="Country.Region", 
-                     yvars=c("confirmed", "recovered"), lpdf=alldata, xvar="day",
-                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", putlegend=TRUE, size=3){
+                     yvars=c("confirmed", "recovered"), xvar="day", lpdf=alldata,
+                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", 
+                     putlegend=TRUE, size=3, until=Sys.Date()){
+  lpdf<- lpdf[lpdf$Date<=until,]
+  lastdate<- max(lpdf$Date)
+  print(lastdate)
   if (length(countries)==0) countries<- unique(lpdf[,ID])
   countries<- findIDnames(countries,ID,lpdf,needfuzzy)
   lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=yvars[1],fuzzy=FALSE)
@@ -286,7 +290,6 @@ graphit4 <- function(countries=NULL, minval=1, ID="Country.Region",
     extratext<- paste( "for ", minval,"+ ",yvars[1],sep="")
   }  else extratext <- paste("by",xvar)
   if (logy) for (varname in yvars)  lpdf[is.na(lpdf[,varname])|(lpdf[,varname]<=0),varname]<- 1 #NA
-  mydate=max(lpdf$Date)
   if(logx) lpdf[is.na(lpdf[,xvar])|(lpdf[,xvar]<=0),xvar]<- 1 
   
   lpdf<- melt(lpdf[,c(ID,xvar,yvars)]
@@ -300,7 +303,7 @@ graphit4 <- function(countries=NULL, minval=1, ID="Country.Region",
     geom_dl(aes_string(x=xvar,y="count",color=ID,label='mygroup'),
             method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
   #}  
-  mytitle<- paste("Covid-19",format(mydate,format="%Y%m%d"), #Sys.Date()
+  mytitle<- paste("Covid-19",format(lastdate,format="%Y%m%d"), #Sys.Date()
                   savename, paste(yvars,collapse="&"),extratext)
   if (length(unique(lpdf$mygroup))<13) {
     myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
@@ -328,4 +331,4 @@ graphit4 <- function(countries=NULL, minval=1, ID="Country.Region",
 
 ##########################################################
 ##update the data, save it and count the NA's:
-alldata<- makeGroups( mklpdf());
+alldata<- makeGroups( mklpdf())

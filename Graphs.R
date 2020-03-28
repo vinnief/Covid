@@ -1,14 +1,24 @@
 source("definitions2.R")
 alldata<- (makeGroups( mklpdf()))
 graphit4(c("San Marino","vatican","andorra",'Monaco','Malta','Liechtenstein' ),1,size=3)
+graphit4(WestvsEast,100,xvar="Date",logy=FALSE,until="2020-03-15") #as.Date("2020-02-01",format="%Y-%m-%d"))
+max(alldata$Date)
+View(alldata[alldata$Date<="2020-02-01",])#Sys.Date(),])
+
+
+
+
+
 
 #for publication
 graphit4(WestvsEast,500,savename="West vs East4")
 
 graphit4(WestvsEast,100,yvars="deaths",logy=FALSE,savename="West vs East")
 graphit4("Belgium",100,yvars=c("confirmed","recovered","deaths"),logx=TRUE,savename="Belgium")
-graphit4(EU,100,savename="EU")
-graphit4(EU,500,yvars=c("confirmed","deaths"),savename="EU")
+graphit4(EU,100,"CRPS",savename="EU")
+graphit4(EU,100,"CRPS","confirmed",xvar="Date",savename="EU")
+graphit4(EU,100,"CRPS","deathsOverRecovered",savename="EU")
+graphit4(EU,500,"CRPS",yvars=c("confirmed","deaths"),savename="EU")
 graphit4(EU,100,yvars=c("deaths"),savename="EU")
 
 graphit4(EU,1,xvar="confirmed",logx=TRUE,yvars=c("deaths"),savename="EU")

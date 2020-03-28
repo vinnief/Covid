@@ -61,11 +61,9 @@ names(lpdf)
 lpdf <- addcounterfrommin(10,
                           datasel("France",minval=0,id=, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
                           ,id=ID,counter=countname)
-graphit4("California", ID="State", minval=1, lpdf=totals(rows="California", id="State"), )
+graphit4("California", ID="State", minval=1, lpdf=totals(rows="California", id="State"))
 graphit2(c("California","New York"),lpdf=totals(rows="US", id="CRPS"),ID="State")
 graphit2("US",ID="Country.Region",lpdf=totals(rows="US", id="Country.Region"))
-
-
 
 graphit2("France",ID="Country.Region",lpdf=totals(rows="France", id="Country.Region"))
 
