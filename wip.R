@@ -1,21 +1,14 @@
 alldata<- makeGroups( mklpdf())
 
+
+### in case you want to make the size of the line depend on the name of the data var
+sizes=data.frame(confirmed=3, deaths=1, recovered=2,recoveredOverConfirmed=3,deathsOverConfirmed=4,recoveredOverDeaths=2)
+
+
+####### test what goes wrong
+
 #### test
-#paste("confirmed",format(Sys.Date(),format="%Y%m%d"), 
-#       paste(findIDnames(countries,ID,lpdf,needfuzzy),collapse=", " ),sep="_")
 ##### unitTESTS
-sum(is.na(deaths))
-unique(confirmed$CRPS)
-unique(recovered$CRPS)
-names(confirmed)
-names(deaths)
-names(recovered)
-sum(is.na(alldata))
-View(alldata[is.na(alldata$confirmed),])
-View(alldata[is.na(alldata$recovered),])
-View(confirmed[is.na(alldata$recovered),])
-
-
 ## colors and plots
 emf("simple_graphic.emf", width=10, height=8)
 plot(c(1.1,2,2,3,3));#plot(2.2);#plot("hello")
@@ -24,25 +17,18 @@ svg(filename="simple_graphic.svg", width=10, height=8)
 plot(c(1.1,2,2,3,3));plot(2.2);#plot("hello")
 dev.off()
 
-
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.all(colorblindFriendly = FALSE)
 display.brewer.pal(1,palette)
-display.brewer.pal(2,"Paired")
+display.brewer.pal(12,"Paired")
+
+
 ## automate country abbrevs  
 Cabbrevs<- data.frame(abr=abbreviate(unique(alldata$Country.Region),minlength=1,method="left.kept"),
                       country=unique(alldata$Country.Region))
 Pabbrevs<- data.frame(abr=abbreviate(unique(alldata$Province.State),minlength=1,method="left.kept"),
                       country=unique(alldata$Province.State))
 #while at it, maybe also make population a variable, and then cases/pop
-## making a unique index
-  coltype="date"; values.name="count"
-wpdf=wc
-wc$CRPS <- (ifelse(""==wpdf$Province.State, 
-                     as.character(wpdf$Country.Region),
-                     paste(wpdf$Province.State,wpdf$Country.Region,sep=', ')))
-
-
 
 ######################### ################  wip make totals. actually useless: Tableau does it better. 
 ######################### 
@@ -75,10 +61,13 @@ names(lpdf)
 lpdf <- addcounterfrommin(10,
                           datasel("France",minval=0,id=, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
                           ,id=ID,counter=countname)
-graphit2("France",100)
-graphit2("France",100,lpdf=lpdf,ID="Country.Region")
+graphit4("California", ID="State", minval=1, lpdf=totals(rows="California", id="State"), )
+graphit2(c("California","New York"),lpdf=totals(rows="US", id="CRPS"),ID="State")
+graphit2("US",ID="Country.Region",lpdf=totals(rows="US", id="Country.Region"))
+
+
+
 graphit2("France",ID="Country.Region",lpdf=totals(rows="France", id="Country.Region"))
-graphit2(c("Belgium","Netherlands"),minval=100,varnames=c("confirmed","deaths"),ID="CRPS",needfuzzy=TRUE)
 
 
 

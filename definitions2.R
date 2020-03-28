@@ -102,7 +102,7 @@ mklpdf <- function() {
   alldata$new_recovered<- c(0,diff(alldata$recovered))
   alldata$recoveredOverDeaths <-ifelse(alldata$deaths>0,alldata$recovered/alldata$deaths,     NA)#lag the deaths by 10 days as recovery takes longer?
   alldata$recoveredOverConfirmed<- ifelse(alldata$confirmed>0, alldata$recovered/alldata$confirmed, NA)# lag the confirmed by 30 days as recovery takes a while.... 
-  
+  alldata$deathsOverConfirmed<- ifelse(alldata$confirmed>0, alldata$deaths/alldata$confirmed, NA)
   alldata<-alldata[with(alldata, order(CRPS, Date)), ]  
 }
 #alldata<-  mklpdf();print(paste("missing values:",sum(is.na(alldata))))
@@ -126,7 +126,29 @@ WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway
              "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", 
              "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", 
              "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe")
-makeGroups <- function(alldata=alldata,varname="Region") {  
+
+############### used in graphit2+ and for saving to csv
+addcounterfrommin<-function(minv=0,lpdf=alldata,varname="confirmed",id="CRPS",counter="day"){
+    lpdf<- lpdf[!is.na(lpdf[,varname]),]
+    lpdf[,counter]<-NA
+    lpdf[lpdf[,varname]>=minv,]<- 
+      ddply(lpdf[lpdf[,varname]>=minv,],id, 
+            function(lpdf){lpdf[,counter]<- lpdf[,"Date"] - min(lpdf[,"Date"])+1;lpdf})
+    lpdf
+  }
+### make dayvars for tableau
+mkcountname <- function(countname,minv){paste(countname,minv,sep="_")}
+writewithcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
+    lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
+    for (minv in c(1,20,100,400,1000,2000,5000,10000)){
+      lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,
+                               counter=mkcountname("day",minv))
+    }
+    write.csv(lpdf,file="Covid19_days.csv", na="")
+    print("Written the current data with counters to disk as CSV. Use in Tableau or Excel")
+}
+  
+makeGroups <- function(alldata=alldata,varname="Region",verbose=1) {  
   alldata[,varname]<-""
   alldata[alldata$Country.Region %in% EFTA, varname] <-"EFTA"
   alldata[alldata$Country.Region %in% Europe, varname] <-"Europe"
@@ -140,6 +162,8 @@ makeGroups <- function(alldata=alldata,varname="Region") {
   alldata[alldata$Country.Region %in% c("US","Canada","Mexico"), varname] <-"North America"
   alldata[alldata$Country.Region %in% SAsiaIO, varname] <-"South Asia & Indian Ocean"
   write.csv(alldata,"Covid19.csv",na="")
+  writewithcounters(alldata)
+  if (verbose>0) print(paste(max(alldata$Date), "missing values:",sum(is.na(alldata))))
   alldata
 }
 
@@ -166,26 +190,6 @@ datasel<- function(countries=testcountries, minval= 0, lpdf=alldata, varname="co
 
 
 
-############### used in graphit2 and for saving to csv
-addcounterfrommin<-function(minv=0,lpdf=alldata,varname="confirmed",id="CRPS",counter="day"){
-  lpdf<- lpdf[!is.na(lpdf[,varname]),]
-  lpdf[,counter]<-NA
-  lpdf[lpdf[,varname]>=minv,]<- 
-      ddply(lpdf[lpdf[,varname]>=minv,],id, 
-          function(lpdf){lpdf[,counter]<- lpdf[,"Date"] - min(lpdf[,"Date"])+1;lpdf})
-  lpdf
-}
-### make dayvars for tableau
-mkcountname <- function(countname,minv){paste(countname,minv,sep="_")}
-writewithcounters<- function(lpdf=alldata,varname="confirmed",id="CRPS"){
-  lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
-  for (minv in c(1,20,100,400,1000,2000,5000,10000)){
-    lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,
-                             counter=mkcountname("day",minv))
-  }
-  write.csv(lpdf,file="Covid19_days.csv", na="")
-  print("Written the current data with counters to disk as CSV. Use in Tableau or Excel")
-}
 
 graphit2 <- function(countries=NULL, minval=1, ID="CRPS", 
                      varnames=c("confirmed", "recovered"), lpdf=alldata, countname="counter",
@@ -222,7 +226,7 @@ graphit2 <- function(countries=NULL, minval=1, ID="CRPS",
 }
 
 
-graphit3 <- function(countries=NULL, minval=1, ID="CRPS", 
+graphit3 <- function(countries=NULL, minval=1, ID="Country.Region", 
                      varnames=c("confirmed", "recovered"), lpdf=alldata, xvar="day",
                      needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", legend=TRUE, size=3){
   if (length(countries)==0) countries<- unique(lpdf[,ID])
@@ -231,8 +235,8 @@ graphit3 <- function(countries=NULL, minval=1, ID="CRPS",
   yvars<- varnames
   if (!(xvar %in% names(lpdf))) {
     lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
-    extratext<- paste( "for ", minval,"+ ",varnames[1],sep="")}
-  else extratext <- paste("by",xvar)
+    extratext<- paste( "for ", minval,"+ ",varnames[1],sep="")
+    } else extratext <- paste("by",xvar)
   countries=unique(lpdf[,ID])
   if (logy) for (varname in yvars)  lpdf[lpdf[,varname]<=0,varname]<- 1 #NA
   if(logx) lpdf[lpdf[,xvar]<=0,xvar]<- 1 
@@ -262,17 +266,66 @@ graphit3 <- function(countries=NULL, minval=1, ID="CRPS",
                       mytitle, ifelse(logy,", log scale",""),
                       ".png",sep=""),
         width=1600,height=900)
-    print(myplot);dev.off();
-    #png(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),"300.png",sep=""),
-       # width=1600,height=900,res=300) ;print(myplot);dev.off()
+    print(myplot);dev.off()
     svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
-                       ".svg",sep=""), width=16,height=9)
+                       ".svg",sep=""), width=16,height=9) #in inches?
     print(myplot);dev.off()
     print(paste("Plot saved:",mytitle))
   }else return(myplot)
 }
+
+
+graphit4 <- function(countries=NULL, minval=1, ID="Country.Region", 
+                     yvars=c("confirmed", "recovered"), lpdf=alldata, xvar="day",
+                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", putlegend=TRUE, size=3){
+  if (length(countries)==0) countries<- unique(lpdf[,ID])
+  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
+  lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=yvars[1],fuzzy=FALSE)
+  if (!(xvar %in% names(lpdf))) {
+    lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
+    extratext<- paste( "for ", minval,"+ ",yvars[1],sep="")
+  }  else extratext <- paste("by",xvar)
+  if (logy) for (varname in yvars)  lpdf[is.na(lpdf[,varname])|(lpdf[,varname]<=0),varname]<- 1 #NA
+  mydate=max(lpdf$Date)
+  if(logx) lpdf[is.na(lpdf[,xvar])|(lpdf[,xvar]<=0),xvar]<- 1 
+  
+  lpdf<- melt(lpdf[,c(ID,xvar,yvars)]
+              ,id=c(ID,xvar),measure.vars=yvars,
+              variable.name="varname", value.name="count")
+  lpdf$mygroup<- paste(lpdf[,ID],lpdf$varname,sep=", ")
+  myplot<- ggplot(lpdf, aes_string(y="count",x=xvar,color=ID,group='mygroup')) 
+  myplot<- myplot +  
+    geom_line(alpha=0.2,size=size)+
+    geom_point(aes(shape=varname),    size=0.7*size)+
+    geom_dl(aes_string(x=xvar,y="count",color=ID,label='mygroup'),
+            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
+  #}  
+  mytitle<- paste("Covid-19",format(mydate,format="%Y%m%d"), #Sys.Date()
+                  savename, paste(yvars,collapse="&"),extratext)
+  if (length(unique(lpdf$mygroup))<13) {
+    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
+  }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE))
+  myplot<-myplot + 
+    ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
+    xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
+    ggtitle(mytitle) +
+    theme_light() + theme(plot.title = element_text(size = 20, face="bold")) +
+    myscale
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
+  if(logx) myplot<- myplot+scale_x_continuous(trans='log2')
+  if (savename!="") {
+    png(filename=paste("plots/",
+                       mytitle, ifelse(logy,", log scale",""),
+                       ".png",sep=""),
+        width=1600,height=900)
+    print(myplot);dev.off()
+    svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+                       ".svg",sep=""), width=16,height=9) #in inches?
+    print(myplot);dev.off()
+    print(paste("Plot saved:",mytitle))
+  }else return(myplot)
+}
+
 ##########################################################
 ##update the data, save it and count the NA's:
 alldata<- makeGroups( mklpdf());
-print(paste("missing values:",sum(is.na(alldata))))
-writewithcounters(alldata)
