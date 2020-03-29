@@ -95,7 +95,7 @@ mklpdf <- function() {
                   by=c("CRPS","Date","Country.Region","Province.State","Lat","Long"))
   alldata<- merge(alldata,deaths,#all.x=TRUE,
                   by=c("Country.Region","CRPS","Province.State","Date","Lat","Long"))
-  
+  alldata$active <- alldata$confirmed - alldata$deaths - alldata$recovered
   ###### make diffs this should happen only AFTER PLM
   alldata$new_confirmed<- c(0,diff(alldata$confirmed))
   alldata$new_deaths<- c(0,diff(alldata$deaths))
@@ -105,7 +105,7 @@ mklpdf <- function() {
   alldata$deathsOverConfirmed<- ifelse(alldata$confirmed>0, alldata$deaths/alldata$confirmed, NA)
   alldata<-alldata[with(alldata, order(CRPS, Date)), ]  
 }
-#alldata<-  mklpdf();print(paste("missing values:",sum(is.na(alldata))))
+#alldata<-  mklpdf()
 
 ######## make state groups, also useful in tableau
 WestvsEast<- c("Italy","Iran","Korea","Germany","France, France","Spain","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","denmark")
@@ -187,60 +187,29 @@ datasel<- function(countries=testcountries, minval= 0, lpdf=alldata, varname="co
   if(fuzzy) countries <- findIDnames(countries,"CRPS",lpdf)
   return( lpdf[ (lpdf[varname]>=minval)&(lpdf[,id] %in% countries) , ])
 }
-
-
-
-
-graphit2 <- function(countries=NULL, minval=1, ID="CRPS", 
-                     varnames=c("confirmed", "recovered"), lpdf=alldata, countname="counter",
-                     needfuzzy=TRUE,  logy=TRUE, savename="", legend=TRUE, size=3){
+dataprep1<- function(countries=NULL, minval=1, ID="Country.Region", 
+                     xvar="day", yvars=c("confirmed", "recovered"), lpdf=alldata, 
+                     fuzzy=TRUE,logx=FALSE,  logy=TRUE, size=3,until=Sys.Date()){
+  lpdf<- lpdf[lpdf$Date<=until,]
   if (length(countries)==0) countries<- unique(lpdf[,ID])
-  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
-  lpdf <- addcounterfrommin(minval,datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE),id=ID,counter=countname)
-  countries=unique(lpdf[,ID])
-  if (logy) for (varname in varnames)  lpdf[lpdf[,varname]<=0,varname]<- 1 #NA
-  myplot<- ggplot(lpdf[,c(countname, ID,varnames)]) 
-  for (varname in varnames) {myplot<- myplot +  
-    geom_line(aes_string(x=countname,y=varname,color=c(ID),group=c(ID)),alpha=0.2,size=size)+
-    geom_point(aes_string(x=countname,y=varname,color=c(ID),group=c(ID)),size=0.7*size,shape=match(varname,varnames))+
-    geom_dl(aes_string(x=countname,y=varname,color=ID,label = ID) , 
-            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
-  }  
-  mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), savename, paste(varnames,collapse="&"),
-                  "after", minval,varnames[1])
-  myplot<-myplot + ylab(paste(paste(varnames,collapse=", "), ifelse(logy,"(log scale)","")))+
-            xlab("day")+ 
-            ggtitle(mytitle) +
-            theme_light() + theme(plot.title = element_text(size = 20, face="bold"))
-  if (length(countries)<12)
-    myplot<- myplot + scale_color_brewer(palette="Spectral",guide = ifelse(legend,"legend",FALSE)) else 
-    myplot<- myplot + scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
-  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
-  if (savename!="") 
-    {png(filename=paste("plots/",
-                        mytitle, ifelse(logy,", log scale",""),
-                        ".png",sep=" "),
-         width=1600,height=1200)
-    print(myplot);dev.off();print(paste("Plot saved:",mytitle))}
-  else return(myplot)
+  countries<- findIDnames(countries,ID,lpdf,fuzzy)
+  lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=yvars[1],fuzzy=FALSE)
+  if (!(xvar %in% names(lpdf))) lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
+  if (logy) for (varname in yvars)  lpdf[!is.na(lpdf[,varname])&lpdf[,varname]<=0,varname]<- 1
+  if(logx) lpdf[lpdf[,xvar]<=0,xvar]<- 1 
+  lpdf[,c(xvar, ID,yvars)]
 }
 
 
-graphit3 <- function(countries=NULL, minval=1, ID="Country.Region", 
-                     varnames=c("confirmed", "recovered"), lpdf=alldata, xvar="day",
-                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", legend=TRUE, size=3){
-  if (length(countries)==0) countries<- unique(lpdf[,ID])
-  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
-  lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=varnames[1],fuzzy=FALSE)
-  yvars<- varnames
-  if (!(xvar %in% names(lpdf))) {
-    lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
-    extratext<- paste( "for ", minval,"+ ",varnames[1],sep="")
-    } else extratext <- paste("by",xvar)
-  countries=unique(lpdf[,ID])
-  if (logy) for (varname in yvars)  lpdf[lpdf[,varname]<=0,varname]<- 1 #NA
-  if(logx) lpdf[lpdf[,xvar]<=0,xvar]<- 1 
-  myplot<- ggplot(lpdf[,c(xvar, ID,yvars)]) 
+
+#without melt, works but has wrong legends, and colores per ID only. ! 
+graphit3 <- function(countries=NULL, minval=1, ID="Country.Region",  
+                     xvar="day", yvars=c("confirmed", "recovered"), lpdf=alldata, 
+                     fuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", putlegend=TRUE, size=3){
+  lpdf<- dataprep1(countries,minval,ID,xvar,yvars,lpdf,fuzzy,logx,logy)
+  if (!(xvar %in% names(lpdf))) {    extratext<- paste( "for ", minval,"+ ",yvars[1],sep="")
+  } else extratext <- paste("by",xvar)
+  myplot<- ggplot(lpdf) 
   for (varname in yvars) {myplot<- myplot +  
     geom_line(aes_string(x=xvar,y=varname,color=c(ID),group=c(ID)),alpha=0.2,size=size)+
     geom_point(aes_string(x=xvar,y=varname,color=c(ID),group=c(ID)),
@@ -249,10 +218,10 @@ graphit3 <- function(countries=NULL, minval=1, ID="Country.Region",
             method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
   }  
   mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), 
-                  savename, paste(varnames,collapse="&"),extratext)
-  if (length(countries)<12) {
-    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(legend,"legend",FALSE)) #"Spectral
-    }  else myscale<- scale_color_discrete(guide = ifelse(legend,"legend",FALSE))
+                  savename, paste(yvars,collapse="&"),extratext)
+  if (length(countries)<13) {
+    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
+    }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE))
   myplot<-myplot + 
     ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
     xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
@@ -267,66 +236,74 @@ graphit3 <- function(countries=NULL, minval=1, ID="Country.Region",
                       ".png",sep=""),
         width=1600,height=900)
     print(myplot);dev.off()
-    svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
-                       ".svg",sep=""), width=16,height=9) #in inches?
-    print(myplot);dev.off()
-    print(paste("Plot saved:",mytitle))
+    #svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+    #                   ".svg",sep=""), width=16,height=9) #in inches?
+    #print(myplot);dev.off()
+    #print(paste("Plot saved:",mytitle))
   }else return(myplot)
 }
 
-
-graphit4 <- function(countries=NULL, minval=1, ID="Country.Region", 
-                     yvars=c("confirmed", "recovered"), xvar="day", lpdf=alldata,
-                     needfuzzy=TRUE,logx=FALSE,  logy=TRUE, savename="", 
-                     putlegend=TRUE, size=3, until=Sys.Date()){
-  lpdf<- lpdf[lpdf$Date<=until,]
-  lastdate<- max(lpdf$Date)
-  print(lastdate)
-  if (length(countries)==0) countries<- unique(lpdf[,ID])
-  countries<- findIDnames(countries,ID,lpdf,needfuzzy)
-  lpdf <- datasel(countries,minval=minval,id=ID, lpdf=lpdf,varname=yvars[1],fuzzy=FALSE)
+dataprep2<- function(#countries=NULL, minval, 
+  ID, xvar, yvars, 
+  lpdf,# fuzzy, logx,  logy, 
+  until,variable.name="varname", value.name="count"){
+  lpdf<- melt(lpdf ,id=c(ID,xvar),measure.vars=yvars,
+              variable.name=variable.name, value.name=value.name)
+  lpdf[,variable.name]<- factor(lpdf[,variable.name], levels = yvars)
+  lpdf$mygroup<- paste(lpdf[,ID],lpdf[,variable.name],sep=", ")
+  lpdf
+}
+#Better, complete legends.
+graphit5 <- function(countries=NULL, minval=1, ID="Country.Region", 
+                     xvar="Date", yvars=c("active", "recovered","deaths"), lpdf=alldata,
+                     fuzzy=TRUE, logx=FALSE,  logy=TRUE, savename="", 
+                     putlegend=TRUE, area=FALSE,facet=FALSE, size=3, until=Sys.Date()){
   if (!(xvar %in% names(lpdf))) {
-    lpdf<- addcounterfrommin(minval,lpdf,id=ID,counter=xvar)
     extratext<- paste( "for ", minval,"+ ",yvars[1],sep="")
   }  else extratext <- paste("by",xvar)
-  if (logy) for (varname in yvars)  lpdf[is.na(lpdf[,varname])|(lpdf[,varname]<=0),varname]<- 1 #NA
-  if(logx) lpdf[is.na(lpdf[,xvar])|(lpdf[,xvar]<=0),xvar]<- 1 
-  
-  lpdf<- melt(lpdf[,c(ID,xvar,yvars)]
-              ,id=c(ID,xvar),measure.vars=yvars,
-              variable.name="varname", value.name="count")
-  lpdf$mygroup<- paste(lpdf[,ID],lpdf$varname,sep=", ")
-  myplot<- ggplot(lpdf, aes_string(y="count",x=xvar,color=ID,group='mygroup')) 
-  myplot<- myplot +  
-    geom_line(alpha=0.2,size=size)+
-    geom_point(aes(shape=varname),    size=0.7*size)+
-    geom_dl(aes_string(x=xvar,y="count",color=ID,label='mygroup'),
+  lastdate<- max(lpdf$Date)
+  lpdf<- dataprep1(countries,minval,ID,xvar,yvars,lpdf,fuzzy,logx,logy,until)
+  lpdf<- dataprep2(#countries=countries, minval=minval, 
+                ID=ID,  xvar=xvar, yvars=yvars, lpdf=lpdf,
+                  #logx=logx, logy=logy, until=until,
+                  variable.name="varname", value.name="count")
+  if (facet=='varname') lpdf$mygroup=lpdf$ID 
+  if (facet==ID) lpdf$mygroup=lpdf$varname
+  myplot<- ggplot(lpdf, aes_string(y="count",x=xvar,group='mygroup')) 
+  if(area){myplot<- myplot + geom_area(aes_string(color='mygroup',fill='mygroup'), position = 'stack',alpha=0.3)
+  }else {myplot<- myplot+geom_line(alpha=0.2,size=size,aes_string(color=ifelse(facet==ID,'mygroup',ID)))+
+    geom_point(aes_string(color=ifelse(facet==ID,'mygroup',ID),shape='varname'),    size=0.7*size)+
+    geom_dl(aes_string(x=xvar,y="count",color=ifelse(facet==ID,'mygroup',ID),label='mygroup'),
             method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
-  #}  
-  mytitle<- paste("Covid-19",format(lastdate,format="%Y%m%d"), #Sys.Date()
+  }  
+  if (!isFALSE(facet)) {
+    myplot<- myplot+ facet_wrap(as.formula(paste("~",facet)))
+  }
+    mytitle<- paste("Covid-19",format(lastdate,format="%Y%m%d"), #Sys.Date()
                   savename, paste(yvars,collapse="&"),extratext)
-  if (length(unique(lpdf$mygroup))<13) {
+    if (length(unique(lpdf$mygroup))<13) {
     myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
   }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE))
   myplot<-myplot + 
     ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
     xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
     ggtitle(mytitle) +
-    theme_light() + theme(plot.title = element_text(size = 20, face="bold")) +
+    theme_light() +
     myscale
-  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
-  if(logx) myplot<- myplot+scale_x_continuous(trans='log2')
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log10')
+  if(logx) myplot<- myplot+scale_x_continuous(trans='log10')
   if (savename!="") {
+    myplot<- myplot+ theme(plot.title = element_text(size = 20, face="bold"))
     png(filename=paste("plots/",
                        mytitle, ifelse(logy,", log scale",""),
                        ".png",sep=""),
         width=1600,height=900)
     print(myplot);dev.off()
-    svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
-                       ".svg",sep=""), width=16,height=9) #in inches?
-    print(myplot);dev.off()
+    #svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+     #                  ".svg",sep=""), width=16,height=9) #in inches?
+    #print(myplot);dev.off()
     print(paste("Plot saved:",mytitle))
-  }else return(myplot)
+  }else return(myplot+theme(plot.title = element_text(size = 11)))
 }
 
 ##########################################################

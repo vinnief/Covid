@@ -1,18 +1,17 @@
 alldata<- makeGroups( mklpdf())
 
-
-### in case you want to make the size of the line depend on the name of the data var
+]]   #this shouls stop the whole file executing at once
+)))((({
+  
+### 
 sizes=data.frame(confirmed=3, deaths=1, recovered=2,recoveredOverConfirmed=3,deathsOverConfirmed=4,recoveredOverDeaths=2)
 
 
-####### test what goes wrong
 
+####### test what goes wrong
 #### test
 ##### unitTESTS
 ## colors and plots
-emf("simple_graphic.emf", width=10, height=8)
-plot(c(1.1,2,2,3,3));#plot(2.2);#plot("hello")
-dev.off()
 svg(filename="simple_graphic.svg", width=10, height=8)
 plot(c(1.1,2,2,3,3));plot(2.2);#plot("hello")
 dev.off()
@@ -93,5 +92,5 @@ names(lpdf)
 lpdf$rod<- lag(lpdf$recovered,-10)/lpdf$deaths
 lpdf$roc<- lpdf$recovered/lag(lpdf$confirmed,21)
 lag.plot(lpdf[lpdf$Country.Region=="Italy",c("new_confirmed","new_recovered","new_deaths")],4,na.omit=TRUE)
-graphit2("Italy",10,lpdf=lpdf,varnames=c("roc","rod"),legend=FALSE)
+graphit2("Italy",0,lpdf=lpdf,varnames=c("roc","rod"),legend=FALSE)
                 
