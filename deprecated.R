@@ -1,5 +1,8 @@
 #deprecated functions
 
+
+
+
 correctgeos <-function(wpdf){ #get rid of the counties on the dataset before 20200325
   wpdf$County <- substr(wpdf$Province.State , 1,regexpr(",",wpdf$Province.State)-1)
   wpdf$PS<-( sub("[A-Z,a-z' ]+, ", "",wpdf$Province.State)) #as factor or ordered
@@ -8,6 +11,22 @@ correctgeos <-function(wpdf){ #get rid of the counties on the dataset before 202
   ps<- rbind(US,data.frame(State=ps,Code=ps))
   wpdf <- merge(wpdf,ps, by.x="PS",by.y="Code", all.x=TRUE)
 }
+
+#  alldata[alldata$Country.Region %in% Europe, varname] <-"Europe"
+#  alldata[alldata$Country.Region %in% EU, varname] <-"EU"
+#  alldata[alldata$Country.Region %in% EFTA, varname] <-"EFTA"
+#  alldata[alldata$Country.Region %in% Africa, varname] <-"Africa"
+#  alldata[alldata$Country.Region %in% MENA, varname] <-MENA[1]
+#  alldata[alldata$Country.Region %in% SAmerica, varname] <-SAmerica[1]
+#  alldata[alldata$Country.Region %in% CAsia, varname] <-CAsia[1]
+#  alldata[alldata$Country.Region %in% SouthEastAsia, varname] <- SouthEastAsia[1]
+#  alldata[alldata$Country.Region %in% CIS, varname] <-CIS[1]
+#  alldata[alldata$Country.Region %in% c("US","Canada","Mexico"), varname] <-"North America"
+#  alldata[alldata$Country.Region %in% SAsiaIO, varname] <-"South Asia & Indian Ocean"
+
+
+
+
 ##make sure we have the right column names. This version not used. 
 multigrep<- function( smalllist,biglist,ignorecase=FALSE){
   unlist(llply(smalllist,function(a) grep(a,biglist, value=TRUE,ignore.case=ignorecase)))
