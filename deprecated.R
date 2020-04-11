@@ -80,3 +80,58 @@ graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname
 }
 #scale_color_brewer(palette="Set3",guide = ifelse(legend,"legend",FALSE)) #Dark2
 #geom_text(data = lpdf, aes_string(label = ID,color = ID,x =Inf,y =max(value) ), hjust = -10) 
+#
+# extravars extract 
+if (FALSE){#"pdata.frame" %in% class(lpdf)){
+  lpdf$new_confirmed<- base::diff(lpdf$confirmed)
+  lpdf$new_deaths<-    base::diff(lpdf$deaths)
+  lpdf$new_recovered<- base::diff(lpdf$recovered)
+}else{
+  warning(paste(quote(lpdf) ,"Not PLM, first date of each ID is going to have wrong 'new_' counts."))
+  lpdf$new_confirmed<- diff.lpdf(lpdf$confirmed)
+  lpdf$new_deaths<- diff.lpdf(lpdf$deaths)
+  lpdf$new_recovered<- diff.lpdf(lpdf$recovered)
+  }
+
+
+#multi lines, without melt, works but has wrong legends, and colors per id only. ! 
+graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day", 
+                     yvars=c("confirmed", "recovered"), 
+                     lpdf=covid19, fuzzy=TRUE,logx=FALSE, logy=TRUE, savename="", 
+                     putlegend=TRUE, size=3,returnid="CRPS"){
+  lpdf<- dataprep1(countries,minval,id,xvar,yvars,lpdf,fuzzy,logx,logy,returnid=returnid)
+  id<-returnid
+  extratext<- paste("by",xvar, "for ", paste(minval,"+ ",yvars[1],sep=""))
+  myplot<- ggplot(lpdf) 
+  for (varname in yvars) {myplot<- myplot +  
+    geom_line(aes_string(x=xvar,y=varname,color=c(id),group=c(id)),alpha=0.2,size=size)+
+    geom_point(aes_string(x=xvar,y=varname,color=c(id),group=c(id)),
+               size=0.7*size,shape=match(varname,yvars))+
+    geom_dl(aes_string(x=xvar,y=varname,color=id,label = id) , 
+            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
+  }  
+  mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), 
+                  savename, paste(yvars,collapse="&"),extratext)
+  if (length(countries)<13) {
+    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
+  }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE))
+  myplot<-myplot + 
+    ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
+    xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
+    ggtitle(mytitle) +
+    theme_light() + theme(plot.title = element_text(size = 20, face="bold")) +
+    myscale
+  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
+  if(logx) myplot<- myplot+scale_x_continuous(trans='log2')
+  if (savename!="") {
+    png(filename=paste("plots/",
+                       mytitle, ifelse(logy,", log scale",""),
+                       ".png",sep=""),
+        width=1600,height=900)
+    print(myplot);dev.off()
+    #svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+    #                   ".svg",sep=""), width=16,height=9) #in inches?
+    #print(myplot);dev.off()
+    #print(paste("Plot saved:",mytitle))
+  }else return(myplot)
+}

@@ -1,54 +1,5 @@
-verbose=0
-if(!require(ggplot2)){
-  install.packages("ggplot2")
-  require(ggplot2)
-}
-if(!require(directlabels)){
-  install.packages("directlabels")
-  require(directlabels)
-}
-#getpackage<- function(pname){
-#  if(!require(eval(name))){
-#    install.packages(pname)
-##    require(eval(pname))
-#  }}
-
-if (!require(RColorBrewer)) {install.packages("RColorBrewer"); require(RColorBrewer)}
-if (!require(ggthemes)) {  installed.packages("ggthemes"); require(ggthemes)}
-
-#if(!require(ggrepel)){
-#  install.packages("ggrepel")
-#  require(ggrepel)
-#}# note ggrepel also does labels next to lines. 
-#if (!require(devEMF)){
-#  install.packages('devEMF') # just once
-#  require(devEMF)}
-
-if(!require(plm)){
-  install.packages("plm")
-  require(plm)
-}
-require(plyr)
-require(reshape2)
-
-
-#if(!require(replaceme)){
-#  install.packages("replaceme")
-#  require(replaceme)
-#}
-#if(!require()){
-#  install.packages("")
-#  require()
-#}
-
-#```
-#**optional more packages, not used yet**
-#```{r } 
-
-#if(!require(data.table)){
-#  install.packages("data.table")
-#  require(data.table)
-#}
+verbose=1
+source("requirements.R")
 
 #```
 #*Note*: the data of John hopkins, git@github.com:CSSEGISandData/COVID-19.git
@@ -101,19 +52,30 @@ findidnames <- function(testidnames=c("Neth","India"), searchid="CRPS",
 aggreg<- function(avector){
   if(length(unique(avector))==1){avector[1]
     }else #if (length(unique(avector))==2) {paste(avector,collapse="_") }else
-           "" #paste(avector[1],length(unique(avector)),avector[length(avector)],sep="_")
+           paste(avector[1],length(unique(avector)),avector[length(avector)],sep="_")
 }
-
-total<- function(rows=c(""), #c("Canada","US","Australia","China",Europe
-                 id="Country.Region", 
-                 varnames=c("confirmed","deaths","recovered"),
-                 # "active","new_confirmed","new_deaths","new_recovered"
-                 lpdf=covid19) {
+#following regions' number are given by state/province/country and we want the whole( the country, or for Europe: the continent's numbers)
+#c("Canada","US","Australia","China",Europe
+## "active","new_confirmed","new_deaths","new_recovered"
+total<- function(rows="", 
+                 id="CRPS", newrow="" ,lpdf=covid19,
+                 varnames=c("confirmed","deaths","recovered")  
+                 ) {
   ans<- ddply(lpdf[lpdf[,id] %in% rows,],c("Date"),
     function(a) {
-      Country.Region=aggreg(as.character(a$Country.Region))
-      Province.State= aggreg(a$Province.State)
-      CRPS=ifelse(Province.State=="",Country.Region,paste(Province.State,Country.Region,sep='.'))
+      Country.Region=ifelse(newrow!="", newrow,
+                            aggreg(as.character(a$Country.Region)))
+      Province.State=ifelse(newrow!="",newrow,aggreg(a$Province.State))
+      CRPS=ifelse(newrow!="",
+                  newrow,
+                  ifelse(id=="CRPS",
+                         aggreg(a$CRPS) ,
+                         ifelse(Province.State=="",
+                                Country.Region,
+                                paste(Province.State,Country.Region,sep=', ')
+                                )
+                         )
+                  )
       b1<- colSums(a[,varnames],na.rm=TRUE)
       nam<- names(b1)
       dim(b1)<- c(1,length(b1))
@@ -137,12 +99,10 @@ totals<- function(rows="", #c("Canada","US","Australia","China",Europe
                   lpdf=covid19){
   if (rows[1]=="") rows=unique(lpdf[,id])
   if (verbose>0) print(paste("Making totals of ",paste(rows,collapse=","),"in",id))
-  ans<-ldply(rows, function (a) total(a,id,varnames,lpdf))
+  ans<-ldply(rows, function (a) total(a,id,a, lpdf,varnames))
 }
              
-length(totals(c("Australia","China")))
-
-totals<- function(rows="", #c("Canada","US","Australia","China",Europe
+totals2<- function(rows="", #c("Canada","US","Australia","China",Europe
                   id="Country.Region", 
                   varnames=c("confirmed","deaths","recovered"),
                       # "active","new_confirmed","new_deaths","new_recovered"
@@ -153,7 +113,7 @@ totals<- function(rows="", #c("Canada","US","Australia","China",Europe
              function(a) {
           Country.Region=aggreg(as.character(a$Country.Region))
           Province.State= aggreg(a$Province.State)
-          CRPS=ifelse(Province.State=="",Country.Region,paste(Province.State,Country.Region,sep='.'))
+          CRPS=ifelse(Province.State=="",Country.Region,paste(Province.State,Country.Region,sep=', '))
           b1<- colSums(a[,varnames],na.rm=TRUE)
           nam<- names(b1)
           dim(b1)<- c(1,length(b1))
@@ -173,37 +133,40 @@ correctnames<- function(df){
   names(df)[match("Long_",names(df))]<-"Long"
   names(df)[match("Province_State",names(df))]<-"Province.State"
   names(df)[match("Country_Region",names(df))]<-"Country.Region"
-  df
+  df[,!names(df) %in% c("Admin2" ,"UID","iso2","iso3","code3","FIPS")]
 }
 
-mklpdfUS <- function() {
+makelpdfUS <- function() {
   wc<-readUSdata('confirmed') 
+  geo.location <- wc[,c("Combined_Key","Country_Region","Province_State","Admin2","UID","Lat","Long_")]
   wc<- correctnames(wc)
-  geo.location <- wc[c("Combined_Key","Country.Region","Province.State","Admin2","UID","Lat","Long")]
-  #write.csv(geo.location,file="geo.location.US.csv",na="")
-  wc<-wc[,!names(wc) %in% c("Admin2" ,"UID","iso2","iso3","code3","FIPS")]
+  write.csv(geo.location,file="geo.location.US.csv",na="")
+  rm(geo.location)
+#  wc<-wc[,!names(wc) %in% c("Admin2" ,"UID","iso2","iso3","code3","FIPS")]
   confirmed<- convertdata(wc,values.name="confirmed",US=TRUE)
   wd<-readUSdata("deaths")
   wd<- correctnames(wd)
-  wd<-wd[,!names(wd) %in% c("Admin2" ,"UID","iso2","iso3","code3","FIPS")]
+  #wd<-wd[,!names(wd) %in% c("Admin2" ,"UID","iso2","iso3","code3","FIPS")]
   deaths<- convertdata(wd,values.name="deaths",US=TRUE)
-  #wr<-readdata("recovered")
-  #  wr<- correctnames(wr)
-  #names(wr)[1]<-names(wc)[1] #"Province.State without strange characters
-  #recovered<- convertdata(wr,values.name="recovered")
-  
-  lpdf<- merge(confirmed,deaths,#all.x=TRUE,
+  lpdf<- merge(confirmed,deaths,all.x=TRUE,
                by=c("Country.Region","Province.State","CRPS","Combined_Key","Lat","Long","Date"))
-  lpdf$recovered<- NA
-  #lpdf<- merge(lpdf,recovered,#all=TRUE,
-  # by=c("Country.Region","Province.State","CRPS","Combined_Key","Lat","Long","Date"))
-  #lpdf<- rbind(lpdf,
-  lpdf<- (totals("","Province.State",lpdf=lpdf))
+  #tryCatch( wr<-readUSdata("recovered"),error=function(e){print(e)})
+  #if ("wr" %in% ls()){
+  #  wr<- correctnames(wr)
+  #  recovered<- convertdata(wr,values.name="recovered")
+  #  lpdf<-merge(lpdf,recovered,all=TRUE,
+  #    by=c("Country.Region","Province.State","CRPS","Combined_Key","Lat","Long","Date"))
+  #}else 
+    lpdf$recovered<- NA 
+  lpdf<- (totals2("","Province.State",lpdf=lpdf)) # depends on all provinces being chosen to sum! 
   #lpdf<-lpdf[with(lpdf, order(CRPS, Date)), ]  
   lpdf$Combined_Key<-NULL
-  lpdf<- rbind(lpdf,(totals("US","Country.Region",lpdf=lpdf)))
+  lpdf  <- rbind(lpdf,(totals("US","Country.Region",lpdf=lpdf)))
 }
-mklpdf <- function() {
+#covid19<- (makelpdfUS())
+#summary(covid19)
+
+makelpdf <- function() {
   wc<-readdata('confirmed') #"Confirmed")
   geo.location <- wc[c("Country.Region","Province.State","Lat","Long")]
   #write.csv(geo.location,file="geo.location.csv",na="")
@@ -218,12 +181,13 @@ mklpdf <- function() {
   lpdf<- merge(lpdf,deaths,all.x=TRUE,
                   by=c("Country.Region","CRPS","Province.State","Date","Lat","Long"))
   lpdf[lpdf$CRPS=="US",]$CRPS<- as.character("USA") #to distinguish from the detailed data
-  lpdf<- rbind(lpdf,totals(c("Canada", "China", "Australia"), varnames=c("confirmed","recovered",'deaths'),lpdf=lpdf))
+  lpdf[lpdf$CRPS=="USA","Country.Region"] <- as.character("USA") #bug: this results in NA. probably it is a factor and this is not one of the existing levels. 
+  lpdf#<- rbind(lpdf,totals(c("Canada", "China", "Australia"), varnames=c("confirmed","recovered",'deaths'),lpdf=lpdf))
 }
 updateDataFromWeb <- function(nameUS="Covid19_US.csv",namenonUS="Covid19_non_US.csv") {
-  CUS<-mklpdfUS() 
+  CUS<-makelpdfUS() 
   write.csv(CUS,nameUS)
-  Cworld<- mklpdf() 
+  Cworld<- makelpdf() 
   write.csv(Cworld,namenonUS)
   lpdf<- rbind(Cworld,CUS)
 }
@@ -233,6 +197,18 @@ readLocalData<- function(nameUS="Covid19_US.csv",namenonUS="Covid19_non_US.csv")
   lpdf<- rbind(Cworld,CUS)
   #lpdf[,"X"]<-NULL
   lpdf
+}
+
+diff.lpdf<- function(lpdf,id="CRPS", varnames=c("confirmed","recovered", "deaths"),prefix="new_"){
+  ans<- ddply(lpdf, id, 
+        function (lpdf){
+          data.frame(llply(lpdf[,varnames], 
+                           function(a){c(NA,base::diff(a))}
+                           ))
+          }
+        )
+  names(ans)<- paste(prefix,names(ans),sep="")
+  ans
 }
 ###### make fractions and diffs this should happen only AFTER PLM
 extravars<- function(lpdf,lagr=0,lagd=0){ #note only use lags if lpdf is a real lpdf a la plm
@@ -253,15 +229,11 @@ extravars<- function(lpdf,lagr=0,lagd=0){ #note only use lags if lpdf is a real 
   lpdf$recovered_per_deaths <-ifelse(lag(lpdf$deaths,lagr-lagd)>0,lpdf$recovered/lag(lpdf$deaths,lagr-lagd), NA)   #lag the deaths by 10 days as recovery takes longer?
   #### for diffs, make sure is ordered by date! 
   lpdf<-lpdf[with(lpdf, order(CRPS, Date)), ]
-  if ("pdata.frame" %in% class(lpdf)){
-    lpdf$new_confirmed<- diff(lpdf$confirmed)
-    lpdf$new_deaths<-    diff(lpdf$deaths)
-    lpdf$new_recovered<- diff(lpdf$recovered)
-  }else{
-    lpdf$new_confirmed<- c(0,diff(lpdf$confirmed))
-    lpdf$new_deaths<- c(0,diff(lpdf$deaths))
-    lpdf$new_recovered<- c(0,diff(lpdf$recovered))
-  }
+  lpdf$new_confirmed<-NULL
+  lpdf$new_recovered<-NULL #just to make sure if we twice use this function we dont get into problems. 
+  lpdf$new_deaths<- NULL
+  lpdf<- cbind(lpdf,diff.lpdf(lpdf))
+  
   lpdf$confirmed_pM <- 1000000*lpdf$confirmed/lpdf$population
   lpdf$active_pM    <-1000000* lpdf$active  /lpdf$population
   lpdf$recovered_pM <- 1000000*lpdf$recovered/lpdf$population
@@ -270,12 +242,14 @@ extravars<- function(lpdf,lagr=0,lagd=0){ #note only use lags if lpdf is a real 
   lpdf$new_confirmed_pM <- 1000000*lpdf$new_confirmed/lpdf$population
   lpdf$new_recovered_pM <- 1000000*lpdf$new_recovered/lpdf$population
   lpdf$new_deaths_pM    <- 1000000*lpdf$new_deaths  /lpdf$population
+  lpdf$Date<- as.Date(lpdf$Date,format="%Y-%m-%d") #otherwise we cannot calculate min confirmed. 
+  lpdf$CRPS<- sortCountries(lpdf)
   lpdf
 }
 
 
 ######## make state groups, also useful in tableau
-WestvsEast<- c("WestvsEast","USA","UK","Italy","Iran","Korea","Germany","France","Spain","Sweden","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","Denmark")
+WestvsEast<- c("WestvsEast","USA","UK","Italy","Iran","Korea","Germany","France","Spain","Sweden","Norway","Hubei","Belgium","Netherlands","Singapore","Japan","Shanghai","Denmark","Hubei, China", "Hongkong, China", "Jiangsu, China")
 Benelux<- c("Benelux","Belgium","Netherlands","Luxembourg")
 EU6<-c("EU6", Benelux[2:4], "Germany","France","Italy")
 EU<- c("EU",EU6[2:7],"Spain","Poland","Austria","Romania","Hungary","Ireland","Sweden","Denmark","Finland","Bulgaria","Portugal","Greece","Croatia","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Cyprus")
@@ -287,17 +261,19 @@ SouthWestAsia<-c("South West Asia","Afganistan","Iran","Irak","Syria","Lebanon",
 SouthEastAsia<- c("South East Asia","Indonesia","Thailand","Vietnam","Laos","Malaysia", "Cambodia", "Papua New Guinea","Myanmar", "Burma","Brunei","Philippines","Timor-Leste")
 SAsiaIO<-c ("South Asia & Indian Ocean","India","Pakistan","Bangladesh","Sri Lanka","Comoros", "Maldives","Madagascar","Mauritius", "Seychelles","Bhutan","Nepal","Mayotte","Reunion")
 MENA<-c("MENA", "Marocco","Algeria","Tunesia","Libia","Egypt","Lebanon","Syria","Turkey","Jordan","Saudi Arabia","Kuwait","Oman","United Arab Emirates","UAE","Yemen","Bahrain","Qatar","Iraq","Iran","Afghanistan", "West Bank and Gaza")
-SAmerica<-c("South America","Argentina","Bolivia","Brazil","Chile","Colombia","Costa Rica","Honduras","El Salvador","Panama","Ecuador","Suriname","Guyana","Belize","Guatemala", "Antilles","Paraguay","Peru","Venezuela","Nicaragua"       , "Uruguay","French Guiana")
+SAmerica<-c("South America","Argentina","Bolivia","Brazil","Chile","Colombia","Costa Rica","Honduras","El Salvador","Panama","Ecuador","Suriname","Guyana","Belize","Guatemala", "Antilles","Paraguay","Peru","Venezuela","Nicaragua"       , "Uruguay","French Guiana","Falkland Islands (Malvinas)","Nicaragua")
 US<-c("US","USA")
-NAmerica<- c("NAmerica",US,"Canada","Mexico")
+NAmerica<- c("NAmerica",US,"Canada","Mexico","Saint Pierre and Miquelon")
 Caribbean<- c("Caribbean",'Anguilla',"Antigua and Barbuda","Bahamas" ,  "Barbados","Bermuda","Cayman Islands","Cuba","Dominica" ,"Dominican Republic","Grenada", "Haiti" , "Jamaica","Saint Kitts and Nevis" ,"Saint Vincent and the Grenadines","Saint Lucia"  ,"Trinidad and Tobago",'Aruba','Curacao',"Bonaire, Sint Eustatius and Saba","British Virgin Islands",'Guadeloupe','Martinique','Sint Maarten','St Martin','Saint Barthelemy','Turks and Caicos Islands','Montserrat')
-Africa<- c("Africa","Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic","Chad","Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana","Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe")
+Africa<- c("Africa","Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic","Chad","Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana","Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara","Zambia", "Zimbabwe")
 EastAsia<- c("East Asia","Japan","Korea, South", "Korea, North","Taiwan*", "Hong Kong","Singapore","Mongolia")
 Oceania<- c("Oceania","Australia","New Zealand","Vanuatu","Tuvalu", "Fiji","Guam","French Polynesia","New Caledonia"  )
 China<- c("China")
 MSM<-c("MSM","Netherlands","Belgium","United Kingdom","Germany","Malta","Egypt","Suriname","China","Vietnam","Hungary","Romania","Kuwait","Italy","Ireland","Iran","Kazakstan","Liberia","Indonesia","Ethiopia","Nigeria","Ghana","Uganda","South Africa","Canada","Spain","France")
 Vincent<- c("Some Selected Regions","Belgium","Germany","Italy","France","Kazakhstan","Indonesia","Spain","Netherlands","Japan","New York")
-
+getname <- function (variab, name=deparse(substitute(variab))) { 
+  name 
+}
 ############### used in graphit2+ and for saving to csv
 addcounterfrommin<-function(minv=0,lpdf=covid19,varname="confirmed",id="CRPS",counter="day"){
   lpdf[,counter]<-NA
@@ -311,26 +287,27 @@ addcounterfrommin<-function(minv=0,lpdf=covid19,varname="confirmed",id="CRPS",co
             )
     lpdf
 }
-#addcounterfrommin(lpdf )
+
 ### make day vars for tableau & Excel
-mkcountname <- function(countname,minv){paste(countname,minv,sep="_")}
+makecountname <- function(countname,minv){paste(countname,minv,sep="_")}
 
 writewithcounters<- function(lpdf=covid19,varname="confirmed",id="CRPS",name="Covid19"){
     lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
     for (minv in c(1,20,100,400,1000,2000,5000,10000)){
-      lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,varname=varname,id=id,
-                               counter=mkcountname("day",minv))
+      lpdf<- addcounterfrommin(minv=minv, lpdf=lpdf,
+                               varname=varname,id=id,
+                               counter=makecountname("day",minv))
     }
     filename=paste(name,"days.csv",sep="_")
     write.csv(lpdf,file=filename, na="")
     if (verbose>0) print(paste("Written the current data with counters to disk as",filename,"for use in Tableau or Excel"))
 }
 
-makeCovid19 <- function(name="Covid19") {
+makeCovid19 <- function(name="Covid19",force=FALSE) {
   nameUS<- paste( paste(name,"US",sep="_"),           "csv",sep=".")
   namenonUS<- paste( paste(name,"non","US",sep="_"),  "csv",sep=".")
   namedays<- paste(name,"_days.csv",sep="")
-  if(difftime(Sys.time(), file.info(namedays)[,"mtime"], units = "hours")>6) {
+  if(force|(difftime(Sys.time(), file.info(namedays)[,"mtime"], units = "hours")>6)) {
     lpdf<- updateDataFromWeb(nameUS,namenonUS)
     if (verbose>0) print("updating from Github")
   } else {
@@ -344,12 +321,15 @@ makeCovid19 <- function(name="Covid19") {
   lpdf
 }
 provincialize<- function(countries,lpdf=covid19){ 
-  cl<- intersect(countries,countrylist)
+  cl<- intersect(countries,Worldcountrylist)
   cl1<-unique(lpdf[lpdf$Country.Region %in% cl,]$CRPS)
   c(paste(countries[1],"Provinces&States"),setdiff(cl1,countries))
 }
-Regiolist<- list(Europe,EU,EFTA,NAmericaS,NAmerica, SouthWestAsia,SouthEastAsia, MENA,Africa,SAsiaIO,EastAsia,CIS,SAmerica,Caribbean,OceaniaP,ChinaP,China,Oceania)
-
+CanadaP<-provincialize('Canada')
+USS<-provincialize(US)
+NAmericaS<- provincialize(NAmerica)
+OceaniaP<- provincialize(Oceania)
+ChinaP<- provincialize(China)
 makeGroups <- function(lpdf=covid19,varname="Region",list=Regiolist) {  
   if(!varname %in% names(lpdf)) lpdf[,varname]<-""
   for (Regio in list) {
@@ -358,7 +338,12 @@ makeGroups <- function(lpdf=covid19,varname="Region",list=Regiolist) {
   lpdf
 }
 
-
+sortCountries<- function(lpdf,varname="confirmed",id="CRPS"){
+  ordre<- lpdf[lpdf$Date== max(lpdf$Date),c(varname,id)]
+  ordre<- ordre[order(ordre[,varname],ordre[,id],decreasing=TRUE),] 
+  #c(TRUE,FALSE)),]
+  lpdf[,id]<- factor(lpdf[,id],levels=ordre[,id])
+}
 #Next, prepare functions to select data we want to line graph, determined by the minimum value , date, and country/id
 
 testcountries<- c("Belgium","Vietnam","Indonesia","Korea","Japan","France","Germany","Italy",  "Netherlands", "Hubei, China","Taiwan")
@@ -368,62 +353,24 @@ datasel<- function(countries=MSM, minval= 0, lpdf=covid19,
   return( lpdf[ (lpdf[varname]>=minval)&(lpdf[,id] %in% countries) , ])
 }
 
-dataprep1<- function(countries=NULL, minval=1, id="Country.Region", 
+dataprep1<- function(countries=NULL, minval=1, id="CRPS", 
                      xvar="day", yvars=c("confirmed", "recovered"), 
                      lpdf=covid19, fuzzy=TRUE,logx=FALSE, logy=TRUE, 
                      size=3,until=Sys.Date(),returnid="CRPS"){
   lpdf<- lpdf[lpdf$Date<=until,]
   if (length(countries)==0) countries<- unique(lpdf[,id])
   countries<- findidnames(countries,searchid=id,lpdf=lpdf,fuzzy=fuzzy,returnid)
-  lpdf <- datasel(countries,minval=minval,id=returnid, lpdf=lpdf)#,varname=yvars[1])
-  if (!(xvar %in% names(lpdf))) lpdf<- addcounterfrommin(minval,lpdf,id=returnid,counter=xvar)
-  if (logy) for (varname in yvars)  lpdf[!is.na(lpdf[,varname])&lpdf[,varname]<=0,varname]<- 1
+  lpdf <- datasel(countries,minval=minval,varname="confirmed", lpdf=lpdf,id=returnid)#,varname=yvars[1])
+  if (!(xvar %in% names(lpdf))) lpdf<- addcounterfrommin(minval,lpdf,varname="confirmed", id=returnid,counter=xvar)
+  if (logy) for (varname in yvars)  {
+    lpdf[(is.na(lpdf[,varname])),varname]<- 1
+    lpdf[lpdf[,varname]  <= 0,varname]<- 1 
+  }
   if(logx) lpdf[lpdf[,xvar]<=0,xvar]<- 1 
+  lpdf[,id]<- sortCountries(lpdf=lpdf,varname=yvars[1],id=id)
   lpdf[,c(xvar, returnid,yvars)]
 }
 
-
-#without melt, works but has wrong legends, and colores per id only. ! 
-graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day", 
-                     yvars=c("confirmed", "recovered"), 
-                     lpdf=covid19, fuzzy=TRUE,logx=FALSE, logy=TRUE, savename="", 
-                     putlegend=TRUE, size=3,returnid="CRPS"){
-  lpdf<- dataprep1(countries,minval,id,xvar,yvars,lpdf,fuzzy,logx,logy,returnid=returnid)
-  id<-returnid
-  extratext<- paste("by",xvar, "for ", paste(minval,"+ ",yvars[1],sep=""))
-  myplot<- ggplot(lpdf) 
-  for (varname in yvars) {myplot<- myplot +  
-    geom_line(aes_string(x=xvar,y=varname,color=c(id),group=c(id)),alpha=0.2,size=size)+
-    geom_point(aes_string(x=xvar,y=varname,color=c(id),group=c(id)),
-               size=0.7*size,shape=match(varname,yvars))+
-    geom_dl(aes_string(x=xvar,y=varname,color=id,label = id) , 
-            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
-  }  
-  mytitle<- paste("Covid-19",format(Sys.Date(),format="%Y%m%d"), 
-                  savename, paste(yvars,collapse="&"),extratext)
-  if (length(countries)<13) {
-    myscale<- scale_color_brewer(palette="Paired",guide = ifelse(putlegend,"legend",FALSE)) #"Spectral
-    }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE))
-  myplot<-myplot + 
-    ylab(paste(paste(yvars,collapse=", "), ifelse(logy,"(log scale)","")))+
-    xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
-    ggtitle(mytitle) +
-    theme_light() + theme(plot.title = element_text(size = 20, face="bold")) +
-    myscale
-  if(logy) myplot<- myplot+scale_y_continuous(trans='log2')
-  if(logx) myplot<- myplot+scale_x_continuous(trans='log2')
-  if (savename!="") {
-    png(filename=paste("plots/",
-                      mytitle, ifelse(logy,", log scale",""),
-                      ".png",sep=""),
-        width=1600,height=900)
-    print(myplot);dev.off()
-    #svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
-    #                   ".svg",sep=""), width=16,height=9) #in inches?
-    #print(myplot);dev.off()
-    #print(paste("Plot saved:",mytitle))
-  }else return(myplot)
-}
 
 dataprep2<- function(id, xvar, yvars, lpdf, until, 
                      variable.name="varname", value.name="count"){
@@ -433,6 +380,7 @@ dataprep2<- function(id, xvar, yvars, lpdf, until,
   lpdf$mygroup<- paste(lpdf[,id],lpdf[,variable.name],sep=", ")
   lpdf
 }
+#for readable labels on facet titles, split them into lines with
 #reformat <- function(x,splitt=", ",lab="\n"){ sapply(x, function(c){ paste(unlist(strsplit(as.character(c) , split=splitt)),collapse=lab) }) }
 #dataset$variable <- factor(dataset$variable, labels=reformat(dataset$variable, lab='\n')
 #And upon facetting, all labels will be very readable:
@@ -440,10 +388,10 @@ dataprep2<- function(id, xvar, yvars, lpdf, until,
 #that is for factor labels. we need it for variable lables. 
 
 #Better, complete legends.
-graphit5 <- function(countries=NULL, minval=1, id="Country.Region", xvar="Date", 
+graphit5 <- function(countries=NULL, minval=1, id="CRPS", xvar="Date", 
                      yvars=c("confirmed","active", "recovered","deaths"), 
-                     lpdf=covid19, fuzzy=TRUE, logx=FALSE, logy=TRUE, savename="", 
-                     putlegend=TRUE, size=3, returnid="CRPS", 
+                     lpdf=covid19, fuzzy=FALSE, logx=FALSE, logy=FALSE, 
+                     savename="", putlegend=TRUE, size=3, returnid="CRPS", 
                      area=FALSE,facet=FALSE, until=Sys.Date()){
   lastdate<- min(max(lpdf$Date),until)
   lpdf<- dataprep1(countries,minval,id,xvar,yvars,lpdf,fuzzy,logx,logy,until, returnid=returnid)
@@ -454,7 +402,7 @@ graphit5 <- function(countries=NULL, minval=1, id="Country.Region", xvar="Date",
   if (facet=='varname') lpdf$mygroup<- lpdf$id 
   if (facet==id) lpdf$mygroup <- lpdf$varname
   myplot<- ggplot(lpdf, aes_string(y="count",x=xvar,group='mygroup')) 
-  if(area){myplot<- myplot + geom_area(aes_string(color='mygroup',fill='mygroup'), position = 'stack',alpha=.8)+scale_fill_manual(values = c("red", "green","orange","blue"))
+  if(area){myplot<- myplot + geom_area(aes_string(color='mygroup',fill='mygroup'), position = 'stack',alpha=.8)+scale_fill_manual(values = c("orange", "green","red","blue"))
   }else {myplot<- myplot+geom_line(alpha=0.3,size=size*0.7,aes_string(color=ifelse(facet==id,'mygroup',id)))+
     geom_point(aes_string(color=ifelse(facet==id,'mygroup',id),shape='varname'),    size=size)+
     geom_dl(aes_string(x=xvar,y="count",color=ifelse(facet==id,'mygroup',id),label='mygroup'),
@@ -466,17 +414,20 @@ graphit5 <- function(countries=NULL, minval=1, id="Country.Region", xvar="Date",
     mytitle<- paste("Covid-19",format(lastdate,format="%Y%m%d"),
                   savename, paste(yvars,collapse=" & "),
                   "by",xvar,"for",paste(minval,"+",sep=""),"confirmed")
-    palette=ifelse (length(unique(lpdf$mygroup))<8, "Dark2","Paired") #Spectral Set2  scale_colour_manual(values=["black","orange", "green", "red"])
+    palette=ifelse (length(unique(lpdf$mygroup))<8, "Dark2","Paired") #Spectral Set2  
     if (length(unique(lpdf$mygroup))<=4){
-      myscale<- scale_color_manual(values=c("orange", "green", "red","black")) ##the colors need to be in the right order: 1 orange 2 green 3 red 4 black
+      myscale<- scale_color_manual(values=c("orange", "green", "red","black"),guide= ifelse(putlegend,"legend",FALSE))  ##the colors need to be in the right order: 1 orange 2 green 3 red 4 black scale_color_manual(values=["black","orange", "green", "red"])
       }else if(length(unique(lpdf$mygroup))<13) {
-    myscale<- scale_color_brewer(palette=palette,guide = ifelse(putlegend,"legend",FALSE)) 
-  }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,guide_legend(title="legend", ncol=2,nrow=35),FALSE))
-  myplot<-myplot + 
+    myscale<- scale_color_brewer(palette=palette) #
+  }  else myscale<- scale_color_discrete(guide = ifelse(putlegend,"legend",FALSE)) #
+    if(xvar=="Date" ) myplot<- myplot+scale_x_date(labels = date_format("%d-%m"))
+    myplot<-myplot + 
     ylab(paste(paste(yvars,collapse=" & "), ifelse(logy,"(log scale)","")))+
     xlab(paste(xvar,                       ifelse(logx,"(log scale)","")))+ 
     ggtitle(mytitle) +
-    theme_light() +myscale 
+    theme_light() +
+    
+    myscale 
   if(logy) myplot<- myplot+scale_y_continuous(trans='log10')
   if(logx) myplot<- myplot+scale_x_continuous(trans='log10')
   if (savename!="") {
@@ -499,37 +450,88 @@ graphit5 <- function(countries=NULL, minval=1, id="Country.Region", xvar="Date",
 #geom_point(aes(shape=cyl, color=cyl, size=cyl))
 #+scale_color_manual(values=c('#999999','#E69F00', '#56B4E9'))
 
-graphRegiolist <- list(MSM,Vincent,WestvsEast,bigEurope,smallEurope,NAmericaS, SouthWestAsia,SouthEastAsia, MENA,Africa,SAsiaIO,EastAsia,CIS,SAmerica,Caribbean,OceaniaP,ChinaP)
+#1 conf+active+recovered+deaths         areaplot          facet per id
+#2 new conf , new rec, new deaths line plot by date, facets by D
+#3 Conf, active, recovered, deaths by day line graph all in one graph
+#4 Conf, active, recovered, deaths by date line graph facets
 
-
-# reco&deaths by conf 
-# Conf, active, recovered, deaths by day line graph facets
-# Conf, active, recovered, deaths by day line graph all in one graph
-# new conf , new rec, new deaths line plot by date, facets by D
-# conf+active+recovered+deaths         areaplot          facet per id
-# reco over conf by date line graph per id
-# deathsp1000 reco p1000, confp1000 line graphs
-graphs<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
-    #graphit5(group,1,id, xvar='confirmed',yvars=c('deaths','recovered'),fuzzy=FALSE, logy=FALSE, logx=FALSE,savename=name)
-    #graphit5(group, minval, id,xvar='day', yvars=c('active','recovered','deaths' ,"confirmed"), fuzzy=FALSE, logy=FALSE,savename= name,facet=id,putlegend=FALSE)
-    graphit5(group, minval, id,xvar='day', yvars=c( 'active','recovered','deaths',"confirmed"), fuzzy=FALSE, logy=FALSE,savename= ifelse(name=="","",paste(name,"all-in-one")),putlegend=FALSE)
-    graphit5(group,minval,id, xvar="Date",yvars=c('new_confirmed','new_recovered','new_deaths'), fuzzy=FALSE, logy=TRUE,savename= name,facet=id) 
-    graphit5(group,1,id, xvar="Date",yvars=c('active','recovered','deaths'), fuzzy=FALSE, logy=FALSE,savename= ifelse(name=="","",paste(name,"areas")),area=TRUE,facet=id) 
-    graphit5(group,minval,id, xvar="Date",yvars=c('new_confirmed_pM','new_recovered_pM','new_deaths_pM'), fuzzy=FALSE, logy=FALSE,savename= name,facet="CRPS")
-    graphit5(group,minval,id, xvar="Date",yvars=c('active_pM','recovered_per_million','deaths_pM','confirmed_pM'), fuzzy=FALSE, logy=FALSE,savename= name,facet="CRPS")
-    graphit5(group,1,id, xvar="Date",yvars=c('recovered_per_confirmed'), fuzzy=FALSE, logy=FALSE,savename= name )
+#4 new confpM , new recpM, new deathspM line plot by date, facets by D
+#5 deathspM recopM, confpM line graphs
+#6 reco over conf by date line graph per id
+#7 reco&deaths by conf 
+#8 like 2 with areas
+graph0<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group, minval, id,xvar='day', yvars=c('active','recovered','deaths' ,"confirmed"), lpdf=lpdf,savename= name,facet=id,putlegend=TRUE)
+}
+graph1<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,1,id, xvar="Date",yvars=c('active','recovered','deaths'), 
+           lpdf=lpdf,
+           savename= ifelse(name=="","",paste(name,"areaplot")),area=TRUE,facet=id) 
+}
+graph2<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,minval,id, xvar="Date",yvars=c('new_confirmed','new_recovered','new_deaths'), 
+           lpdf=lpdf, logy=TRUE,savename= name,facet=id) 
+}
+graph8<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,minval,id, xvar="Date",yvars=c('new_confirmed','new_recovered','new_deaths'), 
+           lpdf=lpdf, logy=TRUE,savename= ifelse(name=="",name,paste(name,"areaplot")),facet=id,area = TRUE) 
 }
 
-writeRegiographs<- function(Regionlist,minval=100, id="CRPS",lpdf=covid19){
+graph3<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group, minval, id,xvar='day', yvars=c( 'active','recovered','deaths',"confirmed"), 
+           lpdf=lpdf,savename= ifelse(name=="","",paste(name,"all-in-one")),putlegend=TRUE)
+}
+
+graph4<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,minval,id, xvar="Date",yvars=c('new_confirmed_pM','new_recovered_pM','new_deaths_pM'), 
+           lpdf=lpdf,savename= name,facet="CRPS")
+}
+graph5<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,minval,id, xvar="Date",yvars=c('active_pM','recovered_pM','deaths_pM','confirmed_pM'), 
+           lpdf=lpdf,savename= name,facet="CRPS")
+}
+graph6<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,1,id, xvar="Date",yvars=c('recovered_per_confirmed'), 
+           lpdf=lpdf,savename= name,putlegend=FALSE )
+}
+graph7<- function(group,name="",minval=100, id="CRPS",lpdf=covid19){
+  graphit5(group,minval,id, xvar='confirmed',yvars=c('recovered','deaths'),
+           lpdf=lpdf,  logx=FALSE,savename=name)
+}
+
+graphs<- function(group,name="",minval=100,nrs=c(1,2,3), id="CRPS",lpdf=covid19){
+  for (j in nrs)
+      do.call (paste("graph",j,sep=""),args=list(group,name,minval, id,lpdf))
+  }
+
+writeRegiographs<- function(Regionlist,minval=100,nrs=1:4, id="CRPS",lpdf=covid19){
   for (i in 1:(length(Regionlist))){
     print(paste("Region",i,Regionlist[[i]][1]))
-    ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=covid19, fuzzy=FALSE,returnid="CRPS"))
-    #ids<- covid19[covid19$Province.State=="" & covid19$CRPS %in% ids,covid19$Country.Region]
-    graphs(ids,Regionlist[[i]][1],minval, id,lpdf)
+    ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=lpdf, fuzzy=FALSE,returnid="CRPS"))
+    graphs(ids,Regionlist[[i]][1],minval,nrs, id,lpdf)
   }
 }
-  ##########################################################
-#graphit5(Europe,100,id="CRPS", yvar="deaths",xvar="Date",area=TRUE,savename="areacolortest1",logy=FALSE,fuzzy=FALSE)
+writeRegiograph<- function(Regionlist,minval=100,nrs=c(1,2,3), id="CRPS",lpdf=covid19){
+  if (typeof(Regionlist)=="character") {
+    name= getname(Regionlist)
+    Regionlist=list(c(name,Regionlist))
+}
+  for (j in nrs)
+    for (i in 1:(length(Regionlist))){
+      ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=lpdf, fuzzy=FALSE,returnid="CRPS"))
+      do.call (paste("graph",j,sep=""),args=list(ids,Regionlist[[i]][1],minval, id,lpdf))
+    }
+}
 
-#unique(covid19[covid19$Country.Region=="China",'Province.State'])
+ccf.vf<- function(var1="new_confirmed", var2="new_recovered", CRPS="Hubei, China",lpdf=covid19,lag.max=30,saveit=FALSE){
+  title=paste("ccf of ",var1  , " vs ",var2," for ",CRPS,".png", sep="")
+  if (saveit) {png(filename=paste("plots/ccf/",title))}
+  myplot=ccf(lpdf[lpdf$CRPS==CRPS&lpdf$Date>"2020-01-22", var1],
+             lpdf[lpdf$CRPS==CRPS&lpdf$Date>"2020-01-22", var2],
+             lag.max=lag.max,main= title)
+  print(myplot)
+  if (saveit) {dev.off()} #else {myplot}
+  }
 
+
+#end. Now run loadData.R
