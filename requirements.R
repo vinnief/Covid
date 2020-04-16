@@ -14,7 +14,7 @@ if(!require(directlabels)){
 
 if (!require(RColorBrewer)) {install.packages("RColorBrewer"); require(RColorBrewer)}
 if (!require(ggthemes)) {  installed.packages("ggthemes"); require(ggthemes)}
-
+if (!require(scales)) {  installed.packages("scales"); require(scales)}
 #if(!require(ggrepel)){
 #  install.packages("ggrepel")
 #  require(ggrepel)

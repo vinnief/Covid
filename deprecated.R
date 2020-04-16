@@ -93,6 +93,10 @@ if (FALSE){#"pdata.frame" %in% class(lpdf)){
   lpdf$new_recovered<- diff.lpdf(lpdf$recovered)
   }
 
+#graphit(5) extract: 
+  #svg(filename=paste("plots/",mytitle, ifelse(logy,", log scale",""),
+  #                  ".svg",sep=""), width=16,height=9) #in inches?
+  #print(myplot);dev.off()
 
 #multi lines, without melt, works but has wrong legends, and colors per id only. ! 
 graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day", 
@@ -134,4 +138,11 @@ graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day",
     #print(myplot);dev.off()
     #print(paste("Plot saved:",mytitle))
   }else return(myplot)
+}
+writeRegiographs<- function(Regionlist,minval=100,nrs=1:4, id="CRPS",lpdf=covid19, until=Sys.Date()){
+  for (i in 1:(length(Regionlist))){
+    if (verbose>=2 ) print(paste(Sys.time(),"Region",i,Regionlist[[i]][1]))
+    ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=lpdf, fuzzy=FALSE,returnid="CRPS"))
+    graphs(ids,Regionlist[[i]][1],minval,nrs, id,lpdf,until=until)
+  }
 }
