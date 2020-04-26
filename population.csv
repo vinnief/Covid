@@ -51,7 +51,6 @@ Cabo Verde,CPV,543767,
 Suriname,SUR,575991,
 Luxembourg,LUX,607728,
 Montenegro,MNE,622345,
-"Macao, China",MAC,631636,
 Solomon Islands,SLB,652858,
 Bhutan,BTN,754394,
 Guyana,GUY,779004,
@@ -116,7 +115,6 @@ Serbia,SRB,6982084,
 Bulgaria,BGR,7024216,
 Laos,LAO,7061507,
 Caribbean small states,CSS,7358965,
-"Hong Kong, China",HKG,7451000
 Sierra Leone,SLE,7650154,
 Togo,TGO,7889094,
 Switzerland,CHE,8516543,
@@ -266,3 +264,83 @@ IDA & IBRD total,IBT,6412522234,
 World,WLD,7594270356,
 Eritrea,ERI,5750433,
 Europe,EURo,746419440,
+"Australian Capital Territory, Australia",,419200
+"New South Wales, Australia",AU-NSW,8089526,
+"Queensland, Australia",AU-QLD,5095100
+"South Australia, Australia",AU-SA,1751693
+"Tasmania, Australia",AU-TAS,534281,
+"Victoria, Australia",AU-VIC,6594804,
+"Western Australia, Australia",AU-WA,2621680,
+"Northern Territory, Australia",AU-NT,245869,
+"Ontario, Canada",Q,14446515
+"Quebec, Canada",,8433301
+"British Columbia, Canada",,5020302
+"Alberta, Canada",,4345737
+"Manitoba, Canada",,1360396
+"Saskatchewan, Canada",,1168423
+"Nova Scotia, Canada",,965382
+"New Brunswick, Canada",,772094
+"Newfoundland and Labrador, Canada",,523790 
+"Prince Edward Island, Canada",,154748
+"Northwest Territories, Canada",,44598
+"Yukon, Canada",,40369
+"Nunavut, Canada",,38787
+"Beijing, China",Beijing,"19612368"
+"Tianjin, China",Tianjin,"12938224"
+"Hebei, China",Shijiazhuang,"71854202"
+"Shanxi, China",Taiyuan,"35712111"
+"Inner Mongolia, China",Hohhot,"24706321"
+"Liaoning, China",Shenyang,"43746323"
+"Jilin, China",Changchun,"27462297"
+"Heilongjiang, China",Harbin,"38312224"
+"Shanghai, China",Shanghai,"23019148"
+"Jiangsu, China",Nanjing,"78659903"
+"Zhejiang, China",Hangzhou,"54426891"
+"Anhui, China",Hefei,"59500510"
+"Fujian, China",Fuzhou,"36894216"
+"Jiangxi, China",Nanchang,"44567475"
+"Shandong, China",Jinan,"95793065"
+"Henan, China",Zhengzhou,"94023567"
+"Hubei, China",Wuhan,"57237740"
+"Hunan, China",Changsha,"65683722"
+"Guangdong, China",Guangzhou,"104303132"
+"Guangxi, China",Nanning,"46026629"
+"Hainan, China",Haikou,"8671518"
+"Chongqing, China",Chongqing,"28846170"
+"Sichuan, China",Chengdu,"80418200"
+"Guizhou, China",Guiyang,"34746468"
+"Yunnan, China",Kunming,"45966239"
+"Tibet, China",Lhasa,"3002166"
+"Shaanxi, China",Xi'an,"37327378"
+"Gansu, China",Lanzhou,"25575254"
+"Qinghai, China",Xining,"5626722"
+"Ningxia, China",Yinchuan,"6301350"
+"Xinjiang, China",,"21813334"
+"Macao, China",MAC,631636,
+"Macau, China",Macau,"552300"
+"Hong Kong, China",HKG,7451000
+"Aruba, Netherlands",,106670
+"Guadeloupe, France",,402119
+"Mayotte, France",,272815
+"New Caledonia, France",,173519
+"Reunion, France",,859959
+"Saint Barthelemy, France",,9871
+"Saint Pierre and Miquelon, France",,5800
+"French Guiana, France",,290691
+"French Polynesia, France",,275918
+"Martinique, France",,376480
+"Faroe Islands, Denmark",,52337
+"Greenland, Denmark",,56081
+"Bonaire, Sint Eustatius and Saba, Netherlands",,24453
+"Curacao, Netherlands",,164093
+"Anguilla, United Kingdom",,13600
+"Bermuda, United Kingdom",,63779
+"British Virgin Islands, United Kingdom",,31758
+"Cayman Islands, United Kingdom",,68076          
+"Channel Islands, United Kingdom",,173519
+"Falkland Islands (Malvinas), United Kingdom",,3457
+"Gibraltar, United Kingdom",,32194
+"Isle of Man, United Kingdom",,84937
+"Montserrat, United Kingdom",,4649 
+"Turks and Caicos Islands, United Kingdom",,31458
+"Western Sahara",,567402

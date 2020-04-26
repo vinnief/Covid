@@ -23,28 +23,9 @@ if (!require(scales)) {  installed.packages("scales"); require(scales)}
 #  install.packages('devEMF') # just once
 #  require(devEMF)}
 
-if(!require(plm)){
-  install.packages("plm")
-  require(plm)
-}
-require(plyr)
-require(reshape2)
+if(!require(plm)){   install.packages("plm");  require(plm)}
+ 
+if(!require(plyr)){   installed.packages("plyr"); require(plyr)}
 
+if(! require(reshape2)){   install.packages("reshape2");require(reshape2)}
 
-#if(!require(replaceme)){
-#  install.packages("replaceme")
-#  require(replaceme)
-#}
-#if(!require()){
-#  install.packages("")
-#  require()
-#}
-
-#```
-#**optional more packages, not used yet**
-#```{r } 
-
-#if(!require(data.table)){
-#  install.packages("data.table")
-#  require(data.table)
-#}
