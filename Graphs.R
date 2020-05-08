@@ -1,29 +1,42 @@
 #for publication #MSM,Vincent,
 Vincent<- c("Some Selected Regions","Belgium","Germany","Italy","France","Kazakhstan","Indonesia","Spain","Netherlands","Japan","New York")
-continents<- c("Continents","Europe","USA","Africa","South America","Asia")
+continents<- c("Continents","Europe","USA","US","Africa","South America","Asia")
 
-graphRegiolist <- c( makeDynRegions(covid19),#CIS, MENA,SAsiaIO,EastAsia,
-list(WestvsEast,NAmerica, CanadaP,USS, SouthWestAsia,SouthEastAsia,
-     Africa,SAmerica,Caribbean,setdiff(c(OceaniaP,Oceania),"Australia"), ChinaP,
-     continents,"World"))
-while((Sys.time()>Sys.Date()% % "22:00:00")| max(covid19$Date)<Sys.Date()-1 ) {
-  Sys.sleep(7200)
+graphRegiolist <- c(World="World",
+                    Continents=continents, 
+                    JHH%>% filter(!(CRPS %in% c("USA","US","Australia","China","Canada","South America","Asia","Africa","World","Europe")))%>% 
+                      makeDynRegions2(),
+                    JHH%>% filter(CRPS %in% Europe &!(CRPS %in% c(continents,"World")))%>% 
+                      makeDynRegions2(gridsize=20,piecename='Europe'), 
+                     list(WestvsEast=WestvsEast,NAmerica=NAmerica, CanadaP=provincialize("Canada"),
+                          USS=provincialize(US), SWA=SouthWestAsia,SEA=SouthEastAsia,
+                          Africa=Africa,SAm=SAmerica, Caribbean=Caribbean,Oceania=
+                          setdiff(c(provincialize(Oceania),Oceania),"Australia"),
+                          Continents=continents))  #CIS, MENA,SAsiaIO,EastAsia, ChinaP,
+while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
   source("loadData.R")  #this loads the requirements and the definitions also. 
+  if (max(JHH$Date)< Sys.Date()-1)     {
+    print( "failed to get yesterday's values ") 
+    for (i in 1:12){
+      print(Sys.time())
+      Sys.sleep(600)
+    }
   }
-verbose=1
-makehistory(regions=graphRegiolist)
+}
+verbose=2
+makehistory(regions=graphRegiolist)#,nrs=0:11)
+makehistory(regions=graphRegiolist["USS"])#,nrs=0:11)
 
 
 ####corrections
-makehistory(regions=graphRegiolist,nrs=3)
+####
 verbose=1
-graph3((EuropeXS))
-graph3((EarthM),"World M smooth")
-graph3((EuropeXL),"Europe XL smooth")
+JHH%>% makehistory(regions=graphRegiolist[1],nrs=6:9, dates="2020-04-25")
+writeRegiograph((graphRegiolist),nrs=)
+graph3((graphRegiolist["World1"]),"World 1 smooth")
 
-graph3((EuropeXL))
 
-graphit("France",lpdf=ecdcdata1, fuzzy=FALSE)
+graphit("France",lpdf=as.data.frame(ecdcdata1), fuzzy=FALSE)
 
 
 makehistory(seq(Sys.Date()-11,Sys.Date()-100,-10),nrs=c(0:9))  
@@ -32,7 +45,7 @@ makehistory(regions=list(bigEarth,USS,"World"), seq(Sys.Date()-11,Sys.Date()-100
 require(plm)
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
-all(is.na(covid19[covid19$Date=="2020-01-22", "new_confirmed"]))  # should be true
+all(is.na(JHH[JHH$Date=="2020-01-22", "new_confirmed"]))  # should be true
 findMaxCCF(myCRPS="Italy")
 findMaxCCF(myCRPS="Hubei, China")
 findMaxCCFs(myCRPS="Hubei, China")
@@ -42,7 +55,7 @@ rclags<- rclags[!is.nan(rclags$cor),]
 hist(rclags$lag, plot=TRUE,breaks=20)
 rclags[rclags$lag<=10&rclags$lag>=0,"CRPS"]
 rclags[order(rclags$lag,decreasing = TRUE),][1:20,]
-dothese<- covid19$Country.Region=="Netherlands"
+dothese<- JHH$Country.Region=="Netherlands"
 rdlags<-findMaxCCFs("new_recovered","new_deaths")
 rdlags<- rdlags[!is.nan(rdlags$cor),]
 hist(rdlags$lag, plot=TRUE,breaks = 20)
