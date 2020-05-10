@@ -2,6 +2,7 @@
 `%,%`<- function(x,y){paste(x,y,sep=",")}
 `%, %`<- function(x,y){paste(x,y,sep=", ")}
 `% %`<- function(x,y){paste(x,y,sep=" ")}
+`%: %`<- function(x,y){paste(x,y,sep=": ")}
 ma <- function(x, n = 5){stats::filter(x, rep(1 / n, n), sides = 1)}
 
 ma <- function(x, n = 5){

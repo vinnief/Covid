@@ -1,21 +1,10 @@
 #for publication #MSM,Vincent,
-Vincent<- c("Some Selected Regions","Belgium","Germany","Italy","France","Kazakhstan","Indonesia","Spain","Netherlands","Japan","New York")
-continents<- c("Continents","Europe","USA","US","Africa","South America","Asia")
+source ("requirements.R")#load libraries
+source("definitions2.R")# make sure we have our definitions. 
 
-graphRegiolist <- c(World="World",
-                    Continents=continents, 
-                    JHH%>% filter(!(CRPS %in% c("USA","US","Australia","China","Canada","South America","Asia","Africa","World","Europe")))%>% 
-                      makeDynRegions2(),
-                    JHH%>% filter(CRPS %in% Europe &!(CRPS %in% c(continents,"World")))%>% 
-                      makeDynRegions2(gridsize=20,piecename='Europe'), 
-                     list(WestvsEast=WestvsEast,NAmerica=NAmerica, CanadaP=provincialize("Canada"),
-                          USS=provincialize(US), SWA=SouthWestAsia,SEA=SouthEastAsia,
-                          Africa=Africa,SAm=SAmerica, Caribbean=Caribbean,Oceania=
-                          setdiff(c(provincialize(Oceania),Oceania),"Australia"),
-                          Continents=continents))  #CIS, MENA,SAsiaIO,EastAsia, ChinaP,
 while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
   source("loadData.R")  #this loads the requirements and the definitions also. 
-  if (max(JHH$Date)< Sys.Date()-1)     {
+    if (max(JHH$Date)< Sys.Date()-1)     {
     print( "failed to get yesterday's values ") 
     for (i in 1:12){
       print(Sys.time())
@@ -23,26 +12,29 @@ while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
     }
   }
 }
-verbose=2
-makehistory(regions=graphRegiolist)#,nrs=0:11)
-makehistory(regions=graphRegiolist["USS"])#,nrs=0:11)
 
+#makeDyn Regions sorts by confirmed! so needs to be done on the latest data!
+JHHRegios <- JHH%>% makeregios()
+ecdcregios <- ecdc %>% makeDynRegions2(piecename='ecdc world')
+verbose=2
+
+JHH%>% makehistory(regions=JHHRegios)#,graphnrs)
+
+verbose=2
+JHH%>% makehistory(regions=JHHRegios,dates="2020-05-07")
+#crashes on graph00l
+ecdc%>% makehistory(regions=ecdcregios, dates=seq(Sys.Date()-11,Sys.Date()-100,-10)) # bug crashes 2020-04-09 on graph00l a+r+c+d allinone log line on the first region ecdcworld1. 
 
 ####corrections
 ####
 verbose=1
-JHH%>% makehistory(regions=graphRegiolist[1],nrs=6:9, dates="2020-04-25")
-writeRegiograph((graphRegiolist),nrs=)
-graph3((graphRegiolist["World1"]),"World 1 smooth")
+JHH%>% makehistory(regions=JHHRegios, dates="2020-04-25")
+ecdc%>% makehistory(regions=ecdcRegios,, dates="2020-05-06")
 
+makehistory(dates=seq(Sys.Date()-11,Sys.Date()-100,-10))  
 
-graphit("France",lpdf=as.data.frame(ecdcdata1), fuzzy=FALSE)
+makehistory(regions=JHHregios, seq(Sys.Date()-11,Sys.Date()-100,-10),nrs=c(0,2,4,5,6:9))  
 
-
-makehistory(seq(Sys.Date()-11,Sys.Date()-100,-10),nrs=c(0:9))  
-makehistory(regions=list(bigEarth,USS,"World"), seq(Sys.Date()-11,Sys.Date()-100,-10),nrs=c(0,2,4,5,6:9))  
-#makehistory(Sys.Date()-10,Sys.Date()-1,regioList=list(bigEarth,smallEarth,middleEarth,microEarth))
-require(plm)
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
 all(is.na(JHH[JHH$Date=="2020-01-22", "new_confirmed"]))  # should be true
