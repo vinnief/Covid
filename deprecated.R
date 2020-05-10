@@ -34,6 +34,104 @@ multigrep<- function( smalllist,biglist,ignorecase=FALSE){
 multigrep(testcountries,unique(alldata$Country.Region),ignorecase=TRUE)
 #this one finds exact names when needed
 #
+#lpdf<- ecdcdata;gridsize=5*6
+makeDynRegions <- function(lpdf=JHH,gridsize=7*6) {
+  a<- lpdf%>% ungroup %>% 
+    filter(!(CRPS %in% c("USA","US","Australia","China","Canada","South America","Asia","Africa","World","Europe")),
+           Date==max(Date))%>% 
+    select( CRPS, confirmed)%>% arrange(desc(confirmed)) #done when extravars were created, and at creation of JHH already. 
+  gridsize = ceiling(sqrt(length(unique(lpdf$CRPS))/8+.25)-.5) 
+  gridsize= gridsize*(gridsize-1)
+  #this way 8 grids of gridsize*(gridsize+1) result. 
+  World1<-c("World 1",as.character(a[1:gridsize,]$CRPS ))
+  World2<-c("World 2",as.character(a[(gridsize+1 ) : (2*gridsize),]$CRPS))
+  World3<-c("World 3",as.character(a[(2*gridsize+1): (3*gridsize),]$CRPS))
+  World4<-c("World 4",as.character(a[(3*gridsize+1): (4*gridsize),]$CRPS))
+  World5<-c("World 5",as.character(a[(5*gridsize+1): (6*gridsize),]$CRPS))
+  World6<-c("World 6",as.character(a[(6*gridsize+1): (7*gridsize),]$CRPS))
+  World7<-c("World 7",as.character(a[(7*gridsize+1): min(nrow(a),8*gridsize),]$CRPS))
+  World8<-c("World 8",as.character(a[(min(nrow(a),8*gridsize)+1):nrow(a),]$CRPS))
+  a<- lpdf%>% ungroup %>% 
+    filter((CRPS %in% setdiff(Europe, "Europe")),
+           Date==max(Date))%>% 
+    select(CRPS, confirmed)%>% arrange(desc(confirmed))
+  gridsize<- 4*4
+  Europe1<- c("Europe 1",as.character(a[1:gridsize,]$CRPS ))
+  Europe2<-  c("Europe 2",as.character(a[(gridsize+1):(2*gridsize),]$CRPS))
+  Europe3<-  c("Europe 3",as.character(a[(2*gridsize+1):(3*gridsize),]$CRPS))
+  Europe4<-  c("Europe 4",as.character(a[(3*gridsize+1):min(nrow(a),4*gridsize),]$CRPS))
+  
+  as.list(paste("World",c("1","2","3","4","5","6","7"),sep=""))
+  list( World1=World1, World2=World2, World3=World3, World4=World4, World5=World5, 
+        World6=World6, World7=World7, World8=World8, Europe1=Europe1, 
+        Europe2=Europe2, Europe3=Europe3)
+}
+
+
+imputeRecovered<- function(lpdf=JHH,lagrc=22,lagrd=15,dothese=FALSE,redo=FALSE){
+#lpdf<- pdata.frame(lpdf,index=c("CRPS", "Date"),stringsAsFactors=FALSE)
+if(!('recovered' %in% names(lpdf))) lpdf$recovered<- as.numeric(NA)
+if(any(dothese)) lpdf$recovered_old<- lpdf$recovered
+if (!"imputed"%in% names(lpdf))lpdf$imputed<-FALSE
+rowstodo<- drop(is.na(lpdf$recovered)|dothese|(redo&lpdf$imputed))
+if (verbose>=2) print("Imputing recovered for:"%+%
+                        paste(unique(lpdf[rowstodo,][["Country.Region"]]),collapse=" / "))
+if (sum(rowstodo)==0)return(lpdf)
+#lpdf[rowstodo,"imputed"]<- TRUE
+attr(lpdf,"imputed")<- "lagrc=22, lagdc=15"
+lpdf<- lpdf%>% group_by(CRPS)%>% 
+  mutate_cond( rowstodo,imputed=TRUE )%>%      
+  mutate_cond( rowstodo,recovered = #max(recovered,
+                 dplyr::lag(confirmed,lagrc)-  dplyr::lag(deaths,lagrd)) ##{{}} ipv !! ? 
+#,na.rm=TRUE)
+#lpdf[rowstodo,"recovered"]<-  dplyr::lag(lpdf[rowstodo,"confirmed"],lagrc)- 
+#                           dplyr::lag(lpdf[rowstodo,"deaths"],lagrd)
+#lpdf
+}
+
+ma.diff.lpdf<- function(lpdf,id="CRPS", varnames=c("confirmed","active","recovered", "deaths"),prefix="new_",n=3){
+  ans<- ddply(lpdf, id, 
+              function (lpdf){
+                data.frame(llply(lpdf[,varnames], 
+                                 function(a){c(NA,ma(base::diff(a),n))}
+                ))
+              }
+  )
+  ans[,id]<- NULL
+  names(ans)<- paste(prefix,varnames,sep="")
+  ans
+}
+
+extravars<- function(lpdf,lagrc=0,lagdc=0){ 
+  lpdf$active <- lpdf$confirmed - lpdf$deaths - lpdf$recovered
+  lpdf<-lpdf[with(lpdf, order(CRPS, Date)), ]
+  prefix = "new_"
+  varnames=c("confirmed","active","recovered", "deaths")
+  lpdf[,paste(prefix,varnames,sep="")]<- NULL 
+  lpdf<- cbind(lpdf,ma.diff.lpdf(lpdf,prefix = prefix))
+  lpdf$confirmed_pM <- 1000000*lpdf$confirmed/lpdf$population
+  lpdf$active_pM    <- 1000000* lpdf$active  /lpdf$population
+  lpdf$recovered_pM <- 1000000*lpdf$recovered/lpdf$population
+  lpdf$deaths_pM    <- 1000000*lpdf$deaths   /lpdf$population
+  
+  lpdf$new_confirmed_pM <- 1000000*lpdf$new_confirmed/lpdf$population
+  lpdf$new_active_pM    <- 1000000* lpdf$new_active  /lpdf$population
+  lpdf$new_recovered_pM <- 1000000*lpdf$new_recovered/lpdf$population
+  lpdf$new_deaths_pM    <- 1000000*lpdf$new_deaths  /lpdf$population
+  
+  lpdf$recovered_per_confirmed<- ifelse(plm::lag(lpdf$confirmed,lagrc)>0, 
+                                        lpdf$recovered/plm::lag(lpdf$confirmed,lagrc), NA)
+  lpdf$deaths_per_confirmed<- ifelse(plm::lag(lpdf$confirmed,lagdc)>0, 
+                                     lpdf$deaths/plm::lag(lpdf$confirmed,lagdc), NA)
+  lpdf$recovered_per_deaths<- ifelse(plm::lag(lpdf$deaths,lagrc-lagdc)>0,
+                                     lpdf$recovered/plm::lag(lpdf$deaths,lagrc-lagdc), NA)
+  
+  lpdf$Date<- as.Date(lpdf$Date,format="%Y-%m-%d") #otherwise we cannot calculate the first date that confirmed is over minval. 
+  lpdf$CRPS<- sortCRPS(lpdf) #the CRPS is now a factor! sorted on confirmed and CRPS! 
+  lpdf
+}
+
+
 addrownrs<-function(lpdf,counter="day", sortby="") {
   if (sortby!="") lpdf[order(lpdf[,sortby]),]
   lpdf[,counter]<-as.numeric(row.names(lpdf))
@@ -44,6 +142,24 @@ addcounter<-function(lpdf=alldata,id="CRPS",counter="day"){
   lpdf<- ddply(lpdf,id, function(lpdf){lpdf[,counter]<- lpdf[,counter]<-as.numeric(row.names(lpdf));lpdf} )
   
   return(lpdf)
+}
+
+datasel.old<- function(countries=MSM, minval= 0, lpdf=JHH,  #deprecated, unused
+                       varname="confirmed", id="CRPS"){
+  return( lpdf[ (lpdf[,varname]>=minval)&(lpdf[,id] %in% countries) , ]) 
+}
+datasel<- function( lpdf=JHH, countries=MSM, minval= 0 ){ #unused
+  return( filter(lpdf,(confirmed>=minval)&(CRPS %in% countries) ) )  
+}
+
+
+dataprep2<- function(lpdf,id, xvar, yvars, #not used, integrated into graphit again. 
+                     variable.name="varname", value.name="count"){
+  lpdf<- melt(lpdf ,id=c(id,xvar),measure.vars=yvars,
+              variable.name=variable.name, value.name=value.name)
+  lpdf[,variable.name]<- factor(lpdf[,variable.name], levels = yvars) #better for graphing and legends?
+  lpdf$mygroup<- paste(lpdf[,id],lpdf[,variable.name],sep=", ")
+  lpdf
 }
 
 
