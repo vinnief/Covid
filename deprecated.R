@@ -1,75 +1,16 @@
 #deprecated functions
 
 
-
-
-correctgeos <-function(wpdf){ #get rid of the counties on the dataset before 20200325
-  wpdf$County <- substr(wpdf$Province.State , 1,regexpr(",",wpdf$Province.State)-1)
-  wpdf$PS<-( sub("[A-Z,a-z' ]+, ", "",wpdf$Province.State)) #as factor or ordered
-  ps<-unique( wpdf[!grepl(",",wpdf$Province.State,fixed=TRUE &wpdf$Province.State!=""),"Province.State"])
-  ps[1]==""
-  ps<- rbind(US,data.frame(State=ps,Code=ps))
-  wpdf <- merge(wpdf,ps, by.x="PS",by.y="Code", all.x=TRUE)
-}
-
-#  alldata[alldata$Country.Region %in% Europe, varname] <-"Europe"
-#  alldata[alldata$Country.Region %in% EU, varname] <-"EU"
-#  alldata[alldata$Country.Region %in% EFTA, varname] <-"EFTA"
-#  alldata[alldata$Country.Region %in% Africa, varname] <-"Africa"
-#  alldata[alldata$Country.Region %in% MENA, varname] <-MENA[1]
-#  alldata[alldata$Country.Region %in% SAmerica, varname] <-SAmerica[1]
-#  alldata[alldata$Country.Region %in% CAsia, varname] <-CAsia[1]
-#  alldata[alldata$Country.Region %in% SouthEastAsia, varname] <- SouthEastAsia[1]
-#  alldata[alldata$Country.Region %in% CIS, varname] <-CIS[1]
-#  alldata[alldata$Country.Region %in% c("US","Canada","Mexico"), varname] <-"North America"
-#  alldata[alldata$Country.Region %in% SAsiaIO, varname] <-"South Asia & Indian Ocean"
-
-
-
-
 ##make sure we have the right column names. This version not used. 
-multigrep<- function( smalllist,biglist,ignorecase=FALSE){
-  unlist(llply(smalllist,function(a) grep(a,biglist, value=TRUE,ignore.case=ignorecase)))
+multigrep<- function( searchlist,inlist,ignorecase=FALSE){
+  unlist(llply(searchlist,function(a) grep(a,inlist, value=TRUE,ignore.case=ignorecase)))
 }
 multigrep(testcountries,unique(alldata$Country.Region),ignorecase=TRUE)
 #this one finds exact names when needed
-#
-#lpdf<- ecdcdata;gridsize=5*6
-makeDynRegions <- function(lpdf=JHH,gridsize=7*6) {
-  a<- lpdf%>% ungroup %>% 
-    filter(!(CRPS %in% c("USA","US","Australia","China","Canada","South America","Asia","Africa","World","Europe")),
-           Date==max(Date))%>% 
-    select( CRPS, confirmed)%>% arrange(desc(confirmed)) #done when extravars were created, and at creation of JHH already. 
-  gridsize = ceiling(sqrt(length(unique(lpdf$CRPS))/8+.25)-.5) 
-  gridsize= gridsize*(gridsize-1)
-  #this way 8 grids of gridsize*(gridsize+1) result. 
-  World1<-c("World 1",as.character(a[1:gridsize,]$CRPS ))
-  World2<-c("World 2",as.character(a[(gridsize+1 ) : (2*gridsize),]$CRPS))
-  World3<-c("World 3",as.character(a[(2*gridsize+1): (3*gridsize),]$CRPS))
-  World4<-c("World 4",as.character(a[(3*gridsize+1): (4*gridsize),]$CRPS))
-  World5<-c("World 5",as.character(a[(5*gridsize+1): (6*gridsize),]$CRPS))
-  World6<-c("World 6",as.character(a[(6*gridsize+1): (7*gridsize),]$CRPS))
-  World7<-c("World 7",as.character(a[(7*gridsize+1): min(nrow(a),8*gridsize),]$CRPS))
-  World8<-c("World 8",as.character(a[(min(nrow(a),8*gridsize)+1):nrow(a),]$CRPS))
-  a<- lpdf%>% ungroup %>% 
-    filter((CRPS %in% setdiff(Europe, "Europe")),
-           Date==max(Date))%>% 
-    select(CRPS, confirmed)%>% arrange(desc(confirmed))
-  gridsize<- 4*4
-  Europe1<- c("Europe 1",as.character(a[1:gridsize,]$CRPS ))
-  Europe2<-  c("Europe 2",as.character(a[(gridsize+1):(2*gridsize),]$CRPS))
-  Europe3<-  c("Europe 3",as.character(a[(2*gridsize+1):(3*gridsize),]$CRPS))
-  Europe4<-  c("Europe 4",as.character(a[(3*gridsize+1):min(nrow(a),4*gridsize),]$CRPS))
-  
-  as.list(paste("World",c("1","2","3","4","5","6","7"),sep=""))
-  list( World1=World1, World2=World2, World3=World3, World4=World4, World5=World5, 
-        World6=World6, World7=World7, World8=World8, Europe1=Europe1, 
-        Europe2=Europe2, Europe3=Europe3)
-}
 
 
 imputeRecovered<- function(lpdf=JHH,lagrc=22,lagrd=15,dothese=FALSE,redo=FALSE){
-#lpdf<- pdata.frame(lpdf,index=c("CRPS", "Date"),stringsAsFactors=FALSE)
+#lpdf<- pdata.frame(lpdf,index=c("PSCR", "Date"),stringsAsFactors=FALSE)
 if(!('recovered' %in% names(lpdf))) lpdf$recovered<- as.numeric(NA)
 if(any(dothese)) lpdf$recovered_old<- lpdf$recovered
 if (!"imputed"%in% names(lpdf))lpdf$imputed<-FALSE
@@ -79,7 +20,7 @@ if (verbose>=2) print("Imputing recovered for:"%+%
 if (sum(rowstodo)==0)return(lpdf)
 #lpdf[rowstodo,"imputed"]<- TRUE
 attr(lpdf,"imputed")<- "lagrc=22, lagdc=15"
-lpdf<- lpdf%>% group_by(CRPS)%>% 
+lpdf<- lpdf%>% group_by(PSCR)%>% 
   mutate_cond( rowstodo,imputed=TRUE )%>%      
   mutate_cond( rowstodo,recovered = #max(recovered,
                  dplyr::lag(confirmed,lagrc)-  dplyr::lag(deaths,lagrd)) ##{{}} ipv !! ? 
@@ -89,7 +30,32 @@ lpdf<- lpdf%>% group_by(CRPS)%>%
 #lpdf
 }
 
-ma.diff.lpdf<- function(lpdf,id="CRPS", varnames=c("confirmed","active","recovered", "deaths"),prefix="new_",n=3){
+addtotals<- function(lpdf=JHH,ID='PSCR'){
+  lpt<- 
+    #just to be sure, that if i do it twice i dont get double counts. 
+    #And omit USA as country, as we have the individual states already. 
+    lpdf[! lpdf[[ID]] %in% c("South America", "Asia", "Africa", "Europe","China","Australia","Canada","USA","US","World"),] 
+  print("Deprecated. use extravars first, then addtotals2, which does not call extravars several times. ")
+  World<- unique(lpt[[ID]])
+  varnames=c("confirmed","recovered", "deaths","population",'recovered_imputed',"active_imputed") #use this function AFTER imputing!
+  rbind(lpdf, 
+        lpt%>% total(World ,ID=ID,newrow="World", varnames= varnames)%>%
+          extravars2,
+        lpt%>% total(regios$Europe,ID=ID,newrow="Europe", varnames= varnames)%>%
+          extravars2,
+        lpt%>% total(regios$Africa,ID=ID,newrow="Africa", varnames= varnames)%>%
+          extravars2,
+        lpt%>% total(regios$Asia,ID=ID,newrow="Asia", varnames= varnames)%>%
+          extravars2,
+        lpt%>% total(regios$SAmerica,ID=ID,newrow="South America",varnames= varnames)%>%
+          extravars2,
+        lpt %>% totals(c("US","China","Australia", "Canada"),
+                       ID="Country.Region", varnames= varnames)%>% extravars2
+  )
+}
+
+
+ma.diff.lpdf<- function(lpdf,id="PSCR", varnames=c("confirmed","active","recovered", "deaths"),prefix="new_",n=3){
   ans<- ddply(lpdf, id, 
               function (lpdf){
                 data.frame(llply(lpdf[,varnames], 
@@ -102,34 +68,6 @@ ma.diff.lpdf<- function(lpdf,id="CRPS", varnames=c("confirmed","active","recover
   ans
 }
 
-extravars<- function(lpdf,lagrc=0,lagdc=0){ 
-  lpdf$active <- lpdf$confirmed - lpdf$deaths - lpdf$recovered
-  lpdf<-lpdf[with(lpdf, order(CRPS, Date)), ]
-  prefix = "new_"
-  varnames=c("confirmed","active","recovered", "deaths")
-  lpdf[,paste(prefix,varnames,sep="")]<- NULL 
-  lpdf<- cbind(lpdf,ma.diff.lpdf(lpdf,prefix = prefix))
-  lpdf$confirmed_pM <- 1000000*lpdf$confirmed/lpdf$population
-  lpdf$active_pM    <- 1000000* lpdf$active  /lpdf$population
-  lpdf$recovered_pM <- 1000000*lpdf$recovered/lpdf$population
-  lpdf$deaths_pM    <- 1000000*lpdf$deaths   /lpdf$population
-  
-  lpdf$new_confirmed_pM <- 1000000*lpdf$new_confirmed/lpdf$population
-  lpdf$new_active_pM    <- 1000000* lpdf$new_active  /lpdf$population
-  lpdf$new_recovered_pM <- 1000000*lpdf$new_recovered/lpdf$population
-  lpdf$new_deaths_pM    <- 1000000*lpdf$new_deaths  /lpdf$population
-  
-  lpdf$recovered_per_confirmed<- ifelse(plm::lag(lpdf$confirmed,lagrc)>0, 
-                                        lpdf$recovered/plm::lag(lpdf$confirmed,lagrc), NA)
-  lpdf$deaths_per_confirmed<- ifelse(plm::lag(lpdf$confirmed,lagdc)>0, 
-                                     lpdf$deaths/plm::lag(lpdf$confirmed,lagdc), NA)
-  lpdf$recovered_per_deaths<- ifelse(plm::lag(lpdf$deaths,lagrc-lagdc)>0,
-                                     lpdf$recovered/plm::lag(lpdf$deaths,lagrc-lagdc), NA)
-  
-  lpdf$Date<- as.Date(lpdf$Date,format="%Y-%m-%d") #otherwise we cannot calculate the first date that confirmed is over minval. 
-  lpdf$CRPS<- sortCRPS(lpdf) #the CRPS is now a factor! sorted on confirmed and CRPS! 
-  lpdf
-}
 
 
 addrownrs<-function(lpdf,counter="day", sortby="") {
@@ -137,36 +75,24 @@ addrownrs<-function(lpdf,counter="day", sortby="") {
   lpdf[,counter]<-as.numeric(row.names(lpdf))
   return(lpdf)
 }# two problems: if rownames change to chr, errors occur. if they get out of order because of a sort, the graphs will be a mess. 
-addcounter<-function(lpdf=alldata,id="CRPS",counter="day"){
+addcounter<-function(lpdf=alldata,id="PSCR",counter="day"){
   lpdf[,counter] <- 0 #just to add a column first
   lpdf<- ddply(lpdf,id, function(lpdf){lpdf[,counter]<- lpdf[,counter]<-as.numeric(row.names(lpdf));lpdf} )
   
   return(lpdf)
 }
 
-datasel.old<- function(countries=MSM, minval= 0, lpdf=JHH,  #deprecated, unused
-                       varname="confirmed", id="CRPS"){
-  return( lpdf[ (lpdf[,varname]>=minval)&(lpdf[,id] %in% countries) , ]) 
-}
-datasel<- function( lpdf=JHH, countries=MSM, minval= 0 ){ #unused
-  return( filter(lpdf,(confirmed>=minval)&(CRPS %in% countries) ) )  
-}
-
-
-dataprep2<- function(lpdf,id, xvar, yvars, #not used, integrated into graphit again. 
-                     variable.name="varname", value.name="count"){
-  lpdf<- melt(lpdf ,id=c(id,xvar),measure.vars=yvars,
-              variable.name=variable.name, value.name=value.name)
-  lpdf[,variable.name]<- factor(lpdf[,variable.name], levels = yvars) #better for graphing and legends?
-  lpdf$mygroup<- paste(lpdf[,id],lpdf[,variable.name],sep=", ")
-  lpdf
-}
-
+#JHH <-  JHH0 %>%
+#          makeGroups( Regiolist= regios)%>% 
+#          addPopulation() %>%
+#          imputeRecovered2()%>% #correct=TRUE) %>%
+#          extravars2() %>%
+#          addtotals #(not efficient!)
 
 #*Now plot* note graphit is just here for legacy reasons. it is deprecated. graphit2 will become graphit soon. 
 #
 #```{r}
-graphit <- function(countries=unique(alldata$CRPS), minval=1, ID="CRPS", varname="confirmed",
+graphit <- function(countries=unique(alldata$PSCR), minval=1, ID="PSCR", varname="confirmed",
                     lpdf=alldata, countname="counter", needfuzzy=TRUE,  logy=TRUE,
                     saveit=FALSE, legend=FALSE, size=1){
   countries<- findIDnames(countries,ID,lpdf,needfuzzy)
@@ -218,7 +144,7 @@ if (FALSE){#"pdata.frame" %in% class(lpdf)){
 graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day", 
                      yvars=c("confirmed", "recovered"), 
                      lpdf=covid19, fuzzy=TRUE,logx=FALSE, logy=TRUE, savename="", 
-                     putlegend=TRUE, size=3,returnid="CRPS"){
+                     putlegend=TRUE, size=3,returnid="PSCR"){
   lpdf<- dataprep1(countries,minval,id,xvar,yvars,lpdf,fuzzy,logx,logy,returnid=returnid)
   id<-returnid
   extratext<- paste("by",xvar, "for ", paste(minval,"+ ",yvars[1],sep=""))
@@ -255,10 +181,10 @@ graphit3 <- function(countries=NULL, minval=1, id="Country.Region", xvar="day",
     #print(paste("Plot saved:",mytitle))
   }else return(myplot)
 }
-writeRegiographs<- function(Regionlist,minval=100,nrs=1:4, id="CRPS",lpdf=covid19, until=Sys.Date()){
+writeRegiographs<- function(Regionlist,minval=100,nrs=1:4, id="PSCR",lpdf=covid19, until=Sys.Date()){
   for (i in 1:(length(Regionlist))){
     if (verbose>=2 ) print(paste(Sys.time(),"Region",i,Regionlist[[i]][1]))
-    ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=lpdf, fuzzy=FALSE,returnid="CRPS"))
+    ids<-(findidnames((Regionlist[[i]]),searchid=id,lpdf=lpdf, fuzzy=FALSE,returnid="PSCR"))
     graphs(ids,Regionlist[[i]][1],minval,nrs, id,lpdf,until=until)
   }
 }

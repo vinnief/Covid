@@ -6,11 +6,11 @@ Palau,PLW,17907,
 British Virgin Islands,VGB,29802,
 Gibraltar,GIB,33718,
 San Marino,SMR,33785,
-"St Martin, France",MAF,37264,
+"St Martin,France",MAF,37264,
 Turks and Caicos Islands,TCA,37665,
 Liechtenstein,LIE,37910,
 Monaco,MCO,38682,
-"Sint Maarten, Netherlands",SXM,40654,
+"Sint Maarten,Netherlands",SXM,40654,
 Faroe Islands,FRO,48497,
 Saint Kitts and Nevis,KNA,52441,
 American Samoa,ASM,55465,
@@ -29,7 +29,7 @@ Aruba,ABW,105845,
 Virgin Islands (U.S.),VIR,106977,
 Saint Vincent and the Grenadines,VCT,110210,
 Grenada,GRD,111454,
-"Micronesia, Fed. Sts.",FSM,112640,
+"Micronesia,Fed. Sts.",FSM,112640,
 Kiribati,KIR,115847,
 Curacao,CUW,159849,
 Guam,GUM,165768,
@@ -82,7 +82,7 @@ Albania,ALB,2866376,
 Jamaica,JAM,2934855,
 Armenia,ARM,2951776,
 Mongolia,MNG,3170208,
-"Puerto Rico, US",PRI,3195153,
+"Puerto Rico,US",PRI,3195153,
 Bosnia and Herzegovina,BIH,3323929,
 Uruguay,URY,3449299,
 Moldova,MDA,3545883,
@@ -264,83 +264,88 @@ IDA & IBRD total,IBT,6412522234,
 World,WLD,7594270356,
 Eritrea,ERI,5750433,
 Europe,EURo,746419440,
-"Australian Capital Territory, Australia",,419200
-"New South Wales, Australia",AU-NSW,8089526,
-"Queensland, Australia",AU-QLD,5095100
-"South Australia, Australia",AU-SA,1751693
-"Tasmania, Australia",AU-TAS,534281,
-"Victoria, Australia",AU-VIC,6594804,
-"Western Australia, Australia",AU-WA,2621680,
-"Northern Territory, Australia",AU-NT,245869,
-"Ontario, Canada",Q,14446515
-"Quebec, Canada",,8433301
-"British Columbia, Canada",,5020302
-"Alberta, Canada",,4345737
-"Manitoba, Canada",,1360396
-"Saskatchewan, Canada",,1168423
-"Nova Scotia, Canada",,965382
-"New Brunswick, Canada",,772094
-"Newfoundland and Labrador, Canada",,523790 
-"Prince Edward Island, Canada",,154748
-"Northwest Territories, Canada",,44598
-"Yukon, Canada",,40369
-"Nunavut, Canada",,38787
-"Beijing, China",Beijing,"19612368"
-"Tianjin, China",Tianjin,"12938224"
-"Hebei, China",Shijiazhuang,"71854202"
-"Shanxi, China",Taiyuan,"35712111"
-"Inner Mongolia, China",Hohhot,"24706321"
-"Liaoning, China",Shenyang,"43746323"
-"Jilin, China",Changchun,"27462297"
-"Heilongjiang, China",Harbin,"38312224"
-"Shanghai, China",Shanghai,"23019148"
-"Jiangsu, China",Nanjing,"78659903"
-"Zhejiang, China",Hangzhou,"54426891"
-"Anhui, China",Hefei,"59500510"
-"Fujian, China",Fuzhou,"36894216"
-"Jiangxi, China",Nanchang,"44567475"
-"Shandong, China",Jinan,"95793065"
-"Henan, China",Zhengzhou,"94023567"
-"Hubei, China",Wuhan,"57237740"
-"Hunan, China",Changsha,"65683722"
-"Guangdong, China",Guangzhou,"104303132"
-"Guangxi, China",Nanning,"46026629"
-"Hainan, China",Haikou,"8671518"
-"Chongqing, China",Chongqing,"28846170"
-"Sichuan, China",Chengdu,"80418200"
-"Guizhou, China",Guiyang,"34746468"
-"Yunnan, China",Kunming,"45966239"
-"Tibet, China",Lhasa,"3002166"
-"Shaanxi, China",Xi'an,"37327378"
-"Gansu, China",Lanzhou,"25575254"
-"Qinghai, China",Xining,"5626722"
-"Ningxia, China",Yinchuan,"6301350"
-"Xinjiang, China",,"21813334"
-"Macao, China",MAC,631636,
-"Macau, China",Macau,"552300"
-"Hong Kong, China",HKG,7451000
-"Aruba, Netherlands",,106670
-"Guadeloupe, France",,402119
-"Mayotte, France",,272815
-"New Caledonia, France",,173519
-"Reunion, France",,859959
-"Saint Barthelemy, France",,9871
-"Saint Pierre and Miquelon, France",,5800
-"French Guiana, France",,290691
-"French Polynesia, France",,275918
-"Martinique, France",,376480
-"Faroe Islands, Denmark",,52337
-"Greenland, Denmark",,56081
-"Bonaire, Sint Eustatius and Saba, Netherlands",,24453
-"Curacao, Netherlands",,164093
-"Anguilla, United Kingdom",,13600
-"Bermuda, United Kingdom",,63779
-"British Virgin Islands, United Kingdom",,31758
-"Cayman Islands, United Kingdom",,68076          
-"Channel Islands, United Kingdom",,173519
-"Falkland Islands (Malvinas), United Kingdom",,3457
-"Gibraltar, United Kingdom",,32194
-"Isle of Man, United Kingdom",,84937
-"Montserrat, United Kingdom",,4649 
-"Turks and Caicos Islands, United Kingdom",,31458
+"Australian Capital Territory,Australia",,419200
+"New South Wales,Australia",AU-NSW,8089526,
+"Queensland,Australia",AU-QLD,5095100
+"South Australia,Australia",AU-SA,1751693
+"Tasmania,Australia",AU-TAS,534281,
+"Victoria,Australia",AU-VIC,6594804,
+"Western Australia,Australia",AU-WA,2621680,
+"Northern Territory,Australia",AU-NT,245869,
+"Ontario,Canada",Q,14446515
+"Quebec,Canada",,8433301
+"British Columbia,Canada",,5020302
+"Alberta,Canada",,4345737
+"Manitoba,Canada",,1360396
+"Saskatchewan,Canada",,1168423
+"Nova Scotia,Canada",,965382
+"New Brunswick,Canada",,772094
+"Newfoundland and Labrador,Canada",,523790 
+"Prince Edward Island,Canada",,154748
+"Northwest Territories,Canada",,44598
+"Yukon,Canada",,40369
+"Nunavut,Canada",,38787
+"Beijing,China",Beijing,"19612368"
+"Tianjin,China",Tianjin,"12938224"
+"Hebei,China",Shijiazhuang,"71854202"
+"Shanxi,China",Taiyuan,"35712111"
+"Inner Mongolia,China",Hohhot,"24706321"
+"Liaoning,China",Shenyang,"43746323"
+"Jilin,China",Changchun,"27462297"
+"Heilongjiang,China",Harbin,"38312224"
+"Shanghai,China",Shanghai,"23019148"
+"Jiangsu,China",Nanjing,"78659903"
+"Zhejiang,China",Hangzhou,"54426891"
+"Anhui,China",Hefei,"59500510"
+"Fujian,China",Fuzhou,"36894216"
+"Jiangxi,China",Nanchang,"44567475"
+"Shandong,China",Jinan,"95793065"
+"Henan,China",Zhengzhou,"94023567"
+"Hubei,China",Wuhan,"57237740"
+"Hunan,China",Changsha,"65683722"
+"Guangdong,China",Guangzhou,"104303132"
+"Guangxi,China",Nanning,"46026629"
+"Hainan,China",Haikou,"8671518"
+"Chongqing,China",Chongqing,"28846170"
+"Sichuan,China",Chengdu,"80418200"
+"Guizhou,China",Guiyang,"34746468"
+"Yunnan,China",Kunming,"45966239"
+"Tibet,China",Lhasa,"3002166"
+"Shaanxi,China",Xi'an,"37327378"
+"Gansu,China",Lanzhou,"25575254"
+"Qinghai,China",Xining,"5626722"
+"Ningxia,China",Yinchuan,"6301350"
+"Xinjiang,China",,"21813334"
+"Macao,China",MAC,631636,
+"Macau,China",Macau,"552300"
+"Hong Kong,China",HKG,7451000
+"Aruba,Netherlands",,106670
+"Guadeloupe,France",,402119
+"Mayotte,France",,272815
+"New Caledonia,France",,173519
+"Reunion,France",,859959
+"Saint Barthelemy,France",,9871
+"Saint Pierre and Miquelon,France",,5800
+"French Guiana,France",,290691
+"French Polynesia,France",,275918
+"Martinique,France",,376480
+"Faroe Islands,Denmark",,52337
+"Greenland,Denmark",,56081
+"Bonaire, Sint Eustatius and Saba,Netherlands",,24453
+"Curacao,Netherlands",,164093
+"Anguilla,United Kingdom",,13600
+"Bermuda,United Kingdom",,63779
+"British Virgin Islands,United Kingdom",,31758
+"Cayman Islands,United Kingdom",,68076          
+"Channel Islands,United Kingdom",,173519
+"Falkland Islands (Malvinas),United Kingdom",,3457
+"Gibraltar,United Kingdom",,32194
+"Isle of Man,United Kingdom",,84937
+"Montserrat,United Kingdom",,4649 
+"Turks and Caicos Islands,United Kingdom",,31458
 "Western Sahara",,567402
+Diamond Princess,,3711
+"Diamond Princess,Canada",,255
+Grand Princess,,3500
+"Grand Princess,Canada",,238
+"Grand Princess,United Kingdom",,140
