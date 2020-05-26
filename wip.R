@@ -1,26 +1,34 @@
 source("requirements.R")
+source('definitions.R')
 
+dev.off()
+demoDoubling(doublingDays=1)
+demoDoubling(doublingDays=2)
 
-JHH%>% filter(is.na(population)&Date=='2020-05-19')%>% view()
+graph6Dardcra_fiyl(JHH,"Idaho,US")
+graphDddp_fyl(JHH,countries="New York,US")
+graphDccp_fyl(JHH,countries="Belgium")
 
-# check imputation in wyoming is not equal to conf-deaths without lag.
+verbose=2
+writeRegioGraph(ECDC,ECDCRegios)$simulations! 
+graph
+writeRegioGraph(ECDC,ECDCRegios,graphlist = myGraphNrs)
+graphDrccrrp_fyl(JHH,"Netherlands")
+graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
+
+simulGrow(lpt=ECDC,'Belgium',start=100,doublingDays=5,nrRows=1000,deathRate=.05,pop=1.1e7,lagrc=42,lagdc=36) %>% 
+  graph6Dardcra_yfil("25 days") #%>% 
+  View
+
+2^(doublingdays(1)/LAGRC)
+#%>%
+
 #check imputations
+
 JHHdifimp<- unique(JHH%>% filter(active != active_imputed)%>% .$PSCR )
 JHH%>% makehistory(regions=JHHdifimp, graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_yfil')  ) 
 
 
-JHH%>% filter(PSCR %in% "Wyoming,US") %>% 
-  select(PSCR,confirmed,active_imputed,recovered,recovered_imputed,deaths)%>% 
-  mutate(r_i=pmin(confirmed-deaths,
-                  pmax(0,
-                       recovered,
-                       dplyr::lag(confirmed,42)-dplyr::lag(deaths,36),
-                       na.rm=TRUE),
-                  na.rm=FALSE))%>% 
-  View
-JHH0%>%filter(PSCR %in% "Wyoming,US") %>% imputeRecovered2() %>%
-  select(PSCR,confirmed,recovered,recovered_imputed,deaths)%>%
-  View
 # pmin(confirmed-deaths, 
 #      pmax(0,recovered, 
 #       lag(confirmed,lagrc)- lag(deaths,lagrd), na.rm=TRUE),
@@ -37,11 +45,7 @@ JHH%>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,r
 # ggplot(data=dataset, aes(x,y)) + geom_point() + facet_grid(. ~ variable)
 #that is for factor labels. we need it for variable lables. 
 
-JHH%>% filter (Country.Region=='Netherlands') %>% totals2 ("","PSCR")%>% head()
-JHH%>% filter (Country.Region=='Netherlands') %>% totals ("","Country.Region")%>% tail()%>% select(1:13) #prov becomes netherlands.
-JHH%>% filter (Country.Region=='Netherlands')%>% total ("","Country.Region")%>% tail()%>% select(1:10) # prov has accretion of all prov names. 
-
-
+J
 total.tibble<- function(lpt=JHH,ID=Country.Region,varnames=c('confirmed',#deaths,
                                                              'recovered')){
   lpttot<-lpt%>%
