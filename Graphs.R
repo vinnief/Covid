@@ -1,7 +1,5 @@
 #for publication #MSM,Vincent,
 rm(list=ls())
-source ("requirements.R")#load libraries
-source("definitions2.R")# make sure we have our definitions. 
 
 while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
   source("loadData.R")  #also loads the requirements and the definitions 
@@ -13,28 +11,38 @@ while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
   }   } }
 
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
-# this needs to be done on the latest data!
-ECDCRegios <- ECDC %>% makeDynRegions2(piecename='ECDC world')
+# so the next 4 lines need to be done on the latest data!
+ECDCRegios <- ECDC %>% makeDynRegions(piecename='ECDC world')
+profvis(
 ECDC%>% makehistory(regions=ECDCRegios)#
+)
+#ECDC%>% writeRegiograph(ECDCRegios)
+JHHRegios <- JHH%>% makeRegioList()
 
-JHHRegios <- JHH%>% makeregios()
 JHH%>% makehistory(regions=JHHRegios)#
+JHH%>%writeRegiograph(JHHRegios)
 
+ECDC %>% writeRegiograph(ECDCRegios)
 graphcodes()
 mygraphlist
 verbose=2
+
+
+length(JHHRegios)
 
 #check colors
 graph3Dard_fia (JHH,JHHRegios$continents)
 graph4Dardc_yfinMl(JHH,JHHRegios$continents)
 
-
+JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccp_yfl')
+JHH %>% makehistory(regions=JHHRegios[10:27])
 ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30))  
 # bug crashes 2020-04-09 on graph4darcd_yl on the first region ECDCworld1. 
 
 JHH%>% makehistory(dates=seq(Sys.Date()-0,Sys.Date()-200,-10))  
 
 ####corrections to earlier graphs
+
 verbose=1
 JHH%>% makehistory(regions=JHHRegios, dates="2020-05-06") #[c('Africa','SAmerica','Caribbean','OceaniaP')])
 ECDC%>% makehistory(regions=ECDCRegios, dates="2020-05-06") 
