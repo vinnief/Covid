@@ -1,4 +1,6 @@
 `%+%`<- function(x,y){paste(x,y,sep="")}
+`%#%`<- function(x,y){paste(x,y,sep="")}
+`%_%`<- function(x,y){paste(x,y,sep="_")}
 `%,%`<- function(x,y){paste(x,y,sep=",")}
 `%, %`<- function(x,y){paste(x,y,sep=", ")}
 `% %`<- function(x,y){paste(x,y,sep=" ")}
@@ -16,7 +18,7 @@ ma <- function(x, n = 5,na.rm=TRUE,...){ #... = sides=2
 mac <- function(x,minval=40, ...){
   cx<- ma(x,...)
   #cx<- ifelse(is.na(cx),x,cx)
-  ifelse(cx<minval, x, cx   )
+  ifelse(abs(cx)<minval, x, cx   )
 }
 #test if mac does not reduce the amounts too much (after all we only average above a threshhold)
 rs<- function(n=200,s=50) {
@@ -40,8 +42,8 @@ getpackages <- function(x){
     }
   }
 }
-
-getpackages (c("reshape2","plyr","ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel","tidyverse")) #"plm",
+#library(profvis)
+getpackages (c('profvis',"reshape2","plyr","ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel","tidyverse")) #"plm",
 
 # note ggrepel also does labels next to lines. 
 
