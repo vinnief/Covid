@@ -13,6 +13,7 @@ while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
 # so the next 4 lines need to be done on the latest data!
 ECDCRegios <- ECDC %>% makeDynRegions(piecename='ECDC world')
+<<<<<<< HEAD
 verbose=2
 profvis(
   makeHistoryGraphs(ECDC,regions=ECDCRegios)#
@@ -21,6 +22,15 @@ profvis(
 writeRegioGraph(ECDC,ECDCRegios)
 profvis(JHHRegios <- makeRegioList(JHH))
 makeHistoryGraphs(JHH,regions=JHHRegios)#
+=======
+profvis(
+ECDC%>% makehistory(regions=ECDCRegios)#
+)
+#ECDC%>% writeRegiograph(ECDCRegios)
+JHHRegios <- JHH%>% makeRegioList()
+
+JHH%>% makehistory(regions=JHHRegios)#
+>>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
 JHH%>%writeRegiograph(JHHRegios)
 
 ECDC %>% writeRegiograph(ECDCRegios)
@@ -29,12 +39,21 @@ mygraphlist
 verbose=2
 
 
+<<<<<<< HEAD
+=======
+length(JHHRegios)
+>>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
 
 #check colors
 graph3Dard_fia (JHH,JHHRegios$continents)
 
+<<<<<<< HEAD
 
 JHH%>% makehistory(regions=JHHRegios, dates=seq(Sys.Date()-0,Sys.Date()-200,-10))  
+=======
+JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccp_yfl')
+JHH %>% makehistory(regions=JHHRegios[10:27])
+>>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
 ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30))  
 JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccp_yfl')
 

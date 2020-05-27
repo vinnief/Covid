@@ -1,4 +1,5 @@
 source("requirements.R")
+<<<<<<< HEAD
 source('definitions.R')
 
 dev.off()
@@ -16,6 +17,16 @@ writeRegioGraph(ECDC,ECDCRegios,graphlist = myGraphNrs)
 graphDrccrrp_fyl(JHH,"Netherlands")
 graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
 
+=======
+source('definitions2.R')
+
+demoDoubling(doublingDays=1)
+demoDoubling(doublingDays=2)
+JHH%>% extravars2 # where the imputations are added in. 
+
+graphDccp_yfl(JHH,"Idaho,US")
+ECDC%>%  addSim("Belgium", doublingDays=3)%>% graphit(regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
+>>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
 simulGrow(lpt=ECDC,'Belgium',start=100,doublingDays=5,nrRows=1000,deathRate=.05,pop=1.1e7,lagrc=42,lagdc=36) %>% 
   graph6Dardcra_yfil("25 days") #%>% 
   View

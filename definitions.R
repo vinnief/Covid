@@ -606,7 +606,7 @@ R02doublingDays<- function(R0=1){
 }
 
 addDoublingDays<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate="2020-01-01",maxDate='2020-12-31'){
-  if (verbose>=3) print('addDdoublinggDays' % %minVal % % '= minval, and variable ='% % variable)
+  if (verbose>=4) print('addDdoublinggDays' % %minVal % % '= minval, and variable ='% % variable)
   lptisel<- lpti[lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date<= maxDate,]%>% head(nrDays)
   if (sum(!is.na(lptisel[variable]))>3 ) 
     slope= lm(log2(confirmed)~Date, data=lptisel,na.action=na.exclude)$coefficients['Date']
@@ -614,7 +614,7 @@ addDoublingDays<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate
   
   lpti['doublingDays']<- round(1/slope,3)
   
-  if (verbose>= 4) print('estimated'% % paste(unique(lpti[['doublingDays']]),collapse=','))
+  if (verbose>= 5) print('estimated'% % paste(unique(lpti[['doublingDays']]),collapse=','))
   lpti
 }
 
@@ -629,7 +629,7 @@ addDoublingDaysperCountry<- function(lpti,countries,variable='confirmed',minVal=
 }
 addDoublingDaysAllCountries<- function(lpti){
   lpti %>% addDoublingDaysperCountry(unique(lpti$PSCR),'confirmed')
-  #addSimVars(unique(lpdf$PSCR),minval=100)
+  
 }
 
 
@@ -659,7 +659,7 @@ addSimVars<- function(lpti,countries, minval=100, doublingDays=-1,
   else
     if (missing(pop) | missing(nrRows) | missing(doublingDays)) {
       countries= unique(lpti$PSCR)
-      if (verbose>= 2) print( "AddSimVars: no country or other parameters given. I will add simulation for:" % % paste(countries,collapse="/"))
+      if (verbose>= 5) print( "AddSimVars: no country or other parameters given. I will add simulation for:" % % paste(countries,collapse="/"))
     }else countries= doublingDays % % 'days'
   for (country in countries)
     lpti<- lpti%>% 
@@ -733,7 +733,7 @@ makecountname <- function(countname,minv){paste(countname,minv,sep="_")}
 writewithcounters<- function(lpdf=JHH,varname="confirmed",ID="PSCR",name="JHH"){
     lpdf<- as.data.frame(lpdf)
       lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
-    for (minv in c(1,20,100,400,1000,2000,5000,10000)){
+    for (minv in c(1,20,100,400,1000,2000,5000,1e4,5e4,1e5,5e5,1e6)){
       lpdf<- addcounterfrommin(lpdf=lpdf, minv=minv, 
                                varname=varname,ID=ID,
                                counter=makecountname("day",minv))
@@ -742,8 +742,6 @@ writewithcounters<- function(lpdf=JHH,varname="confirmed",ID="PSCR",name="JHH"){
     write_csv(lpdf,path=datapath%+%"/"%+% filename, na="")
     if (verbose>0) print(paste("Written the current data with counters to disk as",filename,"for use in Tableau or Excel"))
 }
-#Next, prepare functions to select data we want to line graph, determined by the minimum value , date, and country/ID
-
 
 dataprep<- function(lpdf=JHH, minval=1, ID="PSCR", 
                      xvar="day", yvars=c("confirmed", "recovered"), 
@@ -880,7 +878,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     if (!dir.exists(mypath)) dir.create(mypath,recursive=TRUE)
     png(filename=mypath%+% mytitle %+%".png", width=1600,height=900)
     on.exit(while(!is.null(dev.list())) dev.off() )
-    #suppressWarnings(
+    
       print(myplot)
     #)
     dev.off()
@@ -917,7 +915,7 @@ initials<- function (text=c('test_1','of_imputation','new_recovered_imputed_per_
 }
 rm(list=ls(pattern="graph[[:digit:]]"))
 #in alfphabetical order of outputs
-#graph4dardc_fiMyl<- function(lpdf=JHH,countries,savename="",minval=100, ID="PSCR",
+#graph4dardc_fiMyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
 #                             logy=TRUE, until=Sys.Date()){
 #  lpdf%>%graphit(countries,minval,ID, xvar="Day", 
 #                 yvars=c('active_imputed_p_M','recovered_imputed_p_M','deaths_p_M','confirmed_p_M'), 
@@ -1023,13 +1021,13 @@ graphDddp_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
 
 
 #legacy. 
-graphdarc_fiyl<-function(lpdf=JHH,countries,savename="",minval=100, ID="PSCR", 
+graphdarc_fiyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
                          logy=TRUE, until=Sys.Date()){
   graphit(lpdf,countries, minval, ID,xvar='day', 
                  yvars=c('active_imputed','recovered_imputed',"confirmed"), logy=logy,
                  savename= savename,facet=ID,putlegend=TRUE,until=until)
 }
-graphdarc_iyl<-function(lpdf=JHH,countries,savename="",minval=100, ID="PSCR", 
+graphdarc_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
                         logy=TRUE, until=Sys.Date()){
   
   graphit(lpdf,c(countries,doublingDays% %"days"), minval, ID,xvar='day', 
@@ -1076,7 +1074,7 @@ graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,.
   }
 }
 
-writeRegioGraph<- function(lpdf=JHH,regions,minval=100,graphlist=c('graphDccp_fyl','graphDrccrrp_fyl','graphDddp_fyl'), ID="PSCR", until=Sys.Date()){
+writeRegioGraph<- function(lpdf=JHH,regions,minval=1,graphlist=c('graphDccp_fyl','graphDrccrrp_fyl','graphDddp_fyl'), ID="PSCR", until=Sys.Date()){
   if (typeof(regions)=="character") { regions=list(regions) }
   for (graph in graphlist)
     {if(verbose>=2) {ti=Sys.time(); print(paste(format(Sys.time(),"%H:%M:%S "),graph))}
