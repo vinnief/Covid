@@ -301,7 +301,7 @@ regios<- c(list(EU6=c("EU6", regios$Benelux[2:4], "Germany","France","Italy"),
                            regios$SouthWestAsia,regios$EastAsia, regios$China,
                            regios$CIS),
                          c("Madagascar","East Asia","South Asia & Indian Ocean",
-                           "South East Asia","South West Asia","CIS","Moldova",
+                           "South East Asia","South West Asia","CIS","Moldova",'Russia',
                            "Belarus", "Georgia", "Azerbaijan","Armenia"))), 
            regios)
 regios<- c(list(EU= c("EU",regios$EU6[2:7],"Ireland","Denmark","Greece","Spain","Portugal","Austria","Sweden","Finland","Poland","Hungary","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Cyprus","Romania","Bulgaria","Croatia"),
@@ -341,7 +341,7 @@ makeECDC<- function (){
            recovered=as.numeric(NA)) %>%
     select(-confirmed_today, -deaths_today)
   if (verbose>0) {a=as.numeric(max(lpti$Date)-min(lpti$Date)+1)
-    print(a% %"dates,"%, % nrow(unique(lpti$PSCR))% %"regions, last date:"% % 
+    print(a% %"dates,"%, % length(unique(lpti$PSCR))% %"regions, last date:"% % 
           max(lpti$Date)%, % "with" % %
           sum(is.na(lpti[lpti$Date>="2020-02-02",])) % %
           "missing values after 2020-02-01")}
@@ -406,14 +406,14 @@ provincializeJHH<- function(){
 makeRegioList<- function(lpti=JHH,piecename="JHH"){
   regios =c(#World="World",
     #regios['continents'], 
-    lpti%>% #filter(!(PSCR %in% c("USA","US","Australia","China","Canada","South America","Asia","Africa","World","Europe")))%>% 
+    lpti%>% 
     makeDynRegions(piecename=piecename% %'World'),
     lpti%>% filter(PSCR %in% regios$Europe &!(PSCR %in% c(regios$continents,"World")))%>% 
       makeDynRegions(gridsize=20,piecename=piecename% %'Europe'), 
-    lpti%>% filter(PSCR %in% c(regios$AsiaP,'Russia')) %>% makeDynRegions(piecename=piecename% %'Asia'),
+    lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename=piecename% %'Asia'),
     lpti%>% filter(PSCR %in% regios$NorthAmericaS)   %>% makeDynRegions(piecename='North America'), 
     lpti%>% filter(PSCR %in% regios$Africa )         %>% makeDynRegions(piecename='Africa') ,
-    regios[c('WestvsEast','SAmerica', 'Caribbean','OceaniaP')] 
+    regios[c('SAmerica', 'Caribbean','OceaniaP')] #'WestvsEast'
   ) 
 }
 

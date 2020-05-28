@@ -1,70 +1,43 @@
 #for publication #MSM,Vincent,
 rm(list=ls())
-
-while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
-  source("loadData.R")  #also loads the requirements and the definitions 
-    if (max(JHH$Date)< Sys.Date()-1)     {
-      print( "failed to get yesterday's values ") 
-      for (i in 1:12){
-        print(Sys.time())
-        Sys.sleep(600)
-  }   } }
-
+source("loadData.R")  #also loads the requirements and the definitions 
+verbose=2
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
 # so the next 4 lines need to be done on the latest data!
 ECDCRegios <- ECDC %>% makeDynRegions(piecename='ECDC world')
-<<<<<<< HEAD
-verbose=2
-profvis(
-  makeHistoryGraphs(ECDC,regions=ECDCRegios)#
-)
-# 
-writeRegioGraph(ECDC,ECDCRegios)
-profvis(JHHRegios <- makeRegioList(JHH))
+makeHistoryGraphs(ECDC,regions=ECDCRegios)#
+JHHRegios <- makeRegioList(JHH)
 makeHistoryGraphs(JHH,regions=JHHRegios)#
-=======
-profvis(
-ECDC%>% makehistory(regions=ECDCRegios)#
-)
-#ECDC%>% writeRegiograph(ECDCRegios)
-JHHRegios <- JHH%>% makeRegioList()
 
-JHH%>% makehistory(regions=JHHRegios)#
->>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
-JHH%>%writeRegiograph(JHHRegios)
-
-ECDC %>% writeRegiograph(ECDCRegios)
+#profvis(graphit(ECDC,"Kazakhstan"))
+# 
 graphcodes()
 mygraphlist
 verbose=2
+#simulate 
+ECDC %>% writeRegiograph(ECDCRegios)
+writeRegioGraph(ECDC,ECDCRegios)
+JHH%>%writeRegioGraph(JHHRegios)
+if (Sys.Date()%%7==0) ECDC %>% writeRegiograph(ECDCRegios)
+JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccrrp_yfl')
+
+#while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
+#   source("loaddata.R")
+#   if (max(JHH$Date)< Sys.Date()-1)     {
+#    print( "failed to get yesterday's values ") 
+#   for (i in 1:12){
+#    print(Sys.time())
+#   Sys.sleep(600)
+#}   } }
 
 
-<<<<<<< HEAD
-=======
-length(JHHRegios)
->>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
-
-#check colors
-graph3Dard_fia (JHH,JHHRegios$continents)
-
-<<<<<<< HEAD
-
+#do it ofr all past dates
 JHH%>% makehistory(regions=JHHRegios, dates=seq(Sys.Date()-0,Sys.Date()-200,-10))  
-=======
-JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccp_yfl')
-JHH %>% makehistory(regions=JHHRegios[10:27])
->>>>>>> 8b05b6636b2c0b0bd86fa4a9d71a47808cedb8c9
 ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30))  
-JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccp_yfl')
-
-
 
 ####corrections to earlier graphs
 
 verbose=1
-JHH%>% makehistory(regions=JHHRegios, dates="2020-05-06") #[c('Africa','SAmerica','Caribbean','OceaniaP')])
-ECDC%>% makehistory(regions=ECDCRegios, dates="2020-05-06") 
-
 
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
