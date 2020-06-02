@@ -288,37 +288,37 @@ makeJHH <- function(name="JHH",force=FALSE) {
 ######## make state groups, also useful in tableau
 
 regios<- list(EFTA=c("EFTA","Iceland","Liechtenstein","Switzerland","Norway"),
-              Benelux=c("Benelux","Belgium","Netherlands","Luxembourg"),
-              US=c("US","USA"),
-              SouthWestAsia=c("South West Asia","Afganistan","Iran","Irak","Syria","Lebanon","Turkey","Israel", "West Bank and Gaza","Palestine"),
-              SouthEastAsia=c("South East Asia","Indonesia","Thailand","Vietnam","Laos","Malaysia", "Cambodia", "Papua New Guinea","Myanmar", "Burma","Brunei","Philippines","Timor-Leste"),
-              SAsiaIO=c ("South Asia & Indian Ocean","India","Pakistan","Bangladesh","Sri Lanka","Comoros", "Maldives","Madagascar","Mauritius", "Seychelles","Bhutan","Nepal","Mayotte","Reunion"),
-              EastAsia= c("East Asia","Japan","Korea, South", "Korea, North","Taiwan*", "Hong Kong","Singapore","Mongolia"),
-              CIS= c("CIS","Russia", "Belarus", "Armenia", "Azerbaijan","Kazakhstan","Kyrgyzstan","Turkmenistan","Tajikistan","Uzbekistan","Moldova"),
-              China= c("China"))
+        Benelux=c("Benelux","Belgium","Netherlands","Luxembourg"),
+        US=c("USA"), #"US",
+        SouthWestAsia=c("South West Asia","Afganistan","Iran","Irak","Syria","Lebanon","Turkey","Israel", "West Bank and Gaza","Palestine"),
+        SouthEastAsia=c("South East Asia","Indonesia","Thailand","Vietnam","Laos","Malaysia", "Cambodia", "Papua New Guinea","Myanmar", "Burma","Brunei","Philippines","Timor-Leste"),
+        SAsiaIO=c ("South Asia & Indian Ocean","India","Pakistan","Bangladesh","Sri Lanka","Comoros", "Maldives","Madagascar","Mauritius", "Seychelles","Bhutan","Nepal","Mayotte","Reunion"),
+         EastAsia= c("East Asia","Japan","Korea, South", "Korea, North","Taiwan*", "Hong Kong","Singapore","Mongolia"),
+         CIS= c("CIS","Russia", "Belarus", "Armenia", "Azerbaijan","Kazakhstan","Kyrgyzstan","Turkmenistan","Tajikistan","Uzbekistan","Moldova"),
+         China= c("China"))
 regios<- c(list(EU6=c("EU6", regios$Benelux[2:4], "Germany","France","Italy"),
-           Asia= setdiff(c("Asia regions", regios$SAsiaIO, regios$SouthEastAsia,
+         Asia= setdiff(c("Asia regions", regios$SAsiaIO, regios$SouthEastAsia,
                            regios$SouthWestAsia,regios$EastAsia, regios$China,
                            regios$CIS),
                          c("Madagascar","East Asia","South Asia & Indian Ocean",
                            "South East Asia","South West Asia","CIS","Moldova",'Russia',
                            "Belarus", "Georgia", "Azerbaijan","Armenia"))), 
-           regios)
+         regios)
 regios<- c(list(EU= c("EU",regios$EU6[2:7],"Ireland","Denmark","Greece","Spain","Portugal","Austria","Sweden","Finland","Poland","Hungary","Slovakia","Slovenia","Czechia","Estonia","Lithuania","Latvia","Malta","Cyprus","Romania","Bulgaria","Croatia"),
-           Caribbean= c("Caribbean",'Anguilla',"Antigua and Barbuda","Bahamas" ,  "Barbados","Bermuda","Cayman Islands","Cuba","Dominica" ,"Dominican Republic","Grenada", "Haiti" , "Jamaica","Saint Kitts and Nevis" ,"Saint Vincent and the Grenadines","Saint Lucia"  ,"Trinidad and Tobago",'Aruba','Curacao',"Bonaire, Sint Eustatius and Saba","British Virgin Islands",'Guadeloupe','Martinique','Sint Maarten','St Martin','Saint Barthelemy','Turks and Caicos Islands','Montserrat')), 
-           regios)
+         Caribbean= c("Caribbean",'Anguilla',"Antigua and Barbuda","Bahamas" ,  "Barbados","Bermuda","Cayman Islands","Cuba","Dominica" ,"Dominican Republic","Grenada", "Haiti" , "Jamaica","Saint Kitts and Nevis" ,"Saint Vincent and the Grenadines","Saint Lucia"  ,"Trinidad and Tobago",'Aruba','Curacao',"Bonaire, Sint Eustatius and Saba","British Virgin Islands",'Guadeloupe','Martinique','Sint Maarten','St Martin','Saint Barthelemy','Turks and Caicos Islands','Montserrat')), 
+         regios)
 
 regios=c(list(
   other=c("Other", 'Diamond Princess','MS Zaandam','World'),
   MSM = c("MSM","Netherlands","Belgium","United Kingdom","Germany","Malta","Egypt","Suriname","China","Vietnam","Hungary","Romania","Kuwait","Italy","Ireland","Iran","Kazakstan","Liberia","Indonesia","Ethiopia","Nigeria","Ghana","Uganda","South Africa","Canada","Spain","France"),
   Vincent= c("Some Selected Regions","Belgium","Germany","Italy","France","Kazakhstan","Indonesia","Spain","Netherlands","Japan","New York"),
-  continents= c("Continents","Europe","USA","US",'North America', "Africa","South America","Asia"),
+  continents= c("Continents","Europe",'North America', "Africa","South America","Asia"),#"USA","US",
   WestvsEast= c("WestvsEast","USA","United Kingdom","Italy","Iran","Korea, South","Germany","France","Spain","Sweden","Norway","Belgium","Netherlands","Singapore","Japan","Taiwan*","Denmark","Hubei,China", "Hongkong,China", "Jiangsu,China", 'Indonesia'),
   MENA=c("MENA", "Marocco","Algeria","Tunesia","Libia","Egypt", "West Bank and Gaza","Palestine","Lebanon","Syria","Turkey","Iraq","Iran","Afghanistan","Jordan","Saudi Arabia","Kuwait","Oman","United Arab Emirates","UAE","Yemen","Bahrain","Qatar"),
   SAmerica=c("South America countries","Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Suriname","French Guiana","Venezuela","Paraguay","Peru" , "Uruguay","Falkland Islands (Malvinas)"),
   Europe= c("Europe",regios$EU[2:28],regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus","Moldova","Georgia", "Armenia", "Azerbaijan","Andorra", "Monaco", "San Marino", "Vatican","Holy See", "Albania", "North Macedonia","Kosovo","Croatia","Montenegro","Bosnia and Herzegovina","Serbia","Gibraltar","Faroe Islands", "Isle of Man","Channel Islands","Greenland"),
-  NAmerica= c("North America",regios$US,"Canada","Mexico","Saint Pierre and Miquelon", "Antilles","Belize","Guatemala","Nicaragua","Costa Rica","Honduras","El Salvador","Panama",regios$Caribbean),
-  Africa= c("Africa countries","Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic","Chad","Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana","Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara","Zambia", "Zimbabwe"),
+  NAmerica= c("North America","USA","Canada","Mexico","Saint Pierre and Miquelon", "Antilles","Belize","Guatemala","Nicaragua","Costa Rica","Honduras","El Salvador","Panama",regios$Caribbean),
+  Africa= c("Africa","Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic","Chad","Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana","Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara","Zambia", "Zimbabwe"),
     Oceania= c("Oceania","Australia","New Zealand","Vanuatu","Tuvalu", "Fiji","Guam","French Polynesia","New Caledonia"  )
             ),
          regios)
@@ -341,7 +341,7 @@ makeECDC<- function (){
            recovered=as.numeric(NA)) %>%
     select(-confirmed_today, -deaths_today)
   if (verbose>0) {a=as.numeric(max(lpti$Date)-min(lpti$Date)+1)
-    print(a% %"dates,"%, % length(unique(lpti$PSCR))% %"regions, last date:"% % 
+    print(a% %"dates"%, % length(unique(lpti$PSCR))% %"regions, last date:"% % 
           max(lpti$Date)%, % "with" % %
           sum(is.na(lpti[lpti$Date>="2020-02-02",])) % %
           "missing values after 2020-02-01")}
@@ -356,7 +356,7 @@ addRegions <- function(lpdf=JHH,varname="Region",Regiolist="") {
     lpdf[lpdf$PSCR %in% Regio,varname]<- region
     }
   if (verbose>= 1){
-    print("Regions added:"% % paste(unique(JHH$Region),collapse=", "))
+    print("Regions added:"% % length(unique(JHH$Region)) )#paste(unique(JHH$Region),collapse=", "))
     if(sum(is.na(lpdf$Region))>0){
       print(paste("Not attributed regions:") % %
       paste(unique(lpdf[is.na(lpdf$Region),]$PSCR),collapse="; "))
@@ -376,7 +376,9 @@ makeDynRegions <- function(lpti=JHH,gridsize=5*6,piecename='World',ratio=5) {
     minneeded<- lpti$confirmed[1]/ratio
     piece<-c(piecename%+%nr,as.character(head(lpti[lpti$confirmed>=minneeded,]$PSCR ,gridsize) ))
     mylist[[piece[1]]]<- piece
-    lpti<- lpti%>% filter(row_number()>=gridsize+1 | confirmed< minneeded)
+    nextone=length(piece)-1
+    if (nextone<=1) nextone=2
+    lpti<- lpti%>% filter(row_number()>=nextone) #gridsize+1 | confirmed< minneeded)
     #nrow(lpti)
     nr<- nr+1
     }
@@ -387,7 +389,7 @@ makeDynRegions <- function(lpti=JHH,gridsize=5*6,piecename='World',ratio=5) {
 
 provincialize<- function(countries,lpdf=JHH){
   cl1<-unique(lpdf[lpdf$Country.Region %in% countries,]$PSCR)
-  c(paste(countries[1],"Provinces&States"),setdiff(cl1,countries))
+  c(countries[1]% %"Provinces&States",cl1)#,setdiff(cl1,countries))
 }
 
 provincializeJHH<- function(){
@@ -395,25 +397,23 @@ provincializeJHH<- function(){
   ChinaP<- provincialize(regios$China,lpdf)
   list(CanadaP=provincialize("Canada",lpdf),
        USS=provincialize(regios$US,lpdf), 
-       NorthAmericaS=c(provincialize(regios$NAmerica,lpdf),"Mexico"), 
-       OceaniaP=setdiff(c(provincialize(regios$Oceania,lpdf),regios$Oceania),
-                        "Australia"),
+       NorthAmericaS=setdiff(provincialize(c("US",regios$NAmerica),lpdf),"USA"),
+       OceaniaP=(c(provincialize(regios$Oceania,lpdf),regios$Oceania)),#,                        "Australia"),
        AsiaP= c(regios$Asia, (setdiff(ChinaP,"China Provinces&States"))),
        ChinaP=ChinaP
   )
 }
 
 makeRegioList<- function(lpti=JHH,piecename="JHH"){
-  regios =c(#World="World",
-    #regios['continents'], 
-    lpti%>% 
-    makeDynRegions(piecename=piecename% %'World'),
-    lpti%>% filter(PSCR %in% regios$Europe &!(PSCR %in% c(regios$continents,"World")))%>% 
+  regios =c(    
+    lpti%>% makeDynRegions(piecename=piecename% %'World'),
+    lpti%>% filter(PSCR %in% regios$Europe )%>% 
       makeDynRegions(gridsize=20,piecename=piecename% %'Europe'), 
     lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename=piecename% %'Asia'),
-    lpti%>% filter(PSCR %in% regios$NorthAmericaS)   %>% makeDynRegions(piecename='North America'), 
+    lpti%>% filter(PSCR %in% regios$NorthAmericaS)   %>% makeDynRegions(piecename='North America States'),
+    #lpti%>% filter(PSCR %in% regios$NAmerica)   %>% makeDynRegions(piecename='North America'),
     lpti%>% filter(PSCR %in% regios$Africa )         %>% makeDynRegions(piecename='Africa') ,
-    regios[c('SAmerica', 'Caribbean','OceaniaP')] #'WestvsEast'
+    regios[c('SAmerica','OceaniaP')] #World="World", #regios['continents'], 'WestvsEast', 'Caribbean',
   ) 
 }
 
@@ -427,8 +427,9 @@ addPopulation <- function(lpdf) {
   rownames(popUS)<- popUS$State
   lpdf[grepl(",US", lpdf$PSCR),"population"]<- 
     popUS[lpdf[grep(",US", lpdf$PSCR),]$Province.State,"population"]
+  popunknown<- unique(lpdf[is.na(lpdf$population),]$PSCR)
   if (verbose>=1)print("population unknown:" % % 
-        paste(unique(lpdf[is.na(lpdf$population),]$PSCR),collapse="; "))
+            ifelse(length(popunknown)==0,0, paste(popunknown,collapse="; ")))
   lpdf
 }
 
@@ -523,7 +524,7 @@ doublingLine<- function(lpti=JHH,country, start,doublingDays=5,nrRows=100,
     lat<-lpti$Lat[1]
     long<- lpti$Long[1]
   }else {
-    countryR<- doublingDays % % 'days'
+    CountryR<- doublingDays % % 'days'
     myPSCR<- doublingDays % % 'days'
     ProvinceS<-  doublingDays % % 'days'
     myRegion<- doublingDays % % 'days'
@@ -533,7 +534,7 @@ doublingLine<- function(lpti=JHH,country, start,doublingDays=5,nrRows=100,
   if (!missing(nrRows)&!nrRows<0) maxDate <- min(lpti$Date)+nrRows-1 
     else {maxDate<- max(lpti$Date) ;nrRows<- maxDate-min(lpti$Date)+1}
   if(maxDate==-Inf)stop("Max Date equals -inf. Probably we have an empty data set. Did you choose the right country? ")
-  if (verbose>=3) print('doublingLine:' % % doublingDays % % 'days to double:' % %"R0=" % % round(2^(lagrc/doublingDays)-1,2) %, %nrRows% %'days' % % maxDate)
+  if (verbose>=3) print('dL:' % %myPSCR % % 'to double:' % %"R0=" % % round(2^(lagrc/doublingDays)-1,2) %, %'Simulated' % % nrRows% %'days' % % maxDate)
   #maxDate<- as.Date(maxDate,origin='1970-01-01')
   out=tibble(Date= seq(from=min(lpti$Date),to= maxDate,by=1))
   doubling<- round(start*2^((1:nrow(out)-1)/(doublingDays) ))
@@ -589,30 +590,31 @@ simulGrow<- function(lpti=JHH, country='Belgium', start,doublingDays=5,nrRows=-1
 
 addSimCountry<- function(lpti,country, start=0, doublingDays=5,nrRows=-1,deathRate=.05,pop=0,lagrc=LAGRC,lagdc=LAGDC){
   lpti<- rbind (lpti,
-              
-               {out<- lpti %>% filter(PSCR %in% country) %>%
-                 simulGrow(country, start=start, nrRows=nrRows, doublingDays=doublingDays,pop=pop  )%>%
-                 out<- out %>% imputeRecovered %>% extravars 
-               missingCols<- setdiff(names(lpti),names(out))
-               if(verbose>=5 &length(missingCols>0)) print(' addsimcountry:' % %missingCols% % 'filled with NAs')
-               out[missingCols]<- NA
-               }
-               )
-  
+          {out<- lpti %>% filter(PSCR %in% country) %>%
+              simulGrow(country,start, doublingDays=doublingDays,nrRows=nrRows,pop=pop)%>%
+           #out<- out %>% 
+             imputeRecovered %>% extravars 
+           missingCols<- setdiff(names(lpti),names(out))
+           if(verbose>=5 &length(missingCols>0)) 
+                 print(' addsimcountry:' % %missingCols% % 'filled with NAs')
+           out[missingCols]<- NA
+           }
+        )
 }
 # from R0 to doubling days: not correct. 42 should give 1. 
 R02doublingDays<- function(R0=1){
   log2(LAGRC/R0)
 }
 
-addDoublingDays<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate="2020-01-01",maxDate='2020-12-31'){
+addDoublingDays<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate="2020-01-01",maxDate='2020-12-31',newVar='doublingDays'){
   if (verbose>=4) print('addDdoublinggDays' % %minVal % % '= minval, and variable ='% % variable)
   lptisel<- lpti[lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date<= maxDate,]%>% head(nrDays)
   if (sum(!is.na(lptisel[variable]))>3 ) 
     slope= lm(log2(confirmed)~Date, data=lptisel,na.action=na.exclude)$coefficients['Date']
-  else slope=1/300 #do something very wrong that will show up in graphs, but dont make an error. 
+  else {slope=0 #do something very wrong that will show up in graphs, but dont make an error. 
+    if (verbose>=2) print(paste(unique(lpti$PSCR),collapse = ',')% %'not enough data to estimate the doubling days slope')}
   
-  lpti['doublingDays']<- round(1/slope,3)
+  lpti[newVar]<- round(1/slope,3)
   
   if (verbose>= 5) print('estimated'% % paste(unique(lpti[['doublingDays']]),collapse=','))
   lpti
@@ -623,7 +625,7 @@ addDoublingDaysperCountry<- function(lpti,countries,variable='confirmed',minVal=
   for (country in findIDnames(lpti,  countries ,searchID='PSCR',fuzzy=FALSE)){
     lpti[lpti$PSCR==country , ]<- 
           lpti[lpti$PSCR==country , ] %>% 
-              addDoublingDays(variable,minVal,nrDays) #just do it for confirmed!, is safer
+              addDoublingDays(variable,minVal,nrDays) #we only do it for confirmed!, the other variables are simulated using a.o. lag(confirmed)
   }
   lpti
 }
@@ -696,20 +698,65 @@ addTotals2<- function(lpdf=JHH,ID='PSCR'){
   lpti<- lpdf %>%
     #just to be sure, that if i do it twice i dont get double counts. 
     #And omit USA as country, as we have the individual states already. 
-    filter(! (!!ID %in% c("South America", "Asia", "Africa", "Europe","China","Australia","Canada","USA","US","World"))) 
+    filter(!(Country.Region =="US" | !!ID %in% c("South America", "Asia", "Africa", "Europe","China","Australia","Canada",'North America',"World") )) %>%#bug solved should take USA data, not states,US data
+    filter()
   
   World<- unique(lpti[[ID]])
+  if (verbose>=2) {
+    print('world totals include the following countries: ')
+    print(World)}
   varnames=c("confirmed","recovered", "deaths","population")
-       #,'recovered_imputed',"active_imputed") # we impute AFTER this function so no need. 
+       #,'recovered_imputed',"active_imputed") # we impute AFTER this function so no need for these. 
   rbind(lpdf, 
-        lpti%>% totals(c("US","China","Australia", "Canada"),
-                      ID="Country.Region", varnames= varnames),lpti%>% total(regios$Europe,ID=ID,newrow="Europe", varnames= varnames),
+        lpti%>% totals(c("China","Australia", "Canada"),
+                      ID="Country.Region", varnames= varnames),
+        lpdf%>% totals(c("US"),ID="Country.Region", varnames= varnames),
+        lpti%>% total(regios$Europe,ID=ID,newrow="Europe", varnames= varnames),
         lpti%>% total(regios$Africa,ID=ID,newrow="Africa", varnames= varnames),
         lpti%>% total(regios$Asia,ID=ID,newrow="Asia", varnames= varnames),
         lpti%>% total(regios$SAmerica,ID=ID,newrow="South America",varnames= varnames),
+        lpti%>% total(regios$NAmerica,ID=ID,newrow="North America",varnames= varnames), #bug solved instead of takign the states,US data, take the USA data, whichs has recovered available. 
         lpti%>% total(World ,ID=ID,newrow="World", varnames= varnames)
   ) 
 }
+
+days2overtake<- function(lpti=JHH,countries=c('Belgium','China','Russia','Netherlands','Colombia','Iran')){
+  #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
+  lastdata<- subset(lpti,PSCR %in%countries&Date==max(Date),
+                    select=c('PSCR','confirmed','new_confirmed'))
+  lastdata<- lastdata[order( -lastdata$confirmed),]
+  confirmed<- lastdata$confirmed 
+  names(confirmed)<- lastdata$PSCR
+  new_confirmed<-  lastdata$new_confirmed
+  names(new_confirmed)<- lastdata$PSCR
+  mconf<- outer(confirmed,confirmed,`-`)
+  mnew<- -(outer(new_confirmed,new_confirmed,`-`))
+  round(mconf/mnew,1)
+}
+
+overtakenin<- function(lpti,country){
+  lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
+  mydata<- subset(lastdata,PSCR==country)
+  countries<- subset(lastdata,
+                     confirmed<= mydata$confirmed &
+                       new_confirmed>=mydata$new_confirmed,
+                     select=PSCR)
+  oc<- days2overtake(lpti,countries$PSCR)[,country]
+  oc[order(oc,na.last=FALSE)]
+  
+}
+overtakingin<- function(lpti,country){
+  lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
+  mydata<- subset(lastdata,PSCR==country)
+  countries<- subset(lastdata,
+                     confirmed>= mydata$confirmed &
+                       new_confirmed<=mydata$new_confirmed,
+                     select=PSCR)
+  oc<- days2overtake(lpti,countries$PSCR)[,country]
+  oc[order(oc,na.last=FALSE)]
+}
+
+
 
 addcounterfrommin<-function(lpdf=JHH,minv=0,varname="confirmed",ID="PSCR",counter="day"){
   lpdf[,counter]<-as.numeric(NA)
@@ -840,7 +887,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
       myplot<- myplot + scale_shape_manual(values = c(0,1,3,2,10,5,6)) #shape="\u2620"
     if (nrgroups<=6){
           myscale<- scale_color_manual(values=c("red", "darkgreen", "black","orange",
-                                                  "lawngreen","darkorange"),
+                                                  "lawngreen","tomato"), #darkorange
                                         guide= ifelse(putlegend,"legend",FALSE))
     }else if(nrgroups<13) {
       palette=ifelse (nrgroups <8, "Dark2","Paired") #Spectral Set2  
@@ -862,7 +909,11 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
   if(logy) myplot<- myplot+scale_y_continuous(trans='log10',breaks = breaks, minor_breaks = minor_breaks)+
     annotation_logticks() 
   if(logx) myplot<- myplot+scale_x_continuous(trans='log10',breaks = breaks, minor_breaks = minor_breaks)
-  
+  myplot<- myplot+ theme(
+    axis.text = element_text(color = "blue", angle = 45,
+                             hjust = 1,vjust = 0.5, size = rel(.8)),    
+    strip.background =element_rect(fill="white",color='black'),    
+    strip.text = element_text(color = 'black'))
   if (savename!="") {
     if(facet==FALSE) savename<-  paste(savename,"all-in-one")
     if(area) savename<- paste(savename,"area plot")
@@ -871,8 +922,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     if (logy) myfolder <- myfolder % %'log scale'
     if(facet==FALSE) myfolder<-  paste(myfolder,"all-in-one")
     if (verbose>= 3) print("graphit making plot" % % myfolder %+% "/" %+% mytitle)
-    myplot<- myplot+ theme(text=element_text(size=20),
-                           axis.text = element_text(colour = "blue", size = rel(.8)) )
+    myplot<- myplot+ theme(text=element_text(size=20))#,                           axis.text = element_text(color = "blue", size = rel(.8)) )
     mypath<- paste("G:/My Drive/Covid19_plots",lastdate,sep="/") 
     if(myfolder!="") mypath<- paste(mypath,myfolder,"",sep="/")
     if (!dir.exists(mypath)) dir.create(mypath,recursive=TRUE)
@@ -887,7 +937,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     #options(warn=-1)
     #on.exit(options(warn=tempwarn))
     print(myplot+theme(title = element_text(size = 11)))}
-  invisible(lpti)
+  invisible(lpdf)
 }# 
 
 
@@ -965,7 +1015,7 @@ graph6Dardcra_finyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR
                  yvars=c('net_active_imputed','new_recovered_imputed',
                          'new_deaths', 'new_confirmed','new_recovered',
                          'net_active'),  
-                 logy=TRUE,savename=savename,facet=ID,until=until) 
+                 logy=logy,savename=savename,facet=ID,until=until) 
 }
 graph6Dardcra_fiMnyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
                              logy=TRUE, until=Sys.Date()){
@@ -974,6 +1024,19 @@ graph6Dardcra_fiMnyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSC
                          'new_deaths_p_M','new_confirmed_p_M','new_recovered_p_M',
                          'net_active_p_M'), 
                  logy=logy, savename=savename,facet="PSCR",until=until)
+}
+
+graph1Dc_finl<- function(lpdf=JHH,countries,savename="",minval=1, 
+                        ID="PSCR", logy=FALSE,until=Sys.Date()){
+  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
+                 yvars=c("new_confirmed"), 
+                 logy=logy, savename= savename, facet=ID,putlegend=TRUE,until=until)
+}
+graph1Dc_fil<- function(lpdf=JHH,countries,savename="",minval=1, 
+                              ID="PSCR", logy=FALSE,until=Sys.Date()){
+  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
+                 yvars=c("confirmed"), 
+                 logy=logy, savename= savename, facet=ID,putlegend=TRUE,until=until)
 }
 
 #other graphs
@@ -1004,9 +1067,9 @@ graphDccp_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
           yvars=c('confirmed_sim','confirmed',"population"),
           logy=TRUE, savename=savename,facet='PSCR')
 }
-graphDrccrrp_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
+graphDccprr_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
                          logy=TRUE, until=Sys.Date()){
-  graphit(lpdf,countries, minval=minval,myfolder="Confirmed reccovered simulated", 
+  graphit(lpdf,countries, minval=minval,myfolder="Confirmed recovered simulated", 
           yvars=c('confirmed_sim','confirmed',"population",'recovered_sim','recovered_imputed'),
           logy=TRUE, savename=savename,facet='PSCR')
 }
@@ -1066,6 +1129,16 @@ myGraphNrs<- ls(pattern="graph[[:digit:]]")
 graphcodes()
 print(myGraphList)
 
+graphonregion<- function(lpdf,mygraph,myregion,...){
+  IDs<-findIDnames(lpdf=lpdf, testIDnames=myregion,searchID=ID, fuzzy=FALSE,returnID="PSCR")
+  if(verbose>=3) { tir=Sys.time() ; print(tir%: % mygraph % % myregion[1] ) }
+  if(verbose>=4) print( 'Regions'% %     paste(IDs,collapse="/ "))
+  do.call (mygraph,
+           args=list(lpdf,IDs,myregion[1],...))
+  if(verbose>=3) {
+    print (paste(mygraph % % myregion[1]% % "duration: ",difftime(Sys.time(),tir,units='mins')))}
+}
+
 
 graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,...){
   for (mygraph in graphlist){
@@ -1074,22 +1147,15 @@ graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,.
   }
 }
 
-writeRegioGraph<- function(lpdf=JHH,regions,minval=1,graphlist=c('graphDccp_fyl','graphDrccrrp_fyl','graphDddp_fyl'), ID="PSCR", until=Sys.Date()){
+writeRegioGraph<- function(lpdf=JHH,regions,minval=1,graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), ID="PSCR", until=Sys.Date()){
   if (typeof(regions)=="character") { regions=list(regions) }
-  for (graph in graphlist)
-    {if(verbose>=2) {ti=Sys.time(); print(paste(format(Sys.time(),"%H:%M:%S "),graph))}
-    for (i in 1:(length(regions))){
-      IDs<-findIDnames(lpdf=lpdf, testIDnames=regions[[i]],searchID=ID, fuzzy=FALSE,returnID="PSCR")
-      if(verbose>=3) print(Sys.time()%: % regions[[i]][1] )
-      if(verbose>=4) print('Regions'% %     paste(IDs,collapse="/ "))
-      do.call (graph,
-               args=list(lpdf,IDs,regions[[i]][1],minval, ID, until=until))
-    }
-    if(verbose>=3) {
-      print (paste(regions[[i]][1]% % "duration: ",difftime(Sys.time(),ti,units='mins')))}
+  for (graph in graphlist){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %graph)}
+    for (region in regions){
+      graphonregion(lpdf=lpdf,graph,region,minval=minval,ID=ID,until=until)  }
+    if(verbose>=2) {print(difftime(Sys.time(),tig,units='mins')% %graph)}
   }
 }
-
 makeDate<- function(chardate="",format=myDateFormat){
   tryCatch(as.Date(chardate, format=format),
            error=function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:",myDateFormat ))})

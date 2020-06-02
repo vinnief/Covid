@@ -1,25 +1,46 @@
 #for publication #MSM,Vincent,
-rm(list=ls())
+rm(list=setdiff(ls(),c('ECDC0','JHH0','JHH','ECDC')))
 source("loadData.R")  #also loads the requirements and the definitions 
-verbose=2
+verbose=3
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
 # so the next 4 lines need to be done on the latest data!
-ECDCRegios <- ECDC %>% makeDynRegions(piecename='ECDC world')
+
+#latest numbers
+JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe'),c('confirmed','new_confirmed','active','PSCR')]
+#overtaking
+overtakenin(JHH,"Belgium")[1:10]
+overtakenin(JHH,"Netherlands")[1:10]
+overtakenin(JHH,"United Kingdom")[1:10]
+overtakenin(JHH,"Europe")[1:10]
+overtakingin(JHH,"North America")[1:10]
+overtakingin(JHH,'Brazil')
+overtakenin(JHH,'Russia')
+overtakenin(JHH,'New York,US')
+
+overtakingin(JHH,'Sweden')
+overtakingin(JHH,'Indonesia')
+overtakingin(JHH,'Peru')
+overtakingin(JHH,'India')
+
+#compare my countries
+graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
+#make all graphs
+ECDCRegios <- makeDynRegions( ECDC, piecename='ECDC world')
 makeHistoryGraphs(ECDC,regions=ECDCRegios)#
 JHHRegios <- makeRegioList(JHH)
 makeHistoryGraphs(JHH,regions=JHHRegios)#
 
-#profvis(graphit(ECDC,"Kazakhstan"))
-# 
 graphcodes()
 mygraphlist
 verbose=2
-#simulate 
-ECDC %>% writeRegiograph(ECDCRegios)
-writeRegioGraph(ECDC,ECDCRegios)
-JHH%>%writeRegioGraph(JHHRegios)
+#simulate deaths and confirmed   
+ECDC %>% writeRegiograph(ECDCRegios)#simulations
+writeRegioGraph(ECDC,ECDCRegios) #same thing
+#writeRegioGraph(ECDC,ECDCRegios,graphlist = myGraphNrs)
+
+JHH%>%writeRegioGraph(JHHRegios) #simulations
 if (Sys.Date()%%7==0) ECDC %>% writeRegiograph(ECDCRegios)
-JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccrrp_yfl')
+JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccprr_fyl')
 
 #while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
 #   source("loaddata.R")
@@ -38,6 +59,11 @@ ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30
 ####corrections to earlier graphs
 
 verbose=1
+
+#check imputations
+JHHdifimp<- unique(JHH%>% filter(active != active_imputed)%>% .$PSCR )
+JHH%>% makehistory(regions=JHHdifimp, graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_yfil')  ) 
+JHH%>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths)%>%View
 
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
