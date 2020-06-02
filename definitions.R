@@ -1,7 +1,9 @@
 source("requirements.R")
+#Global assumptions
 LAGRC<- 42
 LAGRD<- 36
 LAGDC<- LAGRC-LAGRD
+deathRate=.05
 if(!exists("verbose")) verbose=1
 
 myDateFormat<- "%Y-%m-%d"
@@ -9,7 +11,7 @@ myDateFormat<- "%Y-%m-%d"
 datapath='./data'
 if (!dir.exists(datapath)) dir.create(datapath,recursive=TRUE)
 
-
+#data loading
 #*Note*: the data of John hopkins, 
 #git@github.com:CSSEGISandData/COVID-19.git
 #before 20200325:#c<-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv")
@@ -480,8 +482,8 @@ extravars<- function(lpdf,lagrc=0,lagdc=0){
     group_by(PSCR) %>% 
     mutate(  active          =   confirmed - deaths - recovered,
            active_imputed    =   confirmed - deaths - recovered_imputed,
-           #NAs               =   NA,
            new_confirmed     =   mac(diff.sl(confirmed)), 
+           new_active_rate   =   round(new_confirmed/active_imputed*100,2),
            net_active        =   mac(diff.sl(active)),
            net_active_imputed=   mac(diff.sl(active_imputed)),
            new_recovered     =   mac(diff.sl(recovered)), 
@@ -592,7 +594,7 @@ addSimCountry<- function(lpti,country, start=0, doublingDays=5,nrRows=-1,deathRa
   lpti<- rbind (lpti,
           {out<- lpti %>% filter(PSCR %in% country) %>%
               simulGrow(country,start, doublingDays=doublingDays,nrRows=nrRows,pop=pop)%>%
-           #out<- out %>% 
+           #out<- out %>%    #needs refactoring: what doublingline does in name filling, should be here. 
              imputeRecovered %>% extravars 
            missingCols<- setdiff(names(lpti),names(out))
            if(verbose>=5 &length(missingCols>0)) 
@@ -671,8 +673,8 @@ addSimVars<- function(lpti,countries, minval=100, doublingDays=-1,
 }
 
 
-#options(warn=0)
-demoDoubling<-function(lpti=ECDC,doublingDays=3,nrRows=-1){
+
+graphDemoDoubling<-function(lpti=ECDC,doublingDays=3,nrRows=-1){
   simulGrow(lpti,"France", start=10, doublingDays,nrRows=nrRows,deathRate=.05,lagrc=LAGRC,lagdc=LAGDC) %>% 
     graphit(c(doublingDays % % "days"),xvar='day',yvars=c('active','recovered','deaths','confirmed',"population") ,logy=TRUE,until=max(.$Date)) %>%
     .[c('deaths','active','confirmed','recovered')]  %>% view #apply(2, max,na.rm=TRUE) 
@@ -945,7 +947,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
 #geom_point(aes(shape=cyl, color=cyl, size=cyl))
 #+scale_color_manual(values=c('#999999','#E69F00', '#56B4E9'))
  
-graphcodes<- function(){ 
+graphCodes<- function(){ 
   print('naming system:')
   print(list(nrvars=1:6,
           letters=tibble(codes=c('d/D/c/d','acrd_','f','i','M','n','y','a/l'),
@@ -1052,7 +1054,7 @@ graph1dr_iyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",logy=
   lpdf%>%graphit(countries,minval,ID, xvar='deaths',yvars=c('recovered_imputed'),
                  logy=logy,logx=TRUE,savename=savename,until=until)
 }
-graph1Dr_p_C_il<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
+graph1Drr_il<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
                            logy=FALSE, until=Sys.Date()){
   lpdf%>%graphit(countries,1,ID, xvar="Date",
                  yvars=c('recovered_imputed_per_confirmed'), 
@@ -1090,12 +1092,26 @@ graphdarc_fiyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
                  yvars=c('active_imputed','recovered_imputed',"confirmed"), logy=logy,
                  savename= savename,facet=ID,putlegend=TRUE,until=until)
 }
-graphdarc_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
+graphdarcs_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
                         logy=TRUE, until=Sys.Date()){
   
   graphit(lpdf,c(countries,doublingDays% %"days"), minval, ID,xvar='day', 
                          yvars=c('active_imputed','recovered_imputed',"confirmed"), 
                          savename= savename,logy=logy,putlegend=TRUE,until=until)
+}
+graphdac_iyl<-function(lpdf=JHH,countries,savename="",minval=100, ID="PSCR", 
+                        logy=TRUE, until=Sys.Date()){
+  
+  graphit(lpdf,c(countries), minval, ID,xvar='day', 
+          yvars=c('active_imputed',"confirmed"), 
+          savename= savename,logy=logy,putlegend=TRUE,until=until)
+}
+graphdnr_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
+                        logy=TRUE, until=Sys.Date()){
+  
+  graphit(lpdf,c(countries), minval, ID,xvar='day', 
+          yvars=c('new_active_rate'), 
+          savename= savename,logy=logy,putlegend=TRUE,until=until)
 }
 
 
@@ -1126,34 +1142,73 @@ graphDrr_fia<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR"
 
 myGraphList<- ls(pattern="graph")
 myGraphNrs<- ls(pattern="graph[[:digit:]]")
-graphcodes()
+myGraphListbyDay <- ls(pattern='graphd') #c("graphdnr_iyl","graphdac_iyl")
+myGraphListbyDate <- ls(pattern='graphD')
+graphCodes()
 print(myGraphList)
-
-graphonregion<- function(lpdf,mygraph,myregion,...){
-  IDs<-findIDnames(lpdf=lpdf, testIDnames=myregion,searchID=ID, fuzzy=FALSE,returnID="PSCR")
-  if(verbose>=3) { tir=Sys.time() ; print(tir%: % mygraph % % myregion[1] ) }
-  if(verbose>=4) print( 'Regions'% %     paste(IDs,collapse="/ "))
-  do.call (mygraph,
-           args=list(lpdf,IDs,myregion[1],...))
-  if(verbose>=3) {
-    print (paste(mygraph % % myregion[1]% % "duration: ",difftime(Sys.time(),tir,units='mins')))}
-}
-
+print(myGraphListbyDate)
+print(myGraphListbyDay)
 
 graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,...){
-  for (mygraph in graphlist){
-    if (verbose>= 3) print( 'graph:' % % mygraph)
-    do.call (mygraph,args=list(lpdf,countries,savename,...))
+  
+  for (myGraph in graphlist){
+    if (verbose>= 3) print( 'graph:' % % myGraph)
+    do.call (myGraph,args=list(lpdf,countries,savename,...))
   }
 }
+reportDiffTime<- function(message,mytime,units='mins',precision=2){
+  print(message % %round( difftime(Sys.time(),mytime,units=units),precision)%+%units)
+}
+timer<- function(mycall,message='',verbosity=1,...){
+  if(verbose>=verbosity) {tistart=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %message)}
+  do.call(myCall,...)
+  if(verbose>=verbosity) {reportDiffTime(message,tistart)}
+}
 
-writeRegioGraph<- function(lpdf=JHH,regions,minval=1,graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), ID="PSCR", until=Sys.Date()){
+graphOnRegion<- function(lpdf,myRegion,myGraph,saveit=TRUE,...){
+  #IDs<-findIDnames(lpdf=lpdf, testIDnames=myRegion,searchID=ID, fuzzy=FALSE,returnID="PSCR")
+  if(verbose>=4) print( 'Regions'% %     paste(myRegion,collapse="/ "))
+  if(verbose>=3) { tir=Sys.time() ; print(tir%: % myGraph % % myRegion[1] ) }
+  do.call (myGraph,
+           args=list(lpdf,myRegion,ifelse(saveit,myRegion[1],""),...))
+  if(verbose>=3) {
+    reportDiffTime (myGraph % % myRegion[1]% % "duration:",tir)}
+}
+byRegionthenGraph<- function(lpdf=JHH,regions,
+                             graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'),
+                             saveit=TRUE,minval=1, 
+                             ID="PSCR", until=Sys.Date()){# ===writeRegioGraph in same order
   if (typeof(regions)=="character") { regions=list(regions) }
-  for (graph in graphlist){
-    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %graph)}
-    for (region in regions){
-      graphonregion(lpdf=lpdf,graph,region,minval=minval,ID=ID,until=until)  }
-    if(verbose>=2) {print(difftime(Sys.time(),tig,units='mins')% %graph)}
+  map(graphlist, function(myGraph){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myGraph)}
+    map(regions, function(myRegion)
+      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  )
+    if(verbose>=2) {reportDiffTime(myGraph,tig)}
+  })
+}
+byGraphthenRegion<- function(lpdf=JHH,regions,
+                             graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'),
+                             saveit=TRUE,minval=1,
+                              ID="PSCR", until=Sys.Date()){ # ===writeRegioGraph different order
+  if (typeof(regions)=="character") { regions=list(regions) }
+  map(regions, function(myRegion){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myRegion)}
+    map(graphlist, function(myGraph)
+      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  )
+    if(verbose>=2) {reportDiffTime(myRegion,tig)}
+  })
+} 
+writeRegioGraph<- function(lpdf=JHH,regions,
+                           graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), 
+                           saveit=TRUE,minval=1,
+                           ID="PSCR", until=Sys.Date()){
+  print("Deprecated. Please use byRegionthenGraph or byGraphthenRegion")
+  if (typeof(regions)=="character") { regions=list(regions) }
+  for (myGraph in graphlist){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myGraph)}
+    for (myRegion in regions){
+      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  }
+    if(verbose>=2) {reportDiffTime(myGraph, tig)}
   }
 }
 makeDate<- function(chardate="",format=myDateFormat){
@@ -1161,9 +1216,37 @@ makeDate<- function(chardate="",format=myDateFormat){
            error=function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:",myDateFormat ))})
 }
 
-makeHistoryGraphs<- function(lpdf,regions="",ID='PSCR', 
-                       dates =as.Date(max(JHH$Date), format=myDateFormat),
-                       graphlist=myGraphNrs
+makeHistoryGraphsRG<- function(lpdf,regions, graphlist=myGraphNrs,
+                               ID='PSCR', 
+                               dates =as.Date(max(JHH$Date), format=myDateFormat)){
+  on.exit(options(warn=0)) 
+  if (missing(regions) ) stop("no regions to graph")
+  #{if (dim(lpdf)==dim(JHH)& (lpdf==JHH)) regions=JHHRegios #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
+  #if (dim(lpdf)==dim(ECDC) & (lpdf==ECDC)) regions=ECDCRegios}
+  if (typeof(dates)=="character") {  makeDate(dates)}
+  if(any(is.na(dates))) print("Not all dates recognized:"% % paste(dates,collapse=",") %+%
+                                ". Either enter an R date or a string in the following Date format:" % %
+                                myDateFormat )
+  #for (until in dates ){
+  map(dates,function(until){
+    if(verbose>=1) {
+      ti_da=Sys.time() 
+      print(format(ti_da,"%H:%M:%S ") % % "doing" % % as.Date(until,origin="1970-01-01"))
+    }
+    if(nrow(lpdf[lpdf$Date<=until,])>0) {  
+      byRegionthenGraph(lpdf,regions,graphlist,saveit=TRUE,ID=ID, 
+                        until=until)
+      if(verbose>=1) {
+        reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
+    }
+    else print("no data for "% % as.Date(until,origin="1970-01-01"))
+    while(!is.null(dev.list())) dev.off() 
+  })
+}
+
+#deprecated
+makeHistoryGraphs<- function(lpdf,regions="", graphlist=myGraphNrs,
+                             ID='PSCR', dates =as.Date(max(JHH$Date), format=myDateFormat)
                         ){
   on.exit(options(warn=0)) 
           if (regions[1]==""){ #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
@@ -1188,24 +1271,23 @@ makeHistoryGraphs<- function(lpdf,regions="",ID='PSCR',
                   'doing'% %regions[[i]][1])
         if (verbose>= 4) print('regions'% % paste(IDs,collapse="/ "))
         lpdf%>% 
-          graphs(countries =IDs,savename=regions[[i]][1],  ID=ID, 
-                 until=until,graphlist=graphlist)
+          graphs(countries =IDs,graphlist=graphlist,savename=regions[[i]][1],  ID=ID, 
+                 until=until)
         if(verbose>=2) {print (regions[[i]][1] % %"duration"%: % 
                               round(difftime(Sys.time(),ti_reg,units='mins'),2)%+%"mins")}
       }
       if(verbose>=1) {
-        print ( as.Date(until,origin="1970-01-01") % % "duration " %: % 
-              round( difftime(Sys.time(),ti_da,units='mins'),1)%+%"mins")}
+        reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
     }
     else print("no data for "% % as.Date(until,origin="1970-01-01"))
     while(!is.null(dev.list())) dev.off() 
   }
-  #traceback() # to trace the nested calls leading to an error. 
+
 }
 
 #options(warn= 2 ) #all warnings become errors, stops execution. 
-
-
+#traceback() # to trace the nested calls leading to an error. 
+#suppresswarnings() to suppresswarnings of the function inside. 
 
 # check th lags between recovered, confirmed and deaths 
 ccf.vf<- function(var1=c(1,2), var2=c(2,2),lag.max=30,saveit=FALSE, plotit=FALSE,printit=FALSE){
