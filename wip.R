@@ -1,20 +1,63 @@
 source("requirements.R")
 source('definitions.R')
-writeRegioGraph(regions=JHHRegios[1:6])
+#from loaddata: trial to make the loading only happen if it gives new data
+#while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
+#   source("loaddata.R")
+#   if (max(JHH$Date)< Sys.Date()-1)     {
+#    print( "failed to get yesterday's values ") 
+#   for (i in 1:12){
+#    print(Sys.time())
+#   Sys.sleep(600)
+#}   } }
 
-dropoffpage<- function(x){which((274762+1936*x)/5 >(58381+195*x))}
-1:20 %>% dropoffpage
+#why is spain gone? 
+view(graphit(ECDC,c('USA',"Spain"),facet='PSCR')) #,"France"
+View(graphit(ECDC,c('USA',"Belgium","Spain",'Italy'),facet='PSCR')) #,"France" #spain disappears! 
+graphit(ECDC,c("Belgium","Spain",'Italy',"France")) #,"France" #spain disappears! 
+graphit(JHH,c("Belgium","Spain",'Italy',"France"),facet='PSCR') #,"France"
+graph6Dardcra_fiyl(ECDC,c("Belgium","Netherlands")) #,'USA'
 
-days2overtake(JHH,c("Belgium",'Colombia',"Netherlands")) #who overtakes whom not clear. 
-days2overtake(JHH,unique(JHH$PSCR))[,"Belgium"][1:10]
-days2overtake(JHH,unique(JHH$PSCR))[,"France"][1:20]
-days2overtake(JHH,unique(JHH$PSCR))[,"Spain"][1:20]
-graphit(ECDC,c("Kazakhstan","Belgium","Netherlands","France"),facet='PSCR' , putlegend=TRUE)
+
+
+isdouble <- function (country,regiolist) {
+  sum(unlist(llply(regiolist, function (charvect) country %in% charvect)))
+}
+isdouble('US',regios)
+checkdouble <- function(country,regiolist){
+  which(unlist(llply(regiolist, function (x) country%in% x)))}
+checkdouble('USA',JHHRegios)
+
+checkdouble(c('USA','Netherlands'),JHHRegios)
+isdouble(c('Belgium','Netherlands'),regios)
+length(JHHRegios)
+
+#check colors
+graph3Dard_fia (JHH,regios$continents)
+
+
+demoDoubling(doublingDays=1)
+demoDoubling(doublingDays=2)
+
+graph6Dardcra_fiyl(JHH,"Idaho,US")
+graphDddp_fyl(JHH,countries="New York,US")
+graphDccp_fyl(JHH,countries="Belgium")
+graphDccprr_fyl()
+verbose=2
+graphDccprr_fyl(JHH,"Netherlands")
+graphDddp_fyl(JHH,"Netherlands")
+graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
+
+
+2^(doublingdays(1)/LAGRC)
+
+
+
+
+#check new version of grapit
+graphit(ECDC,c('Spain',"Kazakhstan","Belgium","Netherlands","France"),facet='PSCR' , putlegend=TRUE)
+
 graphit2(ECDC,c('Spain',"Kazakhstan","Belgium","Netherlands","France"),facet='PSCR' , putlegend=TRUE)
-view(graphit(ECDC,c("Spain"),facet='PSCR')) #,"France"
-graphit(ECDC,c("Belgium","Spain",'Italy'),facet='PSCR') #,"France" #spain disappears! 
-graphit(JHH,c("Belgium","Spain",'Italy'),facet='PSCR') #,"France"
-graph6Dardcra_fiyl(JHH,"Belgium")
+
 graphit2 <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date", 
                     yvars=c("active", "recovered","deaths","confirmed"), 
                     fuzzy=FALSE, logx=FALSE, logy=FALSE, 
@@ -144,37 +187,6 @@ graphit2 <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     print(myplot)}#+theme(title = element_text(size = 11)))}
   invisible(lpti)
 }# 
-
-isdouble <- function (country,regiolist) {
-  sum(unlist(llply(regiolist, function (charvect) country %in% charvect)))
-  }
-isdouble('US',regios)
-checkdouble <- function(country,regiolist){
-  which(unlist(llply(regiolist, function (x) country%in% x)))}
-checkdouble('US',JHHRegios)
-
-checkdouble(c('USA','Netherlands'),regios)
-isdouble(c('Belgium','Netherlands'),regios)
-length(JHHRegios)
-
-#check colors
-graph3Dard_fia (JHH,regios$continents)
-
-dev.off()
-demoDoubling(doublingDays=1)
-demoDoubling(doublingDays=2)
-
-graph6Dardcra_fiyl(JHH,"Idaho,US")
-graphDddp_fyl(JHH,countries="New York,US")
-graphDccp_fyl(JHH,countries="Belgium")
-graphDccprr_fyl()
-verbose=2
-graphDccprr_fyl(JHH,"Netherlands")
-graphDddp_fyl(JHH,"Netherlands")
-graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
-
-
-2^(doublingdays(1)/LAGRC)
 
 
 
