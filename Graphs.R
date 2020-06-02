@@ -6,8 +6,9 @@ verbose=3
 # so the next 4 lines need to be done on the latest data!
 
 #latest numbers
-JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe'),c('confirmed','new_confirmed','active','PSCR')]
+JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
 #overtaking
+
 overtakenin(JHH,"Belgium")[1:10]
 overtakenin(JHH,"Netherlands")[1:10]
 overtakenin(JHH,"United Kingdom")[1:10]
@@ -17,6 +18,8 @@ overtakingin(JHH,'Brazil')
 overtakenin(JHH,'Russia')
 overtakenin(JHH,'New York,US')
 
+overtakingin(JHH,'Germany')
+overtakingin(JHH,'Belgium')
 overtakingin(JHH,'Sweden')
 overtakingin(JHH,'Indonesia')
 overtakingin(JHH,'Peru')
@@ -30,39 +33,39 @@ makeHistoryGraphs(ECDC,regions=ECDCRegios)#
 JHHRegios <- makeRegioList(JHH)
 makeHistoryGraphs(JHH,regions=JHHRegios)#
 
-graphcodes()
-mygraphlist
+graphCodes()
+myGraphList
+myGraphListbyDate
 verbose=2
+#look at growth rates and growth paths in first days (Synchronized)
+ECDC%>% byRegionthenGraph(regions=ECDCRegios,graphlist = c("graphdnr_iyl","graphdac_iyl"))
+
 #simulate deaths and confirmed   
-ECDC %>% writeRegiograph(ECDCRegios)#simulations
-writeRegioGraph(ECDC,ECDCRegios) #same thing
+ECDC %>% byRegionthenGraph(ECDCRegios)#simulations #writeRegiograph
+#writeRegioGraph(ECDC,ECDCRegios) #same thing
 #writeRegioGraph(ECDC,ECDCRegios,graphlist = myGraphNrs)
 
-JHH%>%writeRegioGraph(JHHRegios) #simulations
+JHH%>%writeRegioGraph(JHHRegios) #simulations & non numbered graphs. 
 if (Sys.Date()%%7==0) ECDC %>% writeRegiograph(ECDCRegios)
-JHH %>% makehistory(regions=JHHRegios,graphlist = 'graphDccprr_fyl')
-
-#while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
-#   source("loaddata.R")
-#   if (max(JHH$Date)< Sys.Date()-1)     {
-#    print( "failed to get yesterday's values ") 
-#   for (i in 1:12){
-#    print(Sys.time())
-#   Sys.sleep(600)
-#}   } }
+JHH %>% makeHistoryGraph(regions=JHHRegios,graphlist = 'graphDccprr_fyl')
+JHH %>%# byRegionthenGraph(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
+  makeHistoryGraphsRG(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
 
 
-#do it ofr all past dates
+verbose=3
+
+#do standard graphs for all past dates
 JHH%>% makehistory(regions=JHHRegios, dates=seq(Sys.Date()-0,Sys.Date()-200,-10))  
 ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30))  
 
 ####corrections to earlier graphs
-
 verbose=1
 
 #check imputations
-JHHdifimp<- unique(JHH%>% filter(active != active_imputed)%>% .$PSCR )
-JHH%>% makehistory(regions=JHHdifimp, graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_yfil')  ) 
+#JHHdifimp<- unique(JHH%>% filter(active != active_imputed)%>% .$PSCR )
+JHH%>% makehistory(regions=
+                     unique(JHH%>% filter(active != active_imputed)%>% .$PSCR ), 
+                   graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_yfil')  ) 
 JHH%>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths)%>%View
 
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
