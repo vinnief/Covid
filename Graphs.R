@@ -8,23 +8,10 @@ verbose=3
 #latest numbers
 JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
 #overtaking
+map(c('Belgium','Netherlands','Sweden','Germany',"United Kingdom",'Europe','Russia','New York,US'),function(x) overtakenInDays(JHH,x))
+map(c('Belgium','Netherlands','Sweden','Germany',"United Kingdom",'Russia','Europe','New York,US'),function(x) overtakingInDays(JHH,x))
 
-overtakenin(JHH,"Belgium")[1:10]
-overtakenin(JHH,"Netherlands")[1:10]
-overtakenin(JHH,"United Kingdom")[1:10]
-overtakenin(JHH,"Europe")[1:10]
-overtakingin(JHH,"North America")[1:10]
-overtakingin(JHH,'Brazil')
-overtakenin(JHH,'Russia')
-overtakenin(JHH,'New York,US')
-
-overtakingin(JHH,'Germany')
-overtakingin(JHH,'Belgium')
-overtakingin(JHH,'Sweden')
-overtakingin(JHH,'Indonesia')
-overtakingin(JHH,'Peru')
-overtakingin(JHH,'India')
-
+map(c("North America",'Brazil','Indonesia','Peru','India','Russia'),function(x) overtakingInDays(JHH,x))
 #compare my countries
 graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
 #make all graphs
