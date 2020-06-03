@@ -31,6 +31,36 @@ checkdouble(c('USA','Netherlands'),JHHRegios)
 isdouble(c('Belgium','Netherlands'),regios)
 length(JHHRegios)
 
+addCountryTotals<- function(lpdf=JHH){
+  varnames=c("confirmed","recovered", "deaths","population")
+  existingTotals<- c("China","Australia","Canada",'US')
+  #just to be sure, that if i do it twice i dont get double counts. 
+  #And omit US as country and US states. 
+  lpti<- lpdf %>%
+    filter(!( PSCR %in% existingTotals )) #
+  rbind(lpdf, 
+        lpti%>% totals(c("China","Australia", "Canada",'US'),
+                       ID="Country.Region", varnames= varnames))
+  
+}
+addRegionTotals<- function(lpdf=JHH,totRegions=""){
+  existingTotals<- c("South America", "Asia", "Africa", "Europe","China","Australia","Canada",'US','North America',"World")
+  #just to be sure, that if i do it twice i dont get double counts. 
+  #And omit US as country and US states. 
+    lpti<- lpdf %>%
+    filter(!(Country.Region =="US" | PSCR%in% existingTotals )) #we have US and USA
+  if (totRegions[1]=="") totRegions<- c(regios)
+  if (verbose>=3) {
+    print('world totals include the following countries: ')
+    print(paste(World,collapse=","))}
+  varnames=c("confirmed","recovered", "deaths","population")
+  for(myRegion in totRegions){
+    lpdf<- rbind(lpdf, 
+            lpti%>%total(regios[[myRegion]],ID=ID,newrow=myRegion[1], varnames= varnames))
+  }
+}
+tail(JHH0%>%  addPopulation()%>% addCountryTotals %>% addRegionTotals%>% filter(Date==max(Date)),10)
+
 #check colors
 graph3Dard_fia (JHH,regios$continents)
 

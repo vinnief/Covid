@@ -6,9 +6,10 @@ source("definitions.R")# make sure we have our definitions.
 JHH<- makeJHH(force=TRUE) #load data
 JHH0<- JHH
 
-regios<- c(provincializeJHH(),regios)
+regios<- c(list(World=c('World', unique(JHH[['PSCR']]))),provincializeJHH(),regios) #regiosP?
 
 verbose=2
+
 JHH <-  JHH0 %>%
   addPopulation() %>% addTotals2 %>% addRegions( Regiolist= regios)%>% 
   imputeRecovered()%>% extravars() %>% addDoublingDaysAllCountries %>%
@@ -20,7 +21,7 @@ writewithcounters(JHH,name="Covid19JHH") #no factors!
 
 #same with ECDC
 ECDC0 <- makeECDC()
-ECDC <- ECDC0 %>% imputeRecovered()%>%  extravars() %>% 
+ECDC <- ECDC0 %>% addTotals3%>% imputeRecovered()%>%  extravars() %>% 
             addDoublingDaysAllCountries %>% addSimVars(minval=100)
 writewithcounters(ECDC,name= "Covid19ECDC")
 

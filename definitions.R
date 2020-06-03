@@ -689,14 +689,13 @@ addTotals3<- function(lpti=ECDC,totregions="", ID='Region'){
     filter(! (!!ID %in% totregions)) 
   World<- unique(lpti1[[ID]])
   varnames=c("confirmed","recovered", "deaths","population")
-  #,'recovered_imputed',"active_imputed") # we impute AFTER this function so no need. 
   for (regio in totregions[!is.na(totregions)]) 
     lpti<- rbind(lpti, 
                 lpti1%>% total(regio ,ID=ID, varnames= varnames,newrow=regio))
 }
 
 
-addTotals2<- function(lpdf=JHH,ID='PSCR'){
+addTotals2<- function(lpdf=JHH,totregions="",ID='PSCR'){
   lpti<- lpdf %>%
     #just to be sure, that if i do it twice i dont get double counts. 
     #And omit USA as country, as we have the individual states already. 
@@ -736,7 +735,7 @@ days2overtake<- function(lpti=JHH,countries=c('Belgium','China','Russia','Nether
   round(mconf/mnew,1)
 }
 
-overtakenin<- function(lpti,country){
+overtakenInDays<- function(lpti,country,nr=7){
   lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
   mydata<- subset(lastdata,PSCR==country)
   countries<- subset(lastdata,
@@ -744,10 +743,10 @@ overtakenin<- function(lpti,country){
                        new_confirmed>=mydata$new_confirmed,
                      select=PSCR)
   oc<- days2overtake(lpti,countries$PSCR)[,country]
-  oc[order(oc,na.last=FALSE)]
+  head(oc[order(oc,na.last=FALSE)],nr)
   
 }
-overtakingin<- function(lpti,country){
+overtakingInDays<- function(lpti,country,nr=7){
   lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
   mydata<- subset(lastdata,PSCR==country)
   countries<- subset(lastdata,
@@ -755,7 +754,7 @@ overtakingin<- function(lpti,country){
                        new_confirmed<=mydata$new_confirmed,
                      select=PSCR)
   oc<- days2overtake(lpti,countries$PSCR)[,country]
-  oc[order(oc,na.last=FALSE)]
+  head(oc[order(oc,na.last=FALSE)],nr)
 }
 
 
