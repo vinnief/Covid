@@ -1,42 +1,56 @@
 #for publication #MSM,Vincent,
-rm(list=setdiff(ls(),c('ECDC0','JHH0','JHH','ECDC')))
+rm(list = setdiff(ls(), c('ECDC0', 'JHH0', 'JHH', 'ECDC', 'JHHRegios', 'ECDCRegios')))
 source("loadData.R")  #also loads the requirements and the definitions 
-verbose=3
+
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
 # so the next 4 lines need to be done on the latest data!
 
 #latest numbers
-JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
-#overtaking
-map(c('Belgium','Netherlands','Sweden','Germany',"United Kingdom",'Europe','Russia','New York,US'),function(x) overtakenInDays(JHH,x))
-map(c('Belgium','Netherlands','Sweden','Germany',"United Kingdom",'Russia','Europe','New York,US'),function(x) overtakingInDays(JHH,x))
+#JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','France','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
 
-map(c("North America",'Brazil','Indonesia','Peru','India','Russia'),function(x) overtakingInDays(JHH,x))
+JHH[JHH$Date == max(JHH$Date)&JHH$PSCR %in% 
+    c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe',
+        'Germany','France','Africa','Iran','Russia','Brazil'),
+    c('confirmed','new_confirmed','active_imputed','deaths','PSCR',
+      'new_active_rate', 'active_imputed_growthRate') ]  %>%
+  arrange(new_active_rate)
+
+#overtaking
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who ='Ithem'))
+map(c('Germany','United Kingdom','France','Sweden'),          function(x) overtakeDays_l(JHH,x,who= "Ithem"))
+#map(c('Europe','Russia','New York,US'),function(x) overtakeDays_l(JHH,x,who="Ithem"))
+
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who='Ithem'))
 #compare my countries
 graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
+graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"))
+
 #make all graphs
-ECDCRegios <- makeDynRegions( ECDC, piecename='ECDC world')
-makeHistoryGraphs(ECDC,regions=ECDCRegios)#
+ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
+curGraph('GR', lpdf = ECDC,regions=ECDCRegios,graphlist=myGraphNrs)#
 JHHRegios <- makeRegioList(JHH)
-makeHistoryGraphs(JHH,regions=JHHRegios)#
+makeHistoryGraphsRG(JHH,regions=JHHRegios)#
 
 graphCodes()
+myGraphNrs
 myGraphList
 myGraphListbyDate
 verbose=2
 #look at growth rates and growth paths in first days (Synchronized)
-ECDC%>% byRegionthenGraph(regions=ECDCRegios,graphlist = c("graphdnr_iyl","graphdac_iyl"))
+ECDC%>% byRegionthenGraph(regions=ECDCRegios,graphlist = c("graph1dnr_iyl","graph2dac_iyl"))
 
 #simulate deaths and confirmed   
-ECDC %>% byRegionthenGraph(ECDCRegios)#simulations #writeRegiograph
-#writeRegioGraph(ECDC,ECDCRegios) #same thing
-#writeRegioGraph(ECDC,ECDCRegios,graphlist = myGraphNrs)
+ECDC %>% byRegionthenGraph(ECDCRegios,ext='_sim') #simulations #writeRegiograph
 
-JHH%>%writeRegioGraph(JHHRegios) #simulations & non numbered graphs. 
-if (Sys.Date()%%7==0) ECDC %>% writeRegiograph(ECDCRegios)
+ECDC %>% byRegionthenGraph(ECDCRegios,ext='_endsim') #simulations #writeRegiograph
+
+
+if ( weekdays( Sys.Date() , abbreviate=FALSE) == "Friday") ECDC %>% 
+  byRegionthenGraph(ECDCRegios, graphlist= myGraphListbyDate)
+
 JHH %>% makeHistoryGraph(regions=JHHRegios,graphlist = 'graphDccprr_fyl')
-JHH %>%# byRegionthenGraph(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
-  makeHistoryGraphsRG(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
+JHH %>% byRegionthenGraph(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
+  #makeHistoryGraphsRG(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
 
 
 verbose=3

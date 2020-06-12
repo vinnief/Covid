@@ -7,7 +7,9 @@ deathRate=.05
 if(!exists("verbose")) verbose=1
 
 myDateFormat<- "%Y-%m-%d"
-
+myPlotPath<- "G:/My Drive/Covid19_plots"
+myPath <- myPlotPath #%//% 'current'
+if (!dir.exists(myPlotPath)) dir.create(myPlotPath,recursive=TRUE)
 datapath='./data'
 if (!dir.exists(datapath)) dir.create(datapath,recursive=TRUE)
 
@@ -29,6 +31,16 @@ readUSdata<-function(dataversion="confirmed"){#deaths and recovered are the othe
             error= function(e) print(paste(e," The data was not found: Are you sure this file exists? ",filename))
   )
   return(wpdf)
+}
+readTesting<- function(){
+  testing<- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv')%>% 
+    select(c('Entity','ISO code','Cumulative total','Daily change in cumulative total')) %>% 
+    mutate(tests=`Cumulative total`, new_tests=`Daily change in cumulative total`)%>%    
+    select(-'Cumulative total',-'Daily change in cumulative total')
+  coco<- as.data.frame(str_split_fixed(testing$Entity,' - ',n=2))
+  testing$PSCR<- coco[,1]
+  testing$comment<- coco[.2]
+  testing
 }
 
 readdata<-function(dataversion="confirmed"){#deaths and recovered are the other options. 
@@ -56,14 +68,16 @@ convertdata <-function(wpdf,coltype="date", values.name="count",US=FALSE){
 } 
 
 findIDnames <- function(lpdf=JHH, testIDnames=c("Neth","India"), searchID="PSCR",
-                         fuzzy=TRUE, returnID=""){
+                         fuzzy=TRUE, returnID){
   lpdf<- as.data.frame(lpdf)
   allIDs<- (unique(lpdf[,searchID]))   #error maybe? [ for dataframe 
   if (!fuzzy) {a1<- intersect(testIDnames,allIDs)
   }else a1<- allIDs[unlist(llply(testIDnames,function(a) grep(a,allIDs, ignore.case=TRUE)))]
-  if (returnID=="")  return ( a1) #returnID=searchID
+  if (missing(returnID))  return ( a1) #returnID=searchID
+  else if(searchID==returnID)  {
+    if (verbose>=4) print('no need for returnID if same as searchID')
+    return ( a1)} #returnID=searchID
   unique(lpdf[lpdf[,searchID] %in% a1,returnID])
-  #filter(lpdf, .vars(searchID)%in% a1)%>% select(vars(returnID))
 } 
 aggreg<- function(avector){
   len<- length(unique(avector))
@@ -116,7 +130,7 @@ total<- function(lpdf=JHH, rows="",
   ans[,setdiff(names(lpdf),names(ans))]<-NA
   ans
 }
-#c("Canada","US","Australia","China",america, Africa
+#c("Canada","US","Australia","China")
 totals<- function(lpdf=JHH, rows="",
                   ID="Country.Region", 
                   varnames=c("confirmed","deaths","recovered")
@@ -299,7 +313,7 @@ regios<- list(EFTA=c("EFTA","Iceland","Liechtenstein","Switzerland","Norway"),
          CIS= c("CIS","Russia", "Belarus", "Armenia", "Azerbaijan","Kazakhstan","Kyrgyzstan","Turkmenistan","Tajikistan","Uzbekistan","Moldova"),
          China= c("China"))
 regios<- c(list(EU6=c("EU6", regios$Benelux[2:4], "Germany","France","Italy"),
-         Asia= setdiff(c("Asia regions", regios$SAsiaIO, regios$SouthEastAsia,
+         Asia= setdiff(c("Asia", regios$SAsiaIO, regios$SouthEastAsia,
                            regios$SouthWestAsia,regios$EastAsia, regios$China,
                            regios$CIS),
                          c("Madagascar","East Asia","South Asia & Indian Ocean",
@@ -412,8 +426,7 @@ makeRegioList<- function(lpti=JHH,piecename="JHH"){
     lpti%>% filter(PSCR %in% regios$Europe )%>% 
       makeDynRegions(gridsize=20,piecename=piecename% %'Europe'), 
     lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename=piecename% %'Asia'),
-    lpti%>% filter(PSCR %in% regios$NorthAmericaS)   %>% makeDynRegions(piecename='North America States'),
-    #lpti%>% filter(PSCR %in% regios$NAmerica)   %>% makeDynRegions(piecename='North America'),
+    lpti%>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename='North America'),
     lpti%>% filter(PSCR %in% regios$Africa )         %>% makeDynRegions(piecename='Africa') ,
     regios[c('SAmerica','OceaniaP')] #World="World", #regios['continents'], 'WestvsEast', 'Caribbean',
   ) 
@@ -430,8 +443,8 @@ addPopulation <- function(lpdf) {
   lpdf[grepl(",US", lpdf$PSCR),"population"]<- 
     popUS[lpdf[grep(",US", lpdf$PSCR),]$Province.State,"population"]
   popunknown<- unique(lpdf[is.na(lpdf$population),]$PSCR)
-  if (verbose>=1)print("population unknown:" % % 
-            ifelse(length(popunknown)==0,0, paste(popunknown,collapse="; ")))
+  if (verbose>=2 | length(popunknown) > 0)print("population unknown:" % % 
+            ifelse(length(popunknown) == 0,0, paste(popunknown,collapse="; ")))
   lpdf
 }
 
@@ -482,8 +495,7 @@ extravars<- function(lpdf,lagrc=0,lagdc=0){
     group_by(PSCR) %>% 
     mutate(  active          =   confirmed - deaths - recovered,
            active_imputed    =   confirmed - deaths - recovered_imputed,
-           new_confirmed     =   mac(diff.sl(confirmed)), 
-           new_active_rate   =   round(new_confirmed/active_imputed*100,2),
+           new_confirmed     =   mac(diff.sl(confirmed)),
            net_active        =   mac(diff.sl(active)),
            net_active_imputed=   mac(diff.sl(active_imputed)),
            new_recovered     =   mac(diff.sl(recovered)), 
@@ -507,62 +519,59 @@ extravars<- function(lpdf,lagrc=0,lagdc=0){
            deaths_per_confirmed= frac(deaths,dplyr::lag(confirmed,lagdc)),
            recovered_per_deaths= frac(recovered,dplyr::lag(deaths,lagrc-lagdc)),
            recovered_imputed_per_deaths= 
-             frac(recovered_imputed,dplyr::lag(deaths,lagrc-lagdc))  )
+             frac(recovered_imputed,dplyr::lag(deaths,lagrc-lagdc)), 
+           new_active_rate   =   round(new_confirmed/active_imputed,3)  )
 }
 
-doublingLine<- function(lpti=JHH,country, start,doublingDays=5,nrRows=100,
-                        deathRate=.05,pop=1e7, lagrc=LAGRC,lagdc=LAGDC ){
-  
+doublingLine<- function(lpti=JHH,country, minVal,growthRate, 
+                        doublingDays=5,nrRows=100,pop,
+                        deathRate=.05, lagrc=LAGRC,lagdc=LAGDC ){
   if(!missing(country)){
-    lpti <- lpti%>% filter(PSCR %in% country)
-    if (missing(start)) start<-(lpti$confirmed)[1]
-    if (start<1) start<-(lpti$confirmed)[1]
-    if (missing(doublingDays)) doublingDays= lpti[lptiPSCR==country,]$doublingDays[1]
-    if(NROW(lpti)==0) stop("could not find that country '"%+% country %+%"'in the data")
-    CountryR<-lpti$Country.Region[1] % % doublingDays % % 'days'
-    myPSCR<-lpti$PSCR[1] % % doublingDays % % 'days'
-    ProvinceS<- lpti$Province.State[1] % % doublingDays % % 'days'
-    myRegion<- lpti$Region[1]% % doublingDays % % 'days'
-    lat<-lpti$Lat[1]
-    long<- lpti$Long[1]
-  }else {
-    CountryR<- doublingDays % % 'days'
-    myPSCR<- doublingDays % % 'days'
-    ProvinceS<-  doublingDays % % 'days'
-    myRegion<- doublingDays % % 'days'
-    lat=90
-    long=90
+    if (missing(minVal)) minVal<-lpti$confirmed[1]
+    lpti <- lpti%>% filter(PSCR %in% country, confirmed>=minVal)
+    if (missing(pop)) pop=lpti$population[1]
+    if (missing(doublingDays)) 
+      if (missing(growthRate)) {
+        doublingDays= lpti$confirmed_doublingDays[1]
+        growthRate= 2^(1/doublingDays)}
+    else doublingDays <- -log2(growthRate)
+    if(NROW(lpti)==0) stop("No country '"%+% country %+%"'in the data")
   }
-  if (!missing(nrRows)&!nrRows<0) maxDate <- min(lpti$Date)+nrRows-1 
-    else {maxDate<- max(lpti$Date) ;nrRows<- maxDate-min(lpti$Date)+1}
+  if (!missing(nrRows)) maxDate <- max(lpti$Date)+nrRows
+  else {maxDate<- max(lpti$Date)}
+  if (missing(growthRate)) {growthRate= 2^(1/doublingDays)}
+  nrRows<- maxDate-min(lpti$Date)+1
   if(maxDate==-Inf)stop("Max Date equals -inf. Probably we have an empty data set. Did you choose the right country? ")
-  if (verbose>=3) print('dL:' % %myPSCR % % 'to double:' % %"R0=" % % round(2^(lagrc/doublingDays)-1,2) %, %'Simulated' % % nrRows% %'days' % % maxDate)
-  #maxDate<- as.Date(maxDate,origin='1970-01-01')
+  if (verbose>=3) print('dL:' % %myPSCR % % 'to double:' % %"R0=" % % round(2^(lagrc/doublingDays)-1,2) %, %'Simulated' % % nrRows% %'days until' % % maxDate)
   out=tibble(Date= seq(from=min(lpti$Date),to= maxDate,by=1))
-  doubling<- round(start*2^((1:nrow(out)-1)/(doublingDays) ))
-  out<- out%>% mutate (PSCR= myPSCR,
-                       Country.Region=CountryR,
-                       Province.State= ProvinceS,
-                       Region= myRegion,
-                       confirmed= pmin(doubling,pop), 
-                       deaths= round(deathRate*lag(confirmed,lagdc,default=0)), 
-                       recovered= lag(confirmed, lagrc,default=0),
-                       active=confirmed-deaths-recovered,
-                       population=pop-deaths,
-                       Lat=lat,Long=long
-                       ) 
+  doubling<- round(minVal*2^((0:(nrow(out)-1))/(doublingDays) ))
+  out<- out%>% mutate ( growthRate,doublingDays,
+                        confirmed= pmin(doubling,pop), 
+                        deaths= round(deathRate*lag(confirmed,lagdc,default=0)), 
+                        recovered= lag(confirmed, lagrc,default=0),
+                        active=confirmed-deaths-recovered,
+                        population=pop-deaths
+  ) 
+  #out<-tibble(PSCR=myPSCR, doublingDays, growthRate,
+  #         Date     = seq(from=min(lpti$Date),to= maxDate,by=1),
+  #          confirmed= pmin(pop,round(minVal*growthRate^(0:(nrow(out)-1) )) ))%>%
+  #    mutate(deaths   = round(deathRate*lag(confirmed,lagdc,default=0)), 
+  #           recovered= lag(confirmed, lagrc,default=0),
+  #           active   = confirmed-deaths-recovered,
+  #           population=pop-deaths ) 
   out
 }
-
-growOnce<- function(lpti,rownr,growRate,deathRate,pop,lagrc=LAGRC,lagdc=LAGDC){
-  prevrow<- lpti[rownr-1,]
-  currow<- prevrow %>% 
-    mutate(Date=Date+1, 
-           confirmed=confirmed+round(rpois(1,pmax(0,active*(growRate-1)*(population-recovered-active)/population))))
-  if(rownr<=lagdc) currow$deaths<- 0 
-    else currow$deaths<- round(deathRate*lpti[rownr-lagdc,]$confirmed) 
+growOnce <- function(lpti,rownr,minVal,doublingDays,growthRate,nrRows,myDeathRate=deathRate,pop,lagrc = LAGRC,lagdc = LAGDC){#no need for minVal,doublingDays,nrRows but makes passing arguments easier
+  prevrow<- lpti[rownr - 1,]
+  currow<- prevrow %>% #we randomize because this overcomes low rates& small minVals
+    mutate(Date = Date + 1, 
+           confirmed = confirmed +
+             round(rpois(1,pmax(0,active*(growthRate - 1) *
+                                  (population-recovered-active)/population))))
+  if(rownr <= lagdc) currow$deaths <- 0 
+    else currow$deaths <- round(myDeathRate*lpti[rownr-lagdc,]$confirmed) 
   currow$recovered<- 
-          ifelse(rownr<=lagrc,0,round(lpti[rownr-lagrc,]$confirmed*(1-deathRate)))
+          ifelse(rownr<=lagrc,0,round(lpti[rownr-lagrc,]$confirmed*(1-myDeathRate)))
   currow<-  currow%>% mutate (population=pop-deaths,
                               active=confirmed-deaths-recovered
                               )
@@ -570,113 +579,137 @@ growOnce<- function(lpti,rownr,growRate,deathRate,pop,lagrc=LAGRC,lagdc=LAGDC){
   currow
 }
 
-simulGrow<- function(lpti=JHH, country='Belgium', start,doublingDays=5,nrRows=-1,deathRate=.05,
-                     pop=1e7, lagrc=LAGRC,lagdc=LAGDC){
-  if (!missing(country)& (missing(pop)|pop<=0 )) pop=lpti[lpti$PSCR %in% country,]$population[1]
-  if (!missing(country)& (missing(start))) start=lpti[lpti$PSCR==country, ]$confirmed[1]
-  if (!missing(country)&start< 0 ) start=lpti[lpti$PSCR==country, ]$confirmed[1]
-
-  out<- doublingLine(lpti=lpti, country=country, start=start, doublingDays=doublingDays,
-                     nrRows=nrRows, deathRate=deathRate, pop=pop, lagrc=lagrc, lagdc=lagdc) 
+simulGrow<- function(lpti,country,...){
+  out<- doublingLine(lpti=lpti,country=country,...) 
+  if (verbose>=4) {print('doublingline made' );print(out)} #to compare with growonce results. 
   nrRows<- NROW(out)
+  pop=out$population[1]
   if (nrRows<2) return(out)
-  growRate<- 2^(1/doublingDays )
-  
-  for(rownr in 2:nrRows) {
-    out[rownr,]<- growOnce(out,rownr=rownr,growRate=growRate,
-                         deathRate=deathRate,pop=pop,lagrc,lagdc) 
+  growthRate<- out$confirmed_growthRate[1] 
+  for(rownr in 2:nrRows) {  # one could try pmap here!
+    out[rownr,]<- growOnce(out,rownr=rownr,growthRate=growthRate,pop=pop,...) 
   }
-  
   out
 }
 
-addSimCountry<- function(lpti,country, start=0, doublingDays=5,nrRows=-1,deathRate=.05,pop=0,lagrc=LAGRC,lagdc=LAGDC){
-  lpti<- rbind (lpti,
-          {out<- lpti %>% filter(PSCR %in% country) %>%
-              simulGrow(country,start, doublingDays=doublingDays,nrRows=nrRows,pop=pop)%>%
-           #out<- out %>%    #needs refactoring: what doublingline does in name filling, should be here. 
-             imputeRecovered %>% extravars 
-           missingCols<- setdiff(names(lpti),names(out))
-           if(verbose>=5 &length(missingCols>0)) 
-                 print(' addsimcountry:' % %missingCols% % 'filled with NAs')
-           out[missingCols]<- NA
-           }
-        )
+addSimCountry<- function(lpti,country,...){ 
+  out<- simulGrow(lpti=lpti, country=country,...)%>%
+          imputeRecovered %>% extravars
+  if(missing(country)){
+    out<- out%>% mutate(
+      Country.Region= doublingDays%_%'days',
+      PSCR= doublingDays % % 'days',
+      Province.State =  doublingDays % % 'days',
+      Region== doublingDays % % 'days',
+      Lat=90, Long=90)
+  } else {
+    doublingDays= out$confirmed_doublingDays[1]
+    out<- out%>% mutate(
+      Country.Region= country % %doublingDays%_%'days',
+      PSCR= country % %doublingDays % % 'days',
+      Province.State = country % % doublingDays % % 'days',
+      Region== lpti2$Region[1] % %doublingDays % % 'days',
+      Lat<-lpti2$Lat[1],
+      Long<- lpti2$Long[1]  )
+  }
+  missingCols<- setdiff(names(lpti),names(out))
+  if(verbose>=5 &length(missingCols>0)) 
+    print(' addsimcountry:' % %missingCols% % 'filled with NAs')
+  out[missingCols]<- NA
+  lpti<- rbind (lpti, out )
+  lpti
 }
+
 # from R0 to doubling days: not correct. 42 should give 1. 
 R02doublingDays<- function(R0=1){
   log2(LAGRC/R0)
 }
 
-addDoublingDays<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate="2020-01-01",maxDate='2020-12-31',newVar='doublingDays'){
-  if (verbose>=4) print('addDdoublinggDays' % %minVal % % '= minval, and variable ='% % variable)
-  lptisel<- lpti[lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date<= maxDate,]%>% head(nrDays)
-  if (sum(!is.na(lptisel[variable]))>3 ) 
-    slope= lm(log2(confirmed)~Date, data=lptisel,na.action=na.exclude)$coefficients['Date']
-  else {slope=0 #do something very wrong that will show up in graphs, but dont make an error. 
-    if (verbose>=2) print(paste(unique(lpti$PSCR),collapse = ',')% %'not enough data to estimate the doubling days slope')}
-  
-  lpti[newVar]<- round(1/slope,3)
-  
-  if (verbose>= 5) print('estimated'% % paste(unique(lpti[['doublingDays']]),collapse=','))
-  lpti
-}
 
-addDoublingDaysperCountry<- function(lpti,countries,variable='confirmed',minVal=100,nrDays=15){
-  lpti['doublingDays']<- as.numeric(NA)
-  for (country in findIDnames(lpti,  countries ,searchID='PSCR',fuzzy=FALSE)){
-    lpti[lpti$PSCR==country , ]<- 
-          lpti[lpti$PSCR==country , ] %>% 
-              addDoublingDays(variable,minVal,nrDays) #we only do it for confirmed!, the other variables are simulated using a.o. lag(confirmed)
+estimateDoublingDaysOneCountry<- function(lpti,variable='confirmed',nrDays=9,minDate="2019-12-31",maxDate='2020-12-31'){
+  getGR<- function(rowNr){
+    lptiSel<- lpti[(rowNr-nrDays+1):rowNr,] #potential Bug: assumes data sorted by increasing Date! is it? should be!
+    if (sum(!is.na(lptiSel[[variable]]))>=3 ) {
+      #https://win-vector.com/2018/09/01/r-tip-how-to-pass-a-formula-to-lm/
+      f <- as.formula('log2(' %#% variable %#% ')~Date')
+      growthRate <- tryCatch( 
+          lm( f, data = lptiSel, na.action = na.exclude )$coefficients[['Date']],
+                    finally = NA)}
+    else {growthRate <- NA
+    if (verbose >= 3) print('addDoublingDays' % % lpti$PSCR[1] % %
+                            'row' % % rowNr % % 
+                            '<=3 days of data for estimating growthrate, filling NA')}
+    return(tibble(doublingDays = 1/growthRate, growthRate))
   }
-  lpti
-}
-addDoublingDaysAllCountries<- function(lpti){
-  lpti %>% addDoublingDaysperCountry(unique(lpti$PSCR),'confirmed')
-  
+  rbind(tibble(doublingDays = rep(NA,nrDays - 1),growthRate = doublingDays),
+        map_dfr(nrDays:nrow(lpti), getGR))
 }
 
 
-addSimVarsOneCountry<- function (lpti,country,minval, doublingDays=c(2.0,3),
-                                 nrRows=-1,deathRate=.05,pop=0,lagrc=LAGRC,lagdc=LAGDC) {
-  if (missing(doublingDays) | doublingDays[1]<=0) doublingDays<- lpti[lpti$PSCR==country,]$doublingDays[1]
-  if (missing(minval)) 
-    if (!missing(country) ) minval=min(lpti[ lpti$PSCR == country,'confirmed'])
-        else minval=100
-  if (verbose>= 4)print('addSimVarsOneCountry: found dd=' % %unique(lpti[lpti$PSCR==country,'doublingDays']) % % 'for' % % country)
+addDoublingDaysPerCountry<- function(lpti,variable='confirmed',...){
+  if (!(variable%_%'doublingDays' %in% names(lpti))) 
+    lpti[[variable%_%'doublingDays']]<- as.numeric(NA)
+  if(!(variable %_% 'growthRate' %in% names(lpti))) 
+    lpti[[variable %_% 'growthRate']] <- as.numeric(NA)
+  lpti %>% group_by(PSCR) %>% 
+    (function(lpti){
+      lpti[lpti[[variable]]>0 , c(variable%_%'doublingDays',variable%_%'growthRate')]<- 
+        estimateDoublingDaysOneCountry(lpti[ lpti[[variable]]>0,],
+                                       variable=variable,...) 
+      lpti
+    })
+  #lpti
+}
+
+addSimVarsOneCountry<- function (lpti,country,minVal=100, doublingDays,
+                          minDate="2019-12-31", maxDate=Sys.Date(),
+                          ext='_sim',...) {
+  minDate<- max( as.Date(minDate), 
+                 min(lpti[lpti$PSCR==country&lpti$confirmed>=minVal,]$Date,na.rm=TRUE))
+  if (verbose>=4 &(is.na(minDate)|minDate>maxDate ))
+    {print('addsimvarsoneCountry disnogud! minDate=' % % minDate% %
+            country % % 'minval=' % % minVal % % 
+            'max reached' % % max(lpti[lpti$PSCR==country,]$confirmed) )
+    return()}
+  if (missing(doublingDays)) 
+    doublingDays<- lpti[lpti$PSCR == country&lpti$Date== minDate,]$confirmed_doublingDays
+  if (verbose>= 5) print('addSimVarsOneCountry: found dd=' % %
+                          'doublingDays' % % 'for confirmed in' % % country)
   for (doublingSpeed in doublingDays) {
-    sim<- lpti %>% filter(PSCR == country,confirmed>=minval) 
-    if (NROW(sim)>0 ) {
-      sim<- sim %>% simulGrow(country,nrRows=nrRows, doublingDays=doublingSpeed,pop=pop, #start=minval
-                lagrc=lagrc,lagdc=lagdc)
-      if (length(doublingDays)==1) ext='_sim' else ext=  '_'%+%doublingSpeed
+    sim <- lpti[lpti$PSCR==country & lpti$confirmed>=minVal & 
+                 lpti$Date>=minDate & lpti$Date<=maxDate,]
+    nrRows <- NROW(sim)
+    if (nrRows>0 ) {
+      sim <- sim %>% simulGrow(country, doublingDays=doublingSpeed,...)
+      if (missing(ext)& length(doublingDays) > 1) ext <- '_'%+%doublingSpeed
+      if (verbose>=6) {
+        print('addsimvarsOneCountry: adding vars wih extension:'% %ext)
+      }
       for (varname in c('confirmed','recovered','active','deaths')) 
-        lpti[lpti$PSCR==country & lpti$confirmed>=minval,varname%+%ext] = sim[varname]
-    }
-  }
+        lpti[lpti$PSCR==country & lpti$confirmed>=minVal & 
+               lpti$Date>=minDate & lpti$Date<=maxDate,
+             varname %+% ext] <- sim[1:nrRows,varname]
+      if (NROW(sim) != nrRows) print(country % % (NROW(sim)-nrRows)% %'extra rows generated, what now? ')
+  }}
   lpti
 }
 
-addSimVars<- function(lpti,countries, minval=100, doublingDays=-1,
-                      nrRows=-1,deathRate=.05,pop=0,lagrc=LAGRC,lagdc=LAGDC){
+addSimVars<- function(lpti,countries,ext='_sim',...){ # doublingDays=-1,pop=0,...){
   if (!missing(countries)) countries= findIDnames(lpti,countries,searchID='PSCR',fuzzy=FALSE)
-  else
-    if (missing(pop) | missing(nrRows) | missing(doublingDays)) {
+  else {
       countries= unique(lpti$PSCR)
-      if (verbose>= 5) print( "AddSimVars: no country or other parameters given. I will add simulation for:" % % paste(countries,collapse="/"))
-    }else countries= doublingDays % % 'days'
+    if (verbose>= 3) print( "AddSimVars: no country given, simulating:" % % paste(countries,collapse="/"))
+  }
+  #if(!exists('ext')) ext="_sim"
+  if (!('confirmed'%+%ext %in% names(lpti))) {lpti[,paste(c('confirmed','active','recovered','deaths'),ext,sep="")]<-NA}
   for (country in countries)
-    lpti<- lpti%>% 
-      addSimVarsOneCountry(country,minval=minval,doublingDays=doublingDays,
-                           nrRows=nrRows, deathRate=deathRate,pop=pop,lagrc=lagrc,lagdc=lagdc)
+    lpti[lpti$PSCR==country,]<- addSimVarsOneCountry(lpti[lpti$PSCR==country,], country,ext,...)
   lpti
 }
 
-
-
-graphDemoDoubling<-function(lpti=ECDC,doublingDays=3,nrRows=-1){
-  simulGrow(lpti,"France", start=10, doublingDays,nrRows=nrRows,deathRate=.05,lagrc=LAGRC,lagdc=LAGDC) %>% 
-    graphit(c(doublingDays % % "days"),xvar='day',yvars=c('active','recovered','deaths','confirmed',"population") ,logy=TRUE,until=max(.$Date)) %>%
+graph_DemoDoubling<-function(lpti=ECDC,doublingDays=3,nrRows=-1){
+  simulGrow(lpti,"France", minVal=10, doublingDays) %>% 
+    graphit("France"% %doublingDays % % "days",xvar='day',yvars=c('active','recovered','deaths','confirmed',"population") ,logy=TRUE,until=max(.$Date)) %>%
     .[c('deaths','active','confirmed','recovered')]  %>% view #apply(2, max,na.rm=TRUE) 
 }
 
@@ -689,9 +722,12 @@ addTotals3<- function(lpti=ECDC,totregions="", ID='Region'){
     filter(! (!!ID %in% totregions)) 
   World<- unique(lpti1[[ID]])
   varnames=c("confirmed","recovered", "deaths","population")
+  if(!('Lat' %in% names(lpti))) lpti1$Lat<-NA
+  if(!('Long' %in% names(lpti))) lpti1$Long<-NA
   for (regio in totregions[!is.na(totregions)]) 
     lpti<- rbind(lpti, 
                 lpti1%>% total(regio ,ID=ID, varnames= varnames,newrow=regio))
+  lpti
 }
 
 
@@ -716,35 +752,87 @@ addTotals2<- function(lpdf=JHH,totregions="",ID='PSCR'){
         lpti%>% total(regios$Africa,ID=ID,newrow="Africa", varnames= varnames),
         lpti%>% total(regios$Asia,ID=ID,newrow="Asia", varnames= varnames),
         lpti%>% total(regios$SAmerica,ID=ID,newrow="South America",varnames= varnames),
-        lpti%>% total(regios$NAmerica,ID=ID,newrow="North America",varnames= varnames), #bug solved instead of takign the states,US data, take the USA data, whichs has recovered available. 
+        lpti%>% total(regios$NAmerica,ID=ID,newrow="North America",varnames= varnames), #bug solved :instead of taking the states,US data, we now use the USA data, whichs has recovered available. 
         lpti%>% total(World ,ID=ID,newrow="World", varnames= varnames)
   ) 
 }
 
-days2overtake<- function(lpti=JHH,countries=c('Belgium','China','Russia','Netherlands','Colombia','Iran')){
+days2overtake<- function(
+    lpti=JHH[JHH$Date==max(JHH$Date),],
+    countries=c('Belgium','China','Russia','Netherlands','Colombia','Iran'),
+    varname='confirmed',
+    newvarname='new_confirmed'){
   #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
-  lastdata<- subset(lpti,PSCR %in%countries&Date==max(Date),
-                    select=c('PSCR','confirmed','new_confirmed'))
-  lastdata<- lastdata[order( -lastdata$confirmed),]
-  confirmed<- lastdata$confirmed 
-  names(confirmed)<- lastdata$PSCR
-  new_confirmed<-  lastdata$new_confirmed
-  names(new_confirmed)<- lastdata$PSCR
-  mconf<- outer(confirmed,confirmed,`-`)
-  mnew<- -(outer(new_confirmed,new_confirmed,`-`))
+
+  lastdata<- lpti[lpti$PSCR %in%countries, c('PSCR',varname,newvarname)]
+  lastdata<- (lastdata[order( -lastdata[[varname]]),])
+  #rownames(lastdata)<- lastdata$PSCR
+  variable<- lastdata[[varname]] 
+  names(variable) <- lastdata$PSCR
+  newvar<-  lastdata[[newvarname]]
+  names(newvar)<- lastdata$PSCR
+  mconf<- outer(variable,variable,`-`)
+  mnew<- -(outer(newvar,newvar,`-`))
   round(mconf/mnew,1)
 }
 
-overtakenInDays<- function(lpti,country,nr=7){
-  lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
+overtakeDays_df<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
+  if (varname %in% c('active','active_imputed','active_p_m',
+                     'active_imputed_p_M')) 
+    prefix<- 'net_'
+  else if (varname %in% 
+           c('confirmed','confirmed_p_M',
+             'recovered','recovered_p_M', 'deaths','deaths_p_M',
+             'recovered_imputed','recovered_imputed_p_M')) 
+    prefix<- 'new_'
+  newvarname<- prefix%#% varname
+  lastdata<- lpti[lpti$Date==max(lpti$Date), c('PSCR',varname,newvarname)]
   mydata<- subset(lastdata,PSCR==country)
-  countries<- subset(lastdata,
-                     confirmed<= mydata$confirmed &
-                       new_confirmed>=mydata$new_confirmed,
-                     select=PSCR)
-  oc<- days2overtake(lpti,countries$PSCR)[,country]
-  head(oc[order(oc,na.last=FALSE)],nr)
-  
+  if (who == 'theyme') {
+    colName<- 'days to overtake'% % country
+    countries<- lastdata[lastdata[[varname]]<= mydata[[varname]] &
+                      lastdata[[newvarname]]>=mydata[[newvarname]], 'PSCR']}
+  else if (who == 'Ithem')  {
+    colName<- 'overtakes in ? days'
+    countries<- lastdata[lastdata[[varname]]>= mydata[[varname]] &
+                      lastdata[[newvarname]]<=mydata[[newvarname]], 'PSCR']}
+  else stop('who can only be theyme or Ithem')
+  oc<- days2overtake(lastdata,countries$PSCR,
+                     varname,newvarname)[,country]
+  #head(oc[order(oc,na.last=FALSE)],nr)
+  vec<- oc[order(oc,na.last=FALSE)][1:nr]
+  if (is.null(names(vec))) return (vec)
+  else tib<- tibble(country=names(vec)[2:nr],Days=vec[2:nr])
+  names(tib)[1]<- country
+  names(tib)[2]<- colName
+  tib
+}
+
+overtakeDays_l<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
+  if (varname %in% c('active','active_imputed','active_p_m',
+                     'active_imputed_p_M')) 
+    prefix<- 'net_'
+  else if (varname %in% 
+           c('confirmed','confirmed_p_M',
+             'recovered','recovered_p_M', 'deaths','deaths_p_M',
+             'recovered_imputed','recovered_imputed_p_M')) 
+    prefix<- 'new_'
+  newvarname<- prefix%#% varname
+  lastdata<- lpti[lpti$Date==max(lpti$Date), c('PSCR',varname,newvarname)]
+  mydata<- subset(lastdata,PSCR==country)
+  if (who == 'theyme') {
+    colName<- 'days to overtake'% % country
+    countries<- lastdata[lastdata[[varname]]<= mydata[[varname]] &
+                           lastdata[[newvarname]]>=mydata[[newvarname]], 'PSCR']}
+  else if (who == 'Ithem')  {
+    colName<- country% % 'will overtake in ? days'
+    countries<- lastdata[lastdata[[varname]]>= mydata[[varname]] &
+                           lastdata[[newvarname]]<=mydata[[newvarname]], 'PSCR']}
+  else stop('who can only be theyme or Ithem')
+  oc<- days2overtake(lastdata,countries$PSCR,
+                     varname,newvarname)[,country]
+  #head(oc[order(oc,na.last=FALSE)],nr)
+  vec<- oc[order(oc,na.last=FALSE)][1:nr]
 }
 overtakingInDays<- function(lpti,country,nr=7){
   lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
@@ -753,8 +841,10 @@ overtakingInDays<- function(lpti,country,nr=7){
                      confirmed>= mydata$confirmed &
                        new_confirmed<=mydata$new_confirmed,
                      select=PSCR)
-  oc<- days2overtake(lpti,countries$PSCR)[,country]
-  head(oc[order(oc,na.last=FALSE)],nr)
+  oc<- days2overtake(lastdata,countries$PSCR)[,country]
+  #head(oc[order(oc,na.last=FALSE)],nr)
+  tib<- oc[order(oc,na.last=FALSE)][1:nr]
+  tib<- tibble(country=names(tib),overtakenDays=tib)
 }
 
 
@@ -763,22 +853,19 @@ addcounterfrommin<-function(lpdf=JHH,minv=0,varname="confirmed",ID="PSCR",counte
   lpdf[,counter]<-as.numeric(NA)
   lpdf<- lpdf%>% filter(!is.na(!!varname))   #[!is.na(lpdf[,varname]),] #should not have any! effect for "confirmed" 
   if(sum(lpdf[,varname]>=minv)>0)  
-  #lpdf<- lpdf%>% mutate_cond((!!varname)>=minv) %>% group_by(ID) %>%
-   #       mutate(counter=seq_along(Date))  
-    
    lpdf[lpdf[[varname]]>=minv,]<- 
          ddply(lpdf[lpdf[[varname]]>=minv,],ID, 
             function(lpdf){
               lpdf[[counter]]<- seq_along(lpdf$Date)
               lpdf}
             )
-    #lpdf[lpdf[[varname]]>=minv,]
+   lpdf
 }
 
 ### make day vars for tableau & Excel
 makecountname <- function(countname,minv){paste(countname,minv,sep="_")}
 
-writewithcounters<- function(lpdf=JHH,varname="confirmed",ID="PSCR",name="JHH"){
+writeWithCounters<- function(lpdf=JHH,varname="confirmed",ID="PSCR",name="JHH"){
     lpdf<- as.data.frame(lpdf)
       lpdf<- lpdf[!is.na(lpdf[c(varname)]),]
     for (minv in c(1,20,100,400,1000,2000,5000,1e4,5e4,1e5,5e5,1e6)){
@@ -788,14 +875,16 @@ writewithcounters<- function(lpdf=JHH,varname="confirmed",ID="PSCR",name="JHH"){
     }
     filename=paste(name,"days.csv",sep="_")
     write_csv(lpdf,path=datapath%+%"/"%+% filename, na="")
-    if (verbose>0) print(paste("Written the current data with counters to disk as",filename,"for use in Tableau or Excel"))
+    write_csv(lpdf,path=myPlotPath%+%"/data/"%+% filename, na="")
+    if (verbose>=1) print(paste("Written the current data with counters to disk as",filename,"for use in Tableau or Excel"))
 }
 
-dataprep<- function(lpdf=JHH, minval=1, ID="PSCR", 
+dataprep<- function(lpdf=JHH, minVal=1, ID="PSCR", 
                      xvar="day", yvars=c("confirmed", "recovered"), 
                      logx=FALSE, logy=TRUE, sorted=TRUE){
   if (!(xvar %in% names(lpdf))) 
-    lpdf<- lpdf%>% addcounterfrommin(minval,varname="confirmed", ID=ID,counter=xvar)
+    lpdf<- lpdf%>% addcounterfrommin(minVal,varname="confirmed", ID=ID,counter=xvar)
+  lpdf<- lpdf%>% mutate(confirmed>=minVal) #bug? is new, moved here from addcountersfrommin
   if (logy){ #get rid of negative and zeros for the log
     eps<-  1e-5
     for (varname in yvars)  {
@@ -807,21 +896,21 @@ dataprep<- function(lpdf=JHH, minval=1, ID="PSCR",
   if(sorted) {
     lpdf[[ID]] <- sortIDlevels(lpdf=lpdf,varname=yvars[1]) 
     lpdf<- lpdf[order(lpdf[[ID]],lpdf[[xvar]]),] 
-    if (verbose>=4) print('Dataprep' % % levels(lpdf[[ID]]))
+    if (verbose>=5) print('Dataprep' % % levels(lpdf[[ID]]))
   } 
   lpdf<- lpdf[,c(xvar, ID, yvars)]# ,'Date'  ungroup %>% arrange(PSCR)
 }
 #Bug potential: after the sort, PSCR is a factor. before, it was  character!
 
-graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date", 
-                    yvars=c("active", "recovered","deaths","confirmed"), 
-                    fuzzy=FALSE, logx=FALSE, logy=FALSE, 
-                    myfolder="",savename="", putlegend=TRUE, size=2,
-                    returnID="PSCR", area=FALSE,position='stack',facet=FALSE, 
-                    sorted=TRUE, until=Sys.Date()){
+graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date", 
+                    yvars = c("active", "recovered","deaths","confirmed"), 
+                    fuzzy = FALSE, logx = FALSE, logy = FALSE, yline = FALSE,
+                    myfolder1 = '',myfolder = "", savename = "", putlegend=TRUE, size=2,
+                    returnID = "PSCR", area = FALSE, position = 'stack', facet = FALSE, 
+                    sorted = TRUE, until = Sys.Date()){
   
   lpdf<- as.data.frame(lpti)
-  if (verbose>=4)print(lpti)
+  if (verbose>=7)print(lpti)
   if (typeof(until)=="character") until=as.Date(until,format="%Y-%m-%d")
   lastdate<- min(max(lpdf$Date),until)
   if (missing(countries)) {
@@ -829,24 +918,25 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     if(length(countries> 40)) return(print('too many countries, you wont see anything. Please select less countries'))
     }
     
-    countries<- lpdf%>% findIDnames(testIDnames=countries,searchID=ID,fuzzy=fuzzy,returnID=returnID) #}
+    countries<- findIDnames(lpdf,testIDnames=countries, searchID=ID,
+                            fuzzy=fuzzy,returnID=returnID) #}
   ID<- returnID
-  lpdf <- lpdf%>% filter((confirmed>=minval)&(PSCR %in% countries)&Date<=until)  
+  lpdf <- lpdf%>% filter((confirmed>=minVal)&(PSCR %in% countries)&Date<=until)  
   
   y_lab <- paste(sort(yvars),collapse=" & ")% %ifelse(logy,"(log)","")
   if (str_length(y_lab)>80) 
     y_lab<- paste(initials(sort(yvars)),collapse="&") % % 
     ifelse(logy,"(log)","")
-  mytitle<- format(lastdate,format="%Y%m%d")% %"C19"% % savename% % y_lab% %
-                  "by"% %xvar% %"for"% % minval%+%"+"% %"confirmed"
+  mytitle <- format(lastdate, format = "%Y%m%d") % % "C19"% % savename% % y_lab% %
+                  "by" % % xvar % % "for" % % minVal %#% "+" % % "confirmed"
   
-  if (nrow(lpdf)==0 ) {if (verbose>=4) {print('graphit' % %mytitle% %" No data")}
+  if (nrow(lpdf) == 0 ) {if (verbose >= 4) {print('graphit' % % mytitle % %" No data")}
                       return()  }
-  lpdf <- lpdf%>%
-      dataprep(ID=ID,minval=minval, xvar=xvar,yvars=yvars,logx=logx,logy=logy, sorted=sorted)
+  lpdf <- dataprep(lpdf, ID = ID, minVal = minVal, xvar = xvar, yvars = yvars,logx = logx,
+                   logy = logy, sorted = sorted)
   if (verbose >=5){print ('graphit columns left');print( names(lpdf))}
   if (nrow(lpdf)==0| all(is.na(lpdf[,xvar]))|all(is.na(lpdf[,yvars])))
-    return(if (verbose>=5) print ('graphit' % % paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more regions?")))
+    return(if (verbose>=4) print ('graphit' % % paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more regions?")))
   
    lpdf<- lpdf%>% 
      melt(lpdf ,id=c(ID,xvar),measure.vars=yvars,
@@ -878,12 +968,12 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     myplot<- myplot+myscale_fill+  
       scale_color_manual(values = c("red", "green","black","darkorange","lawngreen"))
   }else {
-    
-    myplot<- myplot+  #line plot
+    myplot<- myplot +  #line plot
       geom_line(alpha=0.3,size=size*0.7)+
       geom_point(size=size, aes_string(   shape='variable'))+
       if(!putlegend| facet==FALSE) geom_dl(aes_string(x=xvar,y="count",  label='mygroup'),      
-            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2))
+            method = list(dl.trans(x = x+0.1 ,y=y+0.1),"last.points", cex = 1.2)) 
+    if ( yline ) myplot <- myplot + geom_hline( yintercept = yline, na.rm = TRUE)  
     if (length(unique(lpdf$variable))<=6 ) 
       myplot<- myplot + scale_shape_manual(values = c(0,1,3,2,10,5,6)) #shape="\u2620"
     if (nrgroups<=6){
@@ -905,9 +995,9 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
     ggtitle(mytitle) +  theme_light()+      
     guides(col = guide_legend(nrow=30, ncol = min(2,(nrgroups-1) %/% 30+1)))  
   
-  breaks <- 10^(-10:10)
+  breaks <- rep(c(.5,1,2),21)*10^rep((-10:10),each=3)
   minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each=5))
-  if(logy) myplot<- myplot+scale_y_continuous(trans='log10',breaks = breaks, minor_breaks = minor_breaks)+
+  if( logy != FALSE) myplot<- myplot+scale_y_continuous(trans='log10',breaks = breaks, minor_breaks = minor_breaks)+
     annotation_logticks() 
   if(logx) myplot<- myplot+scale_x_continuous(trans='log10',breaks = breaks, minor_breaks = minor_breaks)
   myplot<- myplot+ theme(
@@ -915,29 +1005,28 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
                              hjust = 1,vjust = 0.5, size = rel(.8)),    
     strip.background =element_rect(fill="white",color='black'),    
     strip.text = element_text(color = 'black'))
+
   if (savename!="") {
     if(facet==FALSE) savename<-  paste(savename,"all-in-one")
     if(area) savename<- paste(savename,"area plot")
-    if (myfolder=="") { myfolder<- sort(initials(yvars))% %'by'% %xvar}
+    if (myfolder=="") { myfolder<- myfolder1 %//% sort(initials(yvars))% %'by'% %xvar}
+    else myfolder<- myfolder1 %//% myfolder
     if(area)myfolder<- myfolder % % "area plot"
     if (logy) myfolder <- myfolder % %'log scale'
     if(facet==FALSE) myfolder<-  paste(myfolder,"all-in-one")
-    if (verbose>= 3) print("graphit making plot" % % myfolder %+% "/" %+% mytitle)
-    myplot<- myplot+ theme(text=element_text(size=20))#,                           axis.text = element_text(color = "blue", size = rel(.8)) )
-    mypath<- paste("G:/My Drive/Covid19_plots",lastdate,sep="/") 
-    if(myfolder!="") mypath<- paste(mypath,myfolder,"",sep="/")
-    if (!dir.exists(mypath)) dir.create(mypath,recursive=TRUE)
-    png(filename=mypath%+% mytitle %+%".png", width=1600,height=900)
+    if (verbose>= 4) print("graphit making plot" % % myfolder %#% "/" %+% mytitle)
+    myplot<- myplot+ theme(text=element_text(size=20),                           
+    axis.text = element_text(color = "blue", size = rel(.8)) )
+    if(myfolder!="") myPath <- myPath %//% myfolder
+    if (!dir.exists(myPath)) dir.create(myPath,recursive=TRUE)
+    png(filename=myPath %//% mytitle %#%".png", width=1600,height=900)
     on.exit(while(!is.null(dev.list())) dev.off() )
     
       print(myplot)
-    #)
     dev.off()
   }else {
-    #tempwarn<- getOption("warn")
-    #options(warn=-1)
-    #on.exit(options(warn=tempwarn))
-    print(myplot+theme(title = element_text(size = 11)))}
+    print(myplot+theme(title = element_text(size = 11)))
+    }
   invisible(lpdf)
 }# 
 
@@ -946,7 +1035,7 @@ graphit <- function(lpti, countries, minval=1, ID="PSCR", xvar="Date",
 #geom_point(aes(shape=cyl, color=cyl, size=cyl))
 #+scale_color_manual(values=c('#999999','#E69F00', '#56B4E9'))
  
-graphCodes<- function(){ 
+graphCodes <- function(){ 
   print('naming system:')
   print(list(nrvars=1:6,
           letters=tibble(codes=c('d/D/c/d','acrd_','f','i','M','n','y','a/l'),
@@ -955,7 +1044,7 @@ graphCodes<- function(){
           )   ))
   writeLines('example graph1Dc_fiMnyl: confirmed by Date,  facet (by ID),use imputed, per Million, new (not cumulative), logy, line plot). 
 
-The variable "myGraphNrs" contains all daily interesting graph function names one can pass as a parameter to makeHistoryGraphs.')
+The variable "myGraphNrs" contains all daily interesting graph function names one can pass as a parameter to curGraph or makeHistoryGraphsRG.')
 }
 
 initials<- function (text=c('test_1','of_imputation','new_recovered_imputed_per_Million')){
@@ -966,176 +1055,153 @@ initials<- function (text=c('test_1','of_imputation','new_recovered_imputed_per_
 }
 rm(list=ls(pattern="graph[[:digit:]]"))
 #in alfphabetical order of outputs
-#graph4dardc_fiMyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-#                             logy=TRUE, until=Sys.Date()){
-#  lpdf%>%graphit(countries,minval,ID, xvar="Day", 
-#                 yvars=c('active_imputed_p_M','recovered_imputed_p_M','deaths_p_M','confirmed_p_M'), 
-#                 logy=logy,savename= savename,facet="PSCR",until=until)
+#graph4dardc_fiMyl<- function(lpdf=JHH,countries, logy=TRUE, ...){
+#  graphit(lpdf, countries, xvar="Day", 
+#         yvars=c('active_imputed_p_M','recovered_imputed_p_M','deaths_p_M','confirmed_p_M'), 
+#         logy=logy, facet="PSCR",...)
 #}
-graph6Dardcra_fiMyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                             logy=TRUE, until=Sys.Date()){
-  lpdf%>%graphit(countries,minval,ID, xvar="Date", 
-                 yvars=c('active_imputed_p_M','recovered_imputed_p_M',
-                         'deaths_p_M','confirmed_p_M','recovered_p_M',
-                         'active_p_M'), 
-                 logy=logy,savename=savename,facet="PSCR",until=until)
+graph6Dardcra_fiMyl <- function(lpdf = JHH, countries, logy = TRUE,...){
+  graphit(lpdf,countries, xvar="Date", logy = logy,facet = "PSCR",
+          yvars=c('active_imputed_p_M','recovered_imputed_p_M', 'deaths_p_M',
+                  'confirmed_p_M','recovered_p_M', 'active_p_M'), ...)
 }
 
-graph6Dardcra_fiyl<- function(lpdf=JHH,countries,savename="",minval=1, 
-                             ID="PSCR", logy=TRUE,until=Sys.Date()){
-  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
+graph6Dardcra_fiyl <- function(lpdf=JHH,countries, logy = TRUE,...){
+  graphit(lpdf, countries, xvar='Date', logy=logy, facet = 'PSCR',
                yvars=c('active_imputed','recovered_imputed','deaths', 
-                       "confirmed",'recovered','active'), 
-               logy=logy, savename= savename, facet=ID,putlegend=TRUE,until=until)
+                       "confirmed",'recovered','active'), ...)
 }
 #same as areas
 #
-graph3Dard_fia<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                          logy=FALSE, until=Sys.Date()){
-  lpdf%>%graphit(countries,1,ID, xvar="Date",
-                 yvars=c('active_imputed','recovered_imputed','deaths'), 
-                 area=TRUE,facet=ID,
-                 savename=savename,
-                 until=until) 
+graph3Dard_fia<- function(lpdf=JHH,countries,...){
+  graphit(lpdf, countries, xvar="Date", area = TRUE,facet = 'PSCR',
+          yvars=c('active_imputed','recovered_imputed','deaths'),  ...) 
 }
 
 
 #new --
-graph3Dard_fina<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",logy=FALSE,
-                           until=Sys.Date()){
-  lpdf%>%graphit(countries,minval,ID, xvar="Date",
-                 yvars=c('net_active_imputed','new_recovered_imputed',
-                         'new_deaths'), 
-                 logy=FALSE, savename= savename,
-                 facet=ID, area = TRUE, until=until) 
+graph3Dard_fina<- function(lpdf=JHH,countries,...){
+  graphit(lpdf,countries, xvar="Date",  facet='PSCR', area = TRUE,
+          yvars=c('net_active_imputed','new_recovered_imputed', 'new_deaths'), ...) 
 }
 
-graph6Dardcra_finyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                               logy=TRUE, until=Sys.Date()){
-  lpdf%>%graphit(countries,minval,ID, xvar="Date",
-                 yvars=c('net_active_imputed','new_recovered_imputed',
-                         'new_deaths', 'new_confirmed','new_recovered',
-                         'net_active'),  
-                 logy=logy,savename=savename,facet=ID,until=until) 
+graph6Dardcra_finyl<- function(lpdf=JHH,countries, logy = TRUE, ...){
+  graphit(lpdf, countries,xvar="Date", logy=logy, facet ='PSCR',
+          yvars=c('net_active_imputed','new_recovered_imputed', 'new_deaths', 
+                  'new_confirmed','new_recovered', 'net_active'),  ...) 
 }
-graph6Dardcra_fiMnyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                             logy=TRUE, until=Sys.Date()){
-  lpdf%>%graphit(countries,minval,ID, xvar="Date",
-                 yvars=c( 'net_active_imputed_p_M','new_recovered_imputed_p_M',
-                         'new_deaths_p_M','new_confirmed_p_M','new_recovered_p_M',
-                         'net_active_p_M'), 
-                 logy=logy, savename=savename,facet="PSCR",until=until)
+graph6Dardcra_fiMnyl<- function(lpdf=JHH,countries,
+                             logy=TRUE, ...){
+  graphit(lpdf, countries, xvar="Date", logy=logy,facet="PSCR",
+          yvars=c( 'net_active_imputed_p_M','new_recovered_imputed_p_M',
+                   'new_deaths_p_M','new_confirmed_p_M','new_recovered_p_M',
+                         'net_active_p_M'), ...)
 }
 
-graph1Dc_finl<- function(lpdf=JHH,countries,savename="",minval=1, 
-                        ID="PSCR", logy=FALSE,until=Sys.Date()){
-  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
-                 yvars=c("new_confirmed"), 
-                 logy=logy, savename= savename, facet=ID,putlegend=TRUE,until=until)
+graph1Dc_finl<- function(lpdf=JHH,countries, ...){
+  graphit(lpdf, countries, xvar='Date', 
+                 yvars=c("new_confirmed"), facet= 'PSCR', putlegend=TRUE, ...)
 }
-graph1Dc_fil<- function(lpdf=JHH,countries,savename="",minval=1, 
-                              ID="PSCR", logy=FALSE,until=Sys.Date()){
-  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
-                 yvars=c("confirmed"), 
-                 logy=logy, savename= savename, facet=ID,putlegend=TRUE,until=until)
+graph1Dc_fil<- function(lpdf=JHH,countries, logy=FALSE,...){
+  graphit(lpdf, countries, xvar='Date', yvars=c("confirmed"),  facet='PSCR',...)
 }
 
 #other graphs
-graph2crd_il<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",logy=FALSE, 
-                  until=Sys.Date()){
-  lpdf%>% graphit(countries,minval,ID, xvar='confirmed',
-                  yvars=c('recovered_imputed','deaths'),
-                  logy=logy,  logx=FALSE,savename=savename,until=until)
+
+graphDg_fyl <- function(lpdf=JHH,countries,logy = TRUE,...){
+  graphit(lpdf, countries, xvar= 'Date',
+                  yvars = c('confirmed_growthRate'),
+                  logy = logy,  ...)
+}
+graphDggnar_fiyl <- function(lpdf= JHH, countries, logy= TRUE, ...){
+  graphit(lpdf, countries, xvar= 'Date',
+                  yvars= c('active_imputed_growthRate','confirmed_growthRate',"new_active_rate"),
+                  logy= logy, yline = 0.025, facet='PSCR',...)
 }
 
-graph1dr_iyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",logy=TRUE, 
-                  until=Sys.Date()){
-  lpdf%>%graphit(countries,minval,ID, xvar='deaths',yvars=c('recovered_imputed'),
-                 logy=logy,logx=TRUE,savename=savename,until=until)
+
+graph2Dgnar_fiyl <- function(lpdf=JHH,countries,logy=TRUE, ...){
+  graphit(lpdf, countries, xvar='Date',
+                  yvars=c('active_imputed_growthRate',"new_active_rate"),
+                  logy=logy,  yline=0.025, facet='PSCR',...)
 }
-graph1Drr_il<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                           logy=FALSE, until=Sys.Date()){
-  lpdf%>%graphit(countries,1,ID, xvar="Date",
+
+graph2crd_il<- function(lpdf=JHH, countries,...){
+  graphit(lpdf, countries, xvar='confirmed',
+                  yvars=c('recovered_imputed','deaths'), ...)
+}
+
+graph1dr_iyl<- function(lpdf=JHH, countries, logy=TRUE, ...){
+  graphit(lpdf, countries, xvar = 'deaths',yvars = c('recovered_imputed'),
+                 logy = logy, logx = TRUE,...)
+}
+graph1Drr_il<- function(lpdf=JHH, countries, myfolder = '', ...){
+  graphit(lpdf, countries, xvar="Date",
                  yvars=c('recovered_imputed_per_confirmed'), 
-                 myfolder="recovery rate", 
-                 logy=logy,savename=savename,putlegend=FALSE ,
-                 until=until)
+                 myfolder=myfolder %#%"recovery rate", 
+                 putlegend=FALSE ,...      )
 }
 #Simulation included
-graphDccp_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                         logy=TRUE, until=Sys.Date()){
-  graphit(lpdf,countries, minval=minval,myfolder="Confirmed infections avoided", 
-          yvars=c('confirmed_sim','confirmed',"population"),
-          logy=TRUE, savename=savename,facet='PSCR')
-}
-graphDccprr_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                         logy=TRUE, until=Sys.Date()){
-  graphit(lpdf,countries, minval=minval,myfolder="Confirmed recovered simulated", 
-          yvars=c('confirmed_sim','confirmed',"population",'recovered_sim','recovered_imputed'),
-          logy=TRUE, savename=savename,facet='PSCR')
+graphDccp_fyl<- function(lpdf=JHH, countries, logy=TRUE ,ext="_sim", ...){
+  graphit(lpdf,countries, myfolder="Confirmed infections simulated", 
+          yvars=c('confirmed'%+%ext,'confirmed',"population"),
+          logy=logy, facet='PSCR')
 }
 
-graphDddp_fyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                         logy=TRUE, until=Sys.Date()){
-  graphit(lpdf,countries, minval=minval, myfolder="deaths avoided", 
-          yvars=c('deaths_sim','deaths',"population"),
-          logy=TRUE, savename=savename,facet='PSCR')
+graphDccprr_fiyl<- function(lpdf=JHH,countries, logy=TRUE,ext='_sim', ...){
+  graphit(lpdf,countries, myfolder="Confirmed recovered simulated", 
+          yvars=c('confirmed'%+%ext,'confirmed',"population",'recovered'%+%ext,
+                  'recovered_imputed'),
+          logy=logy, facet = 'PSCR',...)
+}
+
+graphDddp_fyl<- function(lpdf=JHH,countries, logy = TRUE, ext="_sim",...){
+  graphit(lpdf,countries, minVal=minVal, myfolder="deaths simulated", 
+          yvars=c('deaths'%+%ext,'deaths',"population"),
+          logy=logy, facet='PSCR', ...)
 }
 
 
 
 #legacy. 
-graphdarc_fiyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
-                         logy=TRUE, until=Sys.Date()){
-  graphit(lpdf,countries, minval, ID,xvar='day', 
+graphdarc_fiyl <- function(lpdf=JHH,countries, logy=TRUE, ...){
+  graphit(lpdf,countries, xvar='day', 
                  yvars=c('active_imputed','recovered_imputed',"confirmed"), logy=logy,
-                 savename= savename,facet=ID,putlegend=TRUE,until=until)
+                 facet= 'PSCR', ...) #putlegend=TRUE
 }
-graphdarcs_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
-                        logy=TRUE, until=Sys.Date()){
-  
-  graphit(lpdf,c(countries,doublingDays% %"days"), minval, ID,xvar='day', 
+graphdarcs_iyl <- function(lpdf ,countries, logy=TRUE, ...){
+  graphit(lpdf,c(countries, doublingDays% %"days"), xvar='day', 
                          yvars=c('active_imputed','recovered_imputed',"confirmed"), 
-                         savename= savename,logy=logy,putlegend=TRUE,until=until)
+                         logy=logy,putlegend=TRUE, ...)
 }
-graphdac_iyl<-function(lpdf=JHH,countries,savename="",minval=100, ID="PSCR", 
-                        logy=TRUE, until=Sys.Date()){
-  
-  graphit(lpdf,c(countries), minval, ID,xvar='day', 
+graph2dac_iyl<-function(lpdf=JHH,countries, minVal = 100,  logy=TRUE, ...){
+  graphit(lpdf,c(countries), minVal, xvar='day', 
           yvars=c('active_imputed',"confirmed"), 
-          savename= savename,logy=logy,putlegend=TRUE,until=until)
+          logy=logy, ... ) #putlegend=TRUE,
 }
-graphdnr_iyl<-function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR", 
-                        logy=TRUE, until=Sys.Date()){
-  
-  graphit(lpdf,c(countries), minval, ID,xvar='day', 
+graph1dnar_iyl <- function(lpdf = JHH, countries, minVal=10, logy=TRUE, ...){
+  graphit(lpdf,c(countries), minVal, xvar='day', 
           yvars=c('new_active_rate'), 
-          savename= savename,logy=logy,putlegend=TRUE,until=until)
+         logy=logy, ...) #putlegend=TRUE
 }
 
 
 # for testing imputation quality, do not add numbers otherwise they get done for all regios.
-graphDaa_fia<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR"
-,logy=FALSE, until=Sys.Date()){
-  lpdf%>%graphit(countries,1,ID, xvar="Date",
+graphDaa_fia<- function(lpdf=JHH,countries, ...){
+  graphit(lpdf,countries, xvar="Date",
                  yvars=c('active_imputed', 'active'),
-                 area=TRUE,position='identity',facet=ID,
-                 savename=savename,  until=until) 
+                 area=TRUE,position='identity',facet= 'PSCR', ...) 
 }
-graphDaa_fiyl<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR",
-                         logy=TRUE, until=Sys.Date()){
-  lpdf%>%graphit(countries, minval, ID,xvar='Date', 
+graphDaa_fiyl<- function(lpdf=JHH,countries, logy=TRUE, ...){
+   graphit(lpdf, countries, xvar='Date', 
           yvars=c( 'active_imputed','active'),facet=ID, 
-          logy=logy, savename= savename,
-          putlegend=TRUE,until=until)
+          logy=logy, ... ) #putLegend=TRUE
 }
 
-graphDrr_fia<- function(lpdf=JHH,countries,savename="",minval=1, ID="PSCR"
-                        ,logy=FALSE, until=Sys.Date()){
-  lpdf%>%graphit(countries,1,ID, xvar="Date",
+graphDrr_fia<- function(lpdf=JHH,countries, ...){
+  graphit(lpdf,countries, xvar="Date",
                  yvars=c('recovered_imputed','recovered'),
-                 area=TRUE,position='identity',facet=ID,
-                 savename=savename,  until=until) 
+                 area=TRUE, position='identity',facet='PSCR', ...) 
 }
 
 
@@ -1144,11 +1210,11 @@ myGraphNrs<- ls(pattern="graph[[:digit:]]")
 myGraphListbyDay <- ls(pattern='graphd') #c("graphdnr_iyl","graphdac_iyl")
 myGraphListbyDate <- ls(pattern='graphD')
 graphCodes()
-print(myGraphList)
+print(myGraphNrs)
 print(myGraphListbyDate)
 print(myGraphListbyDay)
 
-graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,...){
+graphs<- function(lpdf=JHH,countries="World", graphlist=myGraphNrs,...){
   
   for (myGraph in graphlist){
     if (verbose>= 3) print( 'graph:' % % myGraph)
@@ -1156,69 +1222,58 @@ graphs<- function(lpdf=JHH,countries="World",savename="" ,graphlist=myGraphNrs,.
   }
 }
 reportDiffTime<- function(message,mytime,units='mins',precision=2){
-  print(message % %round( difftime(Sys.time(),mytime,units=units),precision)%+%units)
+  print(message % %round( difftime(Sys.time(),mytime,units=units),precision)% %units)
 }
 timer<- function(mycall,message='',verbosity=1,...){
   if(verbose>=verbosity) {tistart=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %message)}
   do.call(myCall,...)
-  if(verbose>=verbosity) {reportDiffTime(message,tistart)}
+  if(verbose>=verbosity) {reportDiffTime(myCall %:% message,tistart)}
 }
 
 graphOnRegion<- function(lpdf,myRegion,myGraph,saveit=TRUE,...){
-  #IDs<-findIDnames(lpdf=lpdf, testIDnames=myRegion,searchID=ID, fuzzy=FALSE,returnID="PSCR")
   if(verbose>=4) print( 'Regions'% %     paste(myRegion,collapse="/ "))
-  if(verbose>=3) { tir=Sys.time() ; print(tir%: % myGraph % % myRegion[1] ) }
+  if(verbose>=3) { tir <- Sys.time() ; print(tir%: % myGraph % % myRegion[1] ) }
   do.call (myGraph,
-           args=list(lpdf,myRegion,ifelse(saveit,myRegion[1],""),...))
+           args=list(lpdf,myRegion,savename = ifelse(saveit,myRegion[1],""),...))
   if(verbose>=3) {
     reportDiffTime (myGraph % % myRegion[1]% % "duration:",tir)}
 }
-byRegionthenGraph<- function(lpdf=JHH,regions,
-                             graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'),
-                             saveit=TRUE,minval=1, 
-                             ID="PSCR", until=Sys.Date()){# ===writeRegioGraph in same order
+
+byRegionthenGraph <- function(lpdf=JHH,regions, saveit=TRUE,
+                             graphlist=c('graphDccprr_fiyl','graphDddp_fyl'), ...){
+  ### this is writeRegioGraph in same order
   if (typeof(regions)=="character") { regions=list(regions) }
-  map(graphlist, function(myGraph){
+  walk(graphlist, function(myGraph){
     if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myGraph)}
-    map(regions, function(myRegion)
-      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  )
+    walk(regions, function(myRegion)
+         graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,...)  )
     if(verbose>=2) {reportDiffTime(myGraph,tig)}
   })
 }
-byGraphthenRegion<- function(lpdf=JHH,regions,
-                             graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'),
-                             saveit=TRUE,minval=1,
-                              ID="PSCR", until=Sys.Date()){ # ===writeRegioGraph different order
+byGraphthenRegion<- function(lpdf=JHH,regions, graphlist=c('graphDggnar_fiyl'), saveit=TRUE, ...){ 
   if (typeof(regions)=="character") { regions=list(regions) }
-  map(regions, function(myRegion){
-    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myRegion)}
-    map(graphlist, function(myGraph)
-      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  )
-    if(verbose>=2) {reportDiffTime(myRegion,tig)}
+  walk(regions, function(myRegion){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myRegion[1])}
+    walk(graphlist, function(myGraph)
+        graphOnRegion(lpdf = lpdf,myRegion,myGraph,saveit=saveit,...)  )
+    if(verbose>=2) {reportDiffTime(myRegion[1],tig)}
   })
 } 
-writeRegioGraph<- function(lpdf=JHH,regions,
-                           graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), 
-                           saveit=TRUE,minval=1,
-                           ID="PSCR", until=Sys.Date()){
-  print("Deprecated. Please use byRegionthenGraph or byGraphthenRegion")
-  if (typeof(regions)=="character") { regions=list(regions) }
-  for (myGraph in graphlist){
-    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myGraph)}
-    for (myRegion in regions){
-      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minval=minval,ID=ID,until=until)  }
-    if(verbose>=2) {reportDiffTime(myGraph, tig)}
-  }
-}
+
 makeDate<- function(chardate="",format=myDateFormat){
   tryCatch(as.Date(chardate, format=format),
            error=function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:",myDateFormat ))})
 }
 
-makeHistoryGraphsRG<- function(lpdf,regions, graphlist=myGraphNrs,
-                               ID='PSCR', 
-                               dates =as.Date(max(JHH$Date), format=myDateFormat)){
-  on.exit(options(warn=0)) 
+curGraph <- function(ord='RG', ...){
+  if (ord == 'RG' ) byRegionthenGraph( myfolder1 = 'current', graphlist=myGraphNrs, ...)
+  else byGraphthenRegion(myfolder1 = 'current',...)
+}
+
+makeHistoryGraphsRG <- function(lpdf,regions, graphlist=myGraphNrs,
+                               dates = as.Date(max(JHH$Date), format=myDateFormat,...)){
+  
+  on.exit({options(warn=0) }) 
   if (missing(regions) ) stop("no regions to graph")
   #{if (dim(lpdf)==dim(JHH)& (lpdf==JHH)) regions=JHHRegios #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
   #if (dim(lpdf)==dim(ECDC) & (lpdf==ECDC)) regions=ECDCRegios}
@@ -1226,83 +1281,45 @@ makeHistoryGraphsRG<- function(lpdf,regions, graphlist=myGraphNrs,
   if(any(is.na(dates))) print("Not all dates recognized:"% % paste(dates,collapse=",") %+%
                                 ". Either enter an R date or a string in the following Date format:" % %
                                 myDateFormat )
-  #for (until in dates ){
   map(dates,function(until){
     if(verbose>=1) {
       ti_da=Sys.time() 
       print(format(ti_da,"%H:%M:%S ") % % "doing" % % as.Date(until,origin="1970-01-01"))
     }
-    if(nrow(lpdf[lpdf$Date<=until,])>0) {  
-      byRegionthenGraph(lpdf,regions,graphlist,saveit=TRUE,ID=ID, 
-                        until=until)
-      if(verbose>=1) {
-        reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
+    if(nrow(lpdf[lpdf$Date <= until,])>0) {
+      byRegionthenGraph(lpdf,regions,graphlist,saveit = TRUE, 
+                        until = until, 
+              myfolder1 = min(until, max(format(JHH$Date, format = '%Y-%m-%d') )), ...)
     }
     else print("no data for "% % as.Date(until,origin="1970-01-01"))
+    if(verbose>=1) {
+      reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
     while(!is.null(dev.list())) dev.off() 
   })
 }
 
-#deprecated
-makeHistoryGraphs<- function(lpdf,regions="", graphlist=myGraphNrs,
-                             ID='PSCR', dates =as.Date(max(JHH$Date), format=myDateFormat)
-                        ){
-  on.exit(options(warn=0)) 
-          if (regions[1]==""){ #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
-    if (dim(lpdf)==dim(JHH)& (lpdf==JHH)) regions=JHHRegios
-    if (dim(lpdf)==dim(ECDC) & (lpdf==ECDC)) regions=ECDCRegios
-  }
-  if (typeof(dates)=="character") {  makeDate(dates)}
-  if(any(is.na(dates))) print(paste("Not all dates recognized: ",paste(dates,collapse=","),". Either enter an R date or a string (please use the following Date format for the string:",myDateFormat ))
-  for (until in dates ){
-    if(verbose>=1) {
-      ti_da=Sys.time() 
-      print(format(ti_da,"%H:%M:%S ") % % "doing" % % as.Date(until,origin="1970-01-01"))
-      }
-    if(nrow(lpdf[lpdf$Date<=until,])>0) {  
-      
-      for (i in 1:(length(regions))){
-        ti_reg=Sys.time()
-        IDs<-findIDnames(lpdf=lpdf, testIDnames=regions[[i]],searchID=ID, 
-                         fuzzy=FALSE,returnID="PSCR")
-        if(verbose>=2) 
-          print('At' % %format( ti_reg,"%H:%M:%S ") % % 
-                  'doing'% %regions[[i]][1])
-        if (verbose>= 4) print('regions'% % paste(IDs,collapse="/ "))
-        lpdf%>% 
-          graphs(countries =IDs,graphlist=graphlist,savename=regions[[i]][1],  ID=ID, 
-                 until=until)
-        if(verbose>=2) {print (regions[[i]][1] % %"duration"%: % 
-                              round(difftime(Sys.time(),ti_reg,units='mins'),2)%+%"mins")}
-      }
-      if(verbose>=1) {
-        reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
-    }
-    else print("no data for "% % as.Date(until,origin="1970-01-01"))
-    while(!is.null(dev.list())) dev.off() 
-  }
-
-}
 
 #options(warn= 2 ) #all warnings become errors, stops execution. 
 #traceback() # to trace the nested calls leading to an error. 
 #suppresswarnings() to suppresswarnings of the function inside. 
 
 # check th lags between recovered, confirmed and deaths 
-ccf.vf<- function(var1=c(1,2), var2=c(2,2),lag.max=30,saveit=FALSE, plotit=FALSE,printit=FALSE){
-  title=paste("ccf of ",var1  , " vs ",var2,".png", sep="")
-  if (saveit) {png(filename=paste("plots/ccf/",title))}
-  myplot=ccf(var1,var2,lag.max=lag.max,main= title, plot=plotit,na.action=na.omit)
+ccf.vf <- function(var1=c(1,2), var2=c(2,2), lag.max = 30, saveit = FALSE, 
+                   plotit = FALSE, printit = FALSE){
+  title = paste("ccf of ",var1  , " vs ",var2,".png", sep = "")
+  if (saveit) {png(filename = paste("plots/ccf/",title))}
+  myplot = ccf(var1,var2,lag.max = lag.max,main = title, plot = plotit,na.action = na.omit)
   if (printit) print(myplot)
   if (saveit) {dev.off()} #else {myplot}
   myplot
   }
 
-findMaxCCF<- function(var1="new_recovered",var2="new_confirmed",myPSCR="Hubei, China", lpdf=JHH,N=5){
-  if (myPSCR!="") lpdf<- lpdf[lpdf$PSCR==myPSCR,]
-  lpdf<- lpdf[lpdf$Date>"2020-01-22",c("Date", var1,var2)]
-  if(all(is.na(lpdf[,var1]))|all(is.na(lpdf[,var2]))) 
-    return(data.frame( cor=NA,lag=NA)) #
+findMaxCCF <- function(var1="new_recovered", var2 = "new_confirmed", myPSCR = "Hubei, China", 
+                       lpdf = JHH, N = 5){
+  if (myPSCR != "") lpdf <- lpdf[lpdf$PSCR == myPSCR,]
+  lpdf <- lpdf[lpdf$Date > "2020-01-22", c("Date", var1,var2)]
+  if (all(is.na(lpdf[,var1])) | all(is.na(lpdf[,var2]))) 
+    return(data.frame( cor = NA, lag = NA)) #
   d <- ccf.vf(lpdf[,var1],lpdf[,var2],lag.max=30, plot = FALSE)
   if (verbose>=2) print (myPSCR)
   res = data.frame( cor=d$acf[,,1],lag=d$lag[,,1])
