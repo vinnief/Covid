@@ -68,7 +68,113 @@ ma.diff.lpdf<- function(lpdf,id="PSCR", varnames=c("confirmed","active","recover
   ans
 }
 
+doublingLine_old<- function(lpti=JHH,country, start, doublingDays=5,nrRows=100,
+                            deathRate=.05,pop=1e7, lagrc=LAGRC,lagdc=LAGDC ){
+  
+  if(!missing(country)){
+    lpti <- lpti%>% filter(PSCR %in% country)
+    if (missing(start)) start<-(lpti$confirmed)[1]
+    # if (start<1) start<-(lpti$confirmed)[1]
+    if (missing(doublingDays)) doublingDays= lpti[lptiPSCR==country,]$confirmed_doublingDays[1]
+    if(NROW(lpti)==0) stop("could not find that country '"%+% country %+%"'in the data")
+    myPSCR<-lpti$PSCR[1] % % doublingDays % % 'days'
+  }else {     myPSCR<- doublingDays % % 'days'   }
+  if (!missing(nrRows)&!nrRows<0) maxDate <- min(lpti$Date)+nrRows-1 
+  else {maxDate<- max(lpti$Date) ;nrRows<- maxDate-min(lpti$Date)+1}
+  if(maxDate==-Inf)stop("Max Date equals -inf. Probably we have an empty data set. Did you choose the right country? ")
+  if (verbose>=3) print('dL:' % %myPSCR % % 'to double:' % %"R0=" % % round(2^(lagrc/doublingDays)-1,2) %, %'Simulated' % % nrRows% %'days until' % % maxDate)
+  out=tibble(Date= seq(from=min(lpti$Date),to= maxDate,by=1))
+  doubling<- round(start*2^((0:(nrow(out)-1))/(doublingDays) ))
+  out<- out%>% mutate (
+    confirmed= pmin(doubling,pop), 
+    deaths= round(deathRate*lag(confirmed,lagdc,default=0)), 
+    recovered= lag(confirmed, lagrc,default=0),
+    active=confirmed-deaths-recovered,
+    population=pop-deaths
+  ) 
+  out
+}
+writeRegioGraph<- function(lpdf=JHH,regions,
+                           graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), 
+                           saveit=TRUE,minVal=1,
+                           ID="PSCR", until=Sys.Date()){
+  print("Deprecated. Please use byRegionthenGraph or byGraphthenRegion")
+  if (typeof(regions)=="character") { regions=list(regions) }
+  for (myGraph in graphlist){
+    if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myGraph)}
+    for (myRegion in regions){
+      graphOnRegion(lpdf=lpdf,myRegion,myGraph,saveit=saveit,minVal=minVal,ID=ID,until=until)  }
+    if(verbose>=2) {reportDiffTime(myGraph, tig)}
+  }
+}
 
+#deprecated
+makeHistoryGraphs<- function(lpdf,regions="", graphlist=myGraphNrs,
+                             ID='PSCR', dates =as.Date(max(JHH$Date), format=myDateFormat)
+){
+  on.exit(options(warn=0)) 
+  if (regions[1]==""){ #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
+    if (dim(lpdf)==dim(JHH)& (lpdf==JHH)) regions=JHHRegios
+    if (dim(lpdf)==dim(ECDC) & (lpdf==ECDC)) regions=ECDCRegios
+  }
+  if (typeof(dates)=="character") {  makeDate(dates)}
+  if(any(is.na(dates))) print(paste("Not all dates recognized: ",paste(dates,collapse=","),". Either enter an R date or a string (please use the following Date format for the string:",myDateFormat ))
+  for (until in dates ){
+    if(verbose>=1) {
+      ti_da=Sys.time() 
+      print(format(ti_da,"%H:%M:%S ") % % "doing" % % as.Date(until,origin="1970-01-01"))
+    }
+    if(nrow(lpdf[lpdf$Date<=until,])>0) {  
+      
+      for (i in 1:(length(regions))){
+        ti_reg=Sys.time()
+        IDs<-findIDnames(lpdf=lpdf, testIDnames=regions[[i]],searchID=ID, 
+                         fuzzy=FALSE,returnID="PSCR")
+        if(verbose>=2) 
+          print('At' % %format( ti_reg,"%H:%M:%S ") % % 
+                  'doing'% %regions[[i]][1])
+        if (verbose>= 4) print('regions'% % paste(IDs,collapse="/ "))
+        lpdf%>% 
+          graphs(countries =IDs,graphlist=graphlist,savename=regions[[i]][1],  ID=ID, 
+                 until=until)
+        if(verbose>=2) {print (regions[[i]][1] % %"duration"%: % 
+                                 round(difftime(Sys.time(),ti_reg,units='mins'),2)%+%"mins")}
+      }
+      if(verbose>=1) {
+        reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
+    }
+    else print("no data for "% % as.Date(until,origin="1970-01-01"))
+    while(!is.null(dev.list())) dev.off() 
+  }
+  
+}
+
+addDoublingDaysPerCountry2<- function(lpti,countries,variable='confirmed',...){
+  if (!('doublingDays' %in% names(lpti))) lpti$doublingDays<- as.numeric(NA)
+  if(!('growthRate' %in% names(lpti))) lpti$growthRate<- as.numeric(NA)
+  if (missing(countries)) countries<- unique(lpti$PSCR)
+  else countries<- findIDnames(lpti, countries, searchID='PSCR',
+                               fuzzy=FALSE)
+  for (country in countries){
+    lpti[lpti$PSCR==country&lpti[[variable]]>0 , c('doublingDays','growthRate')]<- 
+      estimateDoublingDaysOneCountry(lpti[lpti$PSCR==country &
+                                            lpti[[variable]]>0,],
+                                     variable=variable,...) 
+  }
+  lpti
+}
+
+addDoublingDays1<- function(lpti,variable='confirmed',minVal=100,nrDays=9,minDate="2019-12-31",maxDate='2020-12-31',newVar='doublingDays'){
+  if (verbose>=4) print('addDdoublinggDays' % %minVal % % '= minVal, and variable ='% % variable)
+  if (!(missing(minDate)|missing(maxDate))) nrDays<-as.numeric(as.Date(maxDate)-as.Date(minDate))+1
+  lptisel<- lpti[lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date<= maxDate,]%>% head(nrDays)
+  if (sum(!is.na(lptisel[variable]))>3 ) 
+    slope= lm(log2(confirmed)~Date, data=lptisel,na.action=na.exclude)$coefficients['Date']
+  else {slope=0 #do something very wrong that will show up in graphs, but dont make an error. 
+  if (verbose>=3) print(paste(unique(lpti$PSCR),collapse = ',')% %'not enough data to estimate the doubling days slope, filling with Zeros')}
+  lpti[lpti$Date>=minDate & lpti$Date<=maxDate,newVar]<- round(1/slope,3)
+  lpti
+}
 
 addrownrs<-function(lpdf,counter="day", sortby="") {
   if (sortby!="") lpdf[order(lpdf[,sortby]),]
