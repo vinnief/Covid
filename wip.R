@@ -1,9 +1,6 @@
 source("requirements.R")
 source('definitions.R')
 
-graphDggnar_fil(ECDC,c('China','Spain','Germany'))
-graphDggnar_fil(ECDC,ECDCRegios[[1]])
-byGraphthenRegion(ECDC,ECDCRegios,graphlist = 'graphDgnar_fil')
 addSimVars <- function(lpti,countries,ext='_sim',...){ # doublingDays=-1,pop=0,...){
   if (!missing(countries)) countries= findIDnames(lpti,countries,searchID='PSCR',fuzzy=FALSE)
   else {
