@@ -200,7 +200,7 @@ makelpdfUSStates<- function(){
   
 makelpdfUS <- function() {
   lpdf<- makelpdfUSStates()
-  lpdf<- lpdf%>% totals2("","Province.State") # depends on all provinces being chosen to sum! 
+  lpdf<- lpdf %>% totals2("","Province.State") # depends on all provinces being chosen to sum! 
   lpdf$Combined_Key<-NULL
   if(!all(is.na(lpdf$recovered)))
     if( max(lpdf$recovered, na.rm=TRUE)<=0) lpdf$recovered<- as.numeric(NA ) #just in case NA totalled into 0. 
@@ -331,7 +331,7 @@ regios=c(list(
   continents= c("Continents","Europe",'North America', "Africa","South America","Asia"),#"USA","US",
   WestvsEast= c("WestvsEast","USA","United Kingdom","Italy","Iran","Korea, South","Germany","France","Spain","Sweden","Norway","Belgium","Netherlands","Singapore","Japan","Taiwan*","Denmark","Hubei,China", "Hongkong,China", "Jiangsu,China", 'Indonesia'),
   MENA=c("MENA", "Marocco","Algeria","Tunesia","Libia","Egypt", "West Bank and Gaza","Palestine","Lebanon","Syria","Turkey","Iraq","Iran","Afghanistan","Jordan","Saudi Arabia","Kuwait","Oman","United Arab Emirates","UAE","Yemen","Bahrain","Qatar"),
-  SAmerica=c("South America countries","Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Suriname","French Guiana","Venezuela","Paraguay","Peru" , "Uruguay","Falkland Islands (Malvinas)"),
+  SAmerica=c("South America","Argentina","Bolivia","Brazil","Chile","Colombia","Ecuador","Guyana","Suriname","French Guiana","Venezuela","Paraguay","Peru" , "Uruguay","Falkland Islands (Malvinas)"),
   Europe= c("Europe",regios$EU[2:28],regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus","Moldova","Georgia", "Armenia", "Azerbaijan","Andorra", "Monaco", "San Marino", "Vatican","Holy See", "Albania", "North Macedonia","Kosovo","Croatia","Montenegro","Bosnia and Herzegovina","Serbia","Gibraltar","Faroe Islands", "Isle of Man","Channel Islands","Greenland"),
   NAmerica= c("North America","USA","Canada","Mexico","Saint Pierre and Miquelon", "Antilles","Belize","Guatemala","Nicaragua","Costa Rica","Honduras","El Salvador","Panama",regios$Caribbean),
   Africa= c("Africa","Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon","Central African Republic","Chad","Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana","Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara","Zambia", "Zimbabwe"),
@@ -421,14 +421,18 @@ provincializeJHH<- function(){
 }
 
 makeRegioList<- function(lpti=JHH,piecename="JHH"){
+  Oceania= piecename % % 'Oceania'
+  Samerica = piecename % % 'South America'
   regios =c(    
     lpti%>% makeDynRegions(piecename=piecename% %'World'),
     lpti%>% filter(PSCR %in% regios$Europe )%>% 
       makeDynRegions(gridsize=20,piecename=piecename% %'Europe'), 
     lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename=piecename% %'Asia'),
-    lpti%>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename='North America'),
-    lpti%>% filter(PSCR %in% regios$Africa )         %>% makeDynRegions(piecename='Africa') ,
-    regios[c('SAmerica','OceaniaP')] #World="World", #regios['continents'], 'WestvsEast', 'Caribbean',
+    lpti%>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename=piecename % % 'North America'),
+    lpti%>% filter(PSCR %in% regios$Africa )      %>% makeDynRegions(piecename = piecename % % 'Africa') ,
+    list(SAmerica = regios$SAmerica,
+        Oceania = regios$OceaniaP
+    ) #World="World", #regios['continents'], 'WestvsEast', 'Caribbean',
   ) 
 }
 
@@ -905,11 +909,11 @@ dataprep<- function(lpdf=JHH, minVal=1, ID="PSCR",
 graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date", 
                     yvars = c("active", "recovered","deaths","confirmed"), 
                     fuzzy = FALSE, logx = FALSE, logy = FALSE, yline = FALSE,
-                    myfolder1 = '',myfolder = "", savename = "", putlegend=TRUE, size=2,
+                    myfolder1 = 'random',myfolder = "", savename = "", putlegend=TRUE, size=2,
                     returnID = "PSCR", area = FALSE, position = 'stack', facet = FALSE, 
-                    sorted = TRUE, until = Sys.Date()){
+                    sorted = TRUE, from='2019-12-01', until = Sys.Date()){
   
-  lpdf<- as.data.frame(lpti)
+  lpdf<- as.data.frame(lpti[lpti$Date >= from & lpti$Date <= until & lpti$confirmed >= minVal,])
   if (verbose>=7)print(lpti)
   if (typeof(until)=="character") until=as.Date(until,format="%Y-%m-%d")
   lastdate<- min(max(lpdf$Date),until)
@@ -917,17 +921,17 @@ graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date",
     countries<- unique(lpdf[[returnID]])
     if(length(countries> 40)) return(print('too many countries, you wont see anything. Please select less countries'))
     }
-    
     countries<- findIDnames(lpdf,testIDnames=countries, searchID=ID,
                             fuzzy=fuzzy,returnID=returnID) #}
   ID<- returnID
-  lpdf <- lpdf%>% filter((confirmed>=minVal)&(PSCR %in% countries)&Date<=until)  
+  lpdf <- lpdf%>% filter(PSCR %in% countries) #&Date<=until)  
   
   y_lab <- paste(sort(yvars),collapse=" & ")% %ifelse(logy,"(log)","")
   if (str_length(y_lab)>80) 
     y_lab<- paste(initials(sort(yvars)),collapse="&") % % 
     ifelse(logy,"(log)","")
-  mytitle <- format(lastdate, format = "%Y%m%d") % % "C19"% % savename% % y_lab% %
+  mytitle <- format(min(lpdf$Date), format = "%Y %m-%d") % % 'till' % % 
+             format(lastdate, format = "%m%d") % % "C19"% % savename% % y_lab% %
                   "by" % % xvar % % "for" % % minVal %#% "+" % % "confirmed"
   
   if (nrow(lpdf) == 0 ) {if (verbose >= 4) {print('graphit' % % mytitle % %" No data")}
@@ -1014,18 +1018,18 @@ graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date",
     if(area)myfolder<- myfolder % % "area plot"
     if (logy) myfolder <- myfolder % %'log scale'
     if(facet==FALSE) myfolder<-  paste(myfolder,"all-in-one")
-    if (verbose>= 4) print("graphit making plot" % % myfolder %#% "/" %+% mytitle)
-    myplot<- myplot+ theme(text=element_text(size=20),                           
+    if (verbose >= 4) print("graphit making plot" % % myfolder %#% "/" %+% mytitle)
+    myplot <- myplot + theme(text=element_text(size = 20),
     axis.text = element_text(color = "blue", size = rel(.8)) )
-    if(myfolder!="") myPath <- myPath %//% myfolder
-    if (!dir.exists(myPath)) dir.create(myPath,recursive=TRUE)
-    png(filename=myPath %//% mytitle %#%".png", width=1600,height=900)
-    on.exit(while(!is.null(dev.list())) dev.off() )
+    if (myfolder != "") myPath <- myPath %//% myfolder
+    if (!dir.exists(myPath)) dir.create(myPath, recursive = TRUE)
+    png(filename = myPath %//% mytitle %#% ".png", width = 1600, height = 900)
+    on.exit(while (!is.null(dev.list())) dev.off() )
     
       print(myplot)
     dev.off()
   }else {
-    print(myplot+theme(title = element_text(size = 11)))
+    print(myplot + theme(title = element_text(size = 11)))
     }
   invisible(lpdf)
 }# 
@@ -1122,7 +1126,7 @@ graphDggnar_fiyl <- function(lpdf= JHH, countries, logy= TRUE, ...){
 
 graph2Dgnar_fiyl <- function(lpdf=JHH,countries,logy=TRUE, ...){
   graphit(lpdf, countries, xvar='Date',
-                  yvars=c('active_imputed_growthRate',"new_active_rate"),
+                  yvars=c("new_active_rate",'active_imputed_growthRate'),
                   logy=logy,  yline=0.025, facet='PSCR',...)
 }
 
@@ -1181,10 +1185,8 @@ graph2dac_iyl<-function(lpdf=JHH,countries, minVal = 100,  logy=TRUE, ...){
 }
 graph1dnar_iyl <- function(lpdf = JHH, countries, minVal=10, logy=TRUE, ...){
   graphit(lpdf,c(countries), minVal, xvar='day', 
-          yvars=c('new_active_rate'), 
-         logy=logy, ...) #putlegend=TRUE
+          yvars=c('new_active_rate'), logy=logy, yline=0.025, ...) #putlegend=TRUE
 }
-
 
 # for testing imputation quality, do not add numbers otherwise they get done for all regios.
 graphDaa_fia<- function(lpdf=JHH,countries, ...){
@@ -1192,6 +1194,7 @@ graphDaa_fia<- function(lpdf=JHH,countries, ...){
                  yvars=c('active_imputed', 'active'),
                  area=TRUE,position='identity',facet= 'PSCR', ...) 
 }
+
 graphDaa_fiyl<- function(lpdf=JHH,countries, logy=TRUE, ...){
    graphit(lpdf, countries, xvar='Date', 
           yvars=c( 'active_imputed','active'),facet=ID, 
@@ -1250,7 +1253,7 @@ byRegionthenGraph <- function(lpdf=JHH,regions, saveit=TRUE,
     if(verbose>=2) {reportDiffTime(myGraph,tig)}
   })
 }
-byGraphthenRegion<- function(lpdf=JHH,regions, graphlist=c('graphDggnar_fiyl'), saveit=TRUE, ...){ 
+byGraphthenRegion<- function(lpdf=JHH, regions, graphlist=c('graphDggnar_fiyl'), saveit=TRUE, ...){ 
   if (typeof(regions)=="character") { regions=list(regions) }
   walk(regions, function(myRegion){
     if(verbose>=2) {tig=Sys.time(); print(format(Sys.time(),"%H:%M:%S " )% %myRegion[1])}
@@ -1260,44 +1263,44 @@ byGraphthenRegion<- function(lpdf=JHH,regions, graphlist=c('graphDggnar_fiyl'), 
   })
 } 
 
-makeDate<- function(chardate="",format=myDateFormat){
+makeDate <- function(chardate="", format = myDateFormat){
   tryCatch(as.Date(chardate, format=format),
            error=function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:",myDateFormat ))})
 }
 
-curGraph <- function(ord='RG', ...){
-  if (ord == 'RG' ) byRegionthenGraph( myfolder1 = 'current', graphlist=myGraphNrs, ...)
-  else byGraphthenRegion(myfolder1 = 'current',...)
+curGraph <- function(ord='GR', myfolder1 = 'current', ...){
+  if (ord == 'RG' ) byRegionthenGraph( myfolder1 = myfolder1, graphlist = myGraphNrs, ...)
+  else byGraphthenRegion(myfolder1 = myfolder1, graphlist = myGraphNrs, ...)
 }
 
 makeHistoryGraphsRG <- function(lpdf,regions, graphlist=myGraphNrs,
-                               dates = as.Date(max(JHH$Date), format=myDateFormat,...)){
-  
+                               fromdates = as.Date(max(JHH$Date), format = myDateFormat),
+                               todates = as.Date(max(JHH$Date), format = myDateFormat),...){
   on.exit({options(warn=0) }) 
   if (missing(regions) ) stop("no regions to graph")
-  #{if (dim(lpdf)==dim(JHH)& (lpdf==JHH)) regions=JHHRegios #bug: if wrong dimensions, we get  Error in Ops.data.frame(lpdf, JHH) :    ‘==’ only defined for equally-sized data frames 
-  #if (dim(lpdf)==dim(ECDC) & (lpdf==ECDC)) regions=ECDCRegios}
-  if (typeof(dates)=="character") {  makeDate(dates)}
-  if(any(is.na(dates))) print("Not all dates recognized:"% % paste(dates,collapse=",") %+%
+  if (typeof(fromdates)=="character") {  fromdates <- makeDate(fromdates)}
+  if (typeof(todates)=="character") {  todates <- makeDate(todates)}
+  if (any(is.na(todates)) ) print("Not all dates recognized:"% % paste(dates,collapse=",") %+%
                                 ". Either enter an R date or a string in the following Date format:" % %
                                 myDateFormat )
-  map(dates,function(until){
+  fromdates[is.na(fromdates)] <- '2019-12-31'
+  map2(fromdates,todates,function(from,to){
     if(verbose>=1) {
       ti_da=Sys.time() 
       print(format(ti_da,"%H:%M:%S ") % % "doing" % % as.Date(until,origin="1970-01-01"))
     }
     if(nrow(lpdf[lpdf$Date <= until,])>0) {
       byRegionthenGraph(lpdf,regions,graphlist,saveit = TRUE, 
-                        until = until, 
-              myfolder1 = min(until, max(format(JHH$Date, format = '%Y-%m-%d') )), ...)
+                        from = from, until = to, 
+              myfolder1 = min(to, max(format(JHH$Date, format = '%Y-%m-%d') )), ...)
     }
-    else print("no data for "% % as.Date(until,origin="1970-01-01"))
+    else print("no data from "% % as.Date(from,origin="1970-01-01") % %
+                         'to' % % as.Date(to,origin="1970-01-01"))
     if(verbose>=1) {
-      reportDiffTime( as.Date(until,origin="1970-01-01") % % "duration: ",ti_da)}
+      reportDiffTime( as.Date(to,origin="1970-01-01") % % "duration: ",ti_da)}
     while(!is.null(dev.list())) dev.off() 
   })
 }
-
 
 #options(warn= 2 ) #all warnings become errors, stops execution. 
 #traceback() # to trace the nested calls leading to an error. 

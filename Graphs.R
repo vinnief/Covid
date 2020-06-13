@@ -17,19 +17,23 @@ JHH[JHH$Date == max(JHH$Date)&JHH$PSCR %in%
 
 #overtaking
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who ='Ithem'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who ='theyme'))
 map(c('Germany','United Kingdom','France','Sweden'),          function(x) overtakeDays_l(JHH,x,who= "Ithem"))
 #map(c('Europe','Russia','New York,US'),function(x) overtakeDays_l(JHH,x,who="Ithem"))
 
 map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who='Ithem'))
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who='theyme'))
 #compare my countries
 graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
-graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"))
-
+graph3Dard_fia(ECDC,regios$MSM,from='2020-06-01') 
+graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from="2020-06-10")
+graph3Dard_fina(ECDC,regios$MSM,from='2020-06-01') 
+graph6Dardcra_finyl(JHH, c("Kazakhstan","Belgium","Netherlands","France"),from="2020-06-10")
 #make all graphs
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
-curGraph('GR', lpdf = ECDC,regions=ECDCRegios,graphlist=myGraphNrs)#
+curGraph('GR', lpdf = ECDC,regions=ECDCRegios,graphlist=myGraphNrs)
 JHHRegios <- makeRegioList(JHH)
-makeHistoryGraphsRG(JHH,regions=JHHRegios)#
+curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
 
 graphCodes()
 myGraphNrs
