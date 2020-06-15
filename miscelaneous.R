@@ -12,11 +12,3 @@ devtools::install_github("dgrtwo/gganimate")# and install image_magick.
 #  facet_wrap(~continent)
 #12 ggplot extensions: ggcorplot, 
 #https://mode.com/blog/r-ggplot-extension-packages
-#
-#
-#
-# dynamic varnames in select: ## !!varname := 
-# !!varname does not work the same as confirmed in arrange(desc(!!varname))
-# arrange( desc(eval(parse(text=substiture(!!varname)))))  # works. 
-# CRAZY!!
-# {{varname}} might work
