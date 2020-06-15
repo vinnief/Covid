@@ -8,7 +8,7 @@ source("loadData.R")  #also loads the requirements and the definitions
 #latest numbers
 #JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','France','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
 
-JHH[JHH$Date == max(JHH$Date)&JHH$PSCR %in% 
+JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
     c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe',
         'Germany','France','Africa','Iran','Russia','Brazil'),
     c('confirmed','new_confirmed','active_imputed','deaths','PSCR',
@@ -16,37 +16,39 @@ JHH[JHH$Date == max(JHH$Date)&JHH$PSCR %in%
   arrange(new_active_rate)
 
 #overtaking
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who ='Ithem'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who ='theyme'))
-map(c('Germany','United Kingdom','France','Sweden'),          function(x) overtakeDays_l(JHH,x,who= "Ithem"))
-#map(c('Europe','Russia','New York,US'),function(x) overtakeDays_l(JHH,x,who="Ithem"))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
+map(c('Germany','United Kingdom','France'),          function(x) overtakeDays_l(JHH,x,who = "Ithem"))
 
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who='Ithem'))
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who='theyme'))
+
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who = 'Ithem'))
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who = 'theyme'))
+
+
 #compare my countries
 graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
-graph3Dard_fia(ECDC,regios$MSM,from='2020-06-01') 
-graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from="2020-06-10")
-graph3Dard_fina(ECDC,regios$MSM,from='2020-06-01') 
-graph6Dardcra_finyl(JHH, c("Kazakhstan","Belgium","Netherlands","France"),from="2020-06-10")
+
+graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
+graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 
+graph6Dardcra_finyl(ECDC,regios$MSM,from = Sys.Date()-7)
+graph6Dardcra_finyl(JHH, c("Kazakhstan","Belgium","Netherlands","France"),from = Sys.Date()-10)
 #make all graphs
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
-curGraph('GR', lpdf = ECDC,regions=ECDCRegios,graphlist=myGraphNrs)
+curGraph('GR', lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs)
 JHHRegios <- makeRegioList(JHH)
-curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
+curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs)
 
 graphCodes()
 myGraphNrs
 myGraphList
 myGraphListbyDate
-verbose=2
+verbose = 2
 #look at growth rates and growth paths in first days (Synchronized)
-ECDC%>% byRegionthenGraph(regions=ECDCRegios,graphlist = c("graph1dnr_iyl","graph2dac_iyl"))
+ECDC %>% byRegionthenGraph(regions = ECDCRegios,graphlist = c("graph1dnr_iyl","graph2dac_iyl"))
 
 #simulate deaths and confirmed   
-ECDC %>% byRegionthenGraph(ECDCRegios,ext='_sim') #simulations #writeRegiograph
-
-ECDC %>% byRegionthenGraph(ECDCRegios,ext='_endsim') #simulations #writeRegiograph
+ECDC %>% byRegionthenGraph(ECDCRegios,ext='_sim', graphlist=c('graphDccprr_fiyl','graphDddp_fyl'))  #sims
+ECDC %>% byRegionthenGraph(ECDCRegios,ext='_endsim',graphlist=c('graphDccprr_fiyl','graphDddp_fyl')) #simulations 
 
 
 if ( weekdays( Sys.Date() , abbreviate=FALSE) == "Friday") ECDC %>% 
@@ -109,4 +111,4 @@ dclags[order(dclags$lag,decreasing = TRUE),][1:20,]
 
 #sweden claims patients all recover by the 6th week, 42 days. 
 #So I suggest taking lags 42 and 36 (i.e. assume people die within 5 days if they die, which is the median of positive rd lags. Note we do not take the median positive RC lag, which equals 14 (JHH data until 2020-05-18), 
-# if we take a smaller lag between r and d, then d might start rising faster than c, which leads to r decreasing over time and that is not possible. New York suffers from this idiosyncracy.  )
+# if we take a smaller lag between r and d, then d might start rising faster than c, which leads to r decreasing over time and that is not possible.the New York,US data we have imputed suffers from this idiosyncracy.  )
