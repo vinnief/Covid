@@ -269,11 +269,15 @@ sortIDlevels<- function(lpdf,varname="confirmed",ID="PSCR",ondate=""){
   if (ondate==""){ondate= max(lpdf$Date) } else 
     if (nrow(lpdf[lpdf$Date== ondate,]==0)){
       stop("Cannot sort on values of a date which is not present in the Data")}
+  if (nrow(lpdf[lpdf$Date== ondate,]!= NROW(unique(lpdf$PSCR))) ) { 
+    if (verbose>= 3) print( ' sorting just lost you a country, as it has no data on ' % % format(ondate, "%Y-%m-%d"))}
   ordre<- (lpdf[lpdf$Date== ondate,c(varname,ID)])      #as.data.frame not needed if select columns by [[]]
   levels<- ordre[order(-ordre[[varname]],ordre[[ID]]                 ),][[ID]]
                # added -             omitted        ,decreasing=TRUE 
-  lpdf[[ID]]<- factor(lpdf[[ID]],levels=levels) #ordre[[ID]]
+  #lpdf[[ID]]<- 
+    factor(lpdf[[ID]],levels=levels) #ordre[[ID]]
 }
+
 sortbyvar<- function(lpti,varname='confirmed',ID='PSCR',ondate=""){
 lpti[[ID]] <- lpti%>% sortIDlevels(varname=varname, ID=ID,ondate=ondate) 
 lpti<- lpti[order(lpti[[ID]],lpti[[varname]]),] #bUG? WHY SORT AGAIN BY same var?  
@@ -723,12 +727,12 @@ addTotals3<- function(lpti=ECDC,totregions="", ID='Region'){
   lpti1<- lpti %>%
     #just to be sure, that if i do it twice i dont get double counts. 
     #And omit USA as country, as we have the individual states already. 
-    filter(! (!!ID %in% totregions)) 
-  World<- unique(lpti1[[ID]])
-  varnames=c("confirmed","recovered", "deaths","population")
+    filter(!(!!ID %in% totregions)) 
+  World <- unique(lpti1[[ID]])
+  varnames = c("confirmed","recovered", "deaths","population")
   if(!('Lat' %in% names(lpti))) lpti1$Lat<-NA
   if(!('Long' %in% names(lpti))) lpti1$Long<-NA
-  for (regio in totregions[!is.na(totregions)]) 
+  for (regio in totregions[!is.na(totregions)])
     lpti<- rbind(lpti, 
                 lpti1%>% total(regio ,ID=ID, varnames= varnames,newrow=regio))
   lpti
@@ -812,7 +816,7 @@ overtakeDays_df<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
   tib
 }
 
-overtakeDays_l<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
+overtakeDays_l <- function(lpti,country,who='theyme',varname='confirmed',nr=7){
   if (varname %in% c('active','active_imputed','active_p_m',
                      'active_imputed_p_M')) 
     prefix<- 'net_'
@@ -837,18 +841,7 @@ overtakeDays_l<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
                      varname,newvarname)[,country]
   #head(oc[order(oc,na.last=FALSE)],nr)
   vec<- oc[order(oc,na.last=FALSE)][1:nr]
-}
-overtakingInDays<- function(lpti,country,nr=7){
-  lastdata<- lpti[lpti$Date==max(lpti$Date),c('PSCR','confirmed','new_confirmed')]
-  mydata<- subset(lastdata,PSCR==country)
-  countries<- subset(lastdata,
-                     confirmed>= mydata$confirmed &
-                       new_confirmed<=mydata$new_confirmed,
-                     select=PSCR)
-  oc<- days2overtake(lastdata,countries$PSCR)[,country]
-  #head(oc[order(oc,na.last=FALSE)],nr)
-  tib<- oc[order(oc,na.last=FALSE)][1:nr]
-  tib<- tibble(country=names(tib),overtakenDays=tib)
+
 }
 
 
@@ -887,9 +880,10 @@ dataprep<- function(lpdf=JHH, minVal=1, ID="PSCR",
                      xvar="day", yvars=c("confirmed", "recovered"), 
                      logx=FALSE, logy=TRUE, sorted=TRUE){
   if (!(xvar %in% names(lpdf))) 
-    lpdf<- lpdf%>% addcounterfrommin(minVal,varname="confirmed", ID=ID,counter=xvar)
-  lpdf<- lpdf%>% mutate(confirmed>=minVal) #bug? is new, moved here from addcountersfrommin
+    lpdf<- lpdf %>% addcounterfrommin(minVal,varname="confirmed", ID=ID,counter=xvar)
+  #lpdf<- lpdf %>% filter/mutate(confirmed>=minVal) #bug? is new, moved here from addcountersfrommin
   if (logy){ #get rid of negative and zeros for the log
+   
     eps<-  1e-5
     for (varname in yvars)  {
       if (sum((!is.na(lpdf[,varname]))&lpdf[,varname]<= eps)>0) 
@@ -899,6 +893,7 @@ dataprep<- function(lpdf=JHH, minVal=1, ID="PSCR",
   if(logx) lpdf[lpdf[[xvar]]<=0,xvar]<- 1 #bug? should be NA to be honest 
   if(sorted) {
     lpdf[[ID]] <- sortIDlevels(lpdf=lpdf,varname=yvars[1]) 
+    if (verbose>= 7)  print(unique(lpdf[[ID]]))
     lpdf<- lpdf[order(lpdf[[ID]],lpdf[[xvar]]),] 
     if (verbose>=5) print('Dataprep' % % levels(lpdf[[ID]]))
   } 
@@ -924,14 +919,15 @@ graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date",
     countries<- findIDnames(lpdf,testIDnames=countries, searchID=ID,
                             fuzzy=fuzzy,returnID=returnID) #}
   ID<- returnID
+  if (verbose>=7) {print(countries)}
   lpdf <- lpdf%>% filter(PSCR %in% countries) #&Date<=until)  
-  
   y_lab <- paste(sort(yvars),collapse=" & ")% %ifelse(logy,"(log)","")
   if (str_length(y_lab)>80) 
     y_lab<- paste(initials(sort(yvars)),collapse="&") % % 
     ifelse(logy,"(log)","")
-  mytitle <- format(min(lpdf$Date), format = "%Y %m-%d") % % 'till' % % 
-             format(lastdate, format = "%m%d") % % "C19"% % savename% % y_lab% %
+  mytitle <- #format(min(lpdf$Date), format = "%Y %m-%d") % % 'till' % % 
+             #format(lastdate, format = "%m%d") % % 
+    "C19"% % savename% % y_lab% %
                   "by" % % xvar % % "for" % % minVal %#% "+" % % "confirmed"
   
   if (nrow(lpdf) == 0 ) {if (verbose >= 4) {print('graphit' % % mytitle % %" No data")}
@@ -1033,7 +1029,6 @@ graphit <- function(lpti, countries, minVal = 1, ID = "PSCR", xvar = "Date",
     }
   invisible(lpdf)
 }# 
-
 
 #geom_point(shape="\u2620", size = 4)  #skulls
 #geom_point(aes(shape=cyl, color=cyl, size=cyl))
@@ -1269,8 +1264,8 @@ makeDate <- function(chardate="", format = myDateFormat){
 }
 
 curGraph <- function(ord='GR', myfolder1 = 'current', ...){
-  if (ord == 'RG' ) byRegionthenGraph( myfolder1 = myfolder1, graphlist = myGraphNrs, ...)
-  else byGraphthenRegion(myfolder1 = myfolder1, graphlist = myGraphNrs, ...)
+  if (ord == 'RG' ) byRegionthenGraph( myfolder1 = myfolder1 , ...)
+  else byGraphthenRegion(myfolder1 = myfolder1, ...)
 }
 
 makeHistoryGraphsRG <- function(lpdf,regions, graphlist=myGraphNrs,

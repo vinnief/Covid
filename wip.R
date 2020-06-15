@@ -15,11 +15,13 @@ addSimVars <- function(lpti,countries,ext='_sim',...){ # doublingDays=-1,pop=0,.
   lpti
 }
 
+curGraph('GR', myfolder1 = 'June and beyond', from='2020-06-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
+curGraph('GR', myfolder1 = 'May and beyond', from='2020-05-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
+curGraph('GR', myfolder1 = 'May', from='2020-05-01', until="2020-05-31", lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
 
-
-JHH0B<- JHH0[JHH0$PSCR=='Belgium',]
-JHHB<- JHH0[JHH0$PSCR=='Belgium',] %>% estimateDoublingDaysOneCountry("Belgium")#
-JHHB<- JHH0 %>% addDoublingDaysperCountry() %>% view
+JHH0B <- JHH0[JHH0$PSCR=='Belgium',]
+JHHB <- JHH0[JHH0$PSCR=='Belgium',] %>% estimateDoublingDaysOneCountry("Belgium")#
+JHHB <- JHH0 %>% addDoublingDaysperCountry() %>% view
   #%>% [JHH0$PSCR%in%c('Belgium','Netherlands','France'),]
   addSimVars('Belgium',minVal=100,ext='_backsim')#%>% 
   view(JHH[JHH$PSCR=='Belgium',])
