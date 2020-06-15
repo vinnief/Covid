@@ -17,7 +17,7 @@ JHH <- JHH %>%  addDoublingDaysPerCountry(variable = 'confirmed') %>%
 
 #JHH<- JHH %>% addSimVars(minVal = 100) #%>% 
   JHH <- JHH %>%  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
-names(JHH)
+#names(JHH)
 writeWithCounters(JHH,name = "Covid19JHH") #no factors!
 
 #same with ECDC

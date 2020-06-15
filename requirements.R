@@ -20,14 +20,7 @@ mac <- function(x,minval=40, ...){
   #cx<- ifelse(is.na(cx),x,cx)
   ifelse(abs(cx)<minval, x, cx   )
 }
-#test if mac does not reduce the amounts too much (after all we only average above a threshhold)
-rs<- function(n=200,s=50) {
-  x<- rnorm(100,n,s)
-  round(rowSums( rbind(x,
-      mac.1=mac.(x,sides=1),ma1=ma(x,sides=1),
-      mac.2=mac.(x,sides=2),mac.=mac.(x),ma=ma(x)))
-      /sum(x)*100,2)
-}
+
 
 #pacman p_load automates this and the following also: 
 #automate the syntax... Thanks Simon https://stackoverflow.com/users/1478381/simon-ohanlon

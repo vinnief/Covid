@@ -265,18 +265,24 @@ sortIDlevels1<- function(lpdf,varname=confirmed,ondate=""){
 
 #lpdf=JHH
 
-sortIDlevels<- function(lpdf,varname="confirmed",ID="PSCR",ondate=""){
-  if (ondate==""){ondate= max(lpdf$Date) } else 
-    if (nrow(lpdf[lpdf$Date== ondate,]==0)){
-      stop("Cannot sort on values of a date which is not present in the Data")}
-  if (nrow(lpdf[lpdf$Date== ondate,]!= NROW(unique(lpdf$PSCR))) ) { 
-    if (verbose>= 3) print( ' sorting just lost you a country, as it has no data on ' % % format(ondate, "%Y-%m-%d"))}
-  ordre<- (lpdf[lpdf$Date== ondate,c(varname,ID)])      #as.data.frame not needed if select columns by [[]]
-  levels<- ordre[order(-ordre[[varname]],ordre[[ID]]                 ),][[ID]]
-               # added -             omitted        ,decreasing=TRUE 
-  #lpdf[[ID]]<- 
-    factor(lpdf[[ID]],levels=levels) #ordre[[ID]]
+sortIDlevels <- function(lpdf,varname = "confirmed", ID = "PSCR", ondate){
+  if (missing(ondate)) { 
+    theDateData <- lpdf[,c(varname,ID,'Date')] %>% group_by(PSCR) %>% 
+      filter(Date == max(Date)) %>% ungroup
+  } else {
+    theDateData <- lpdf[lpdf$Date == ondate,c(varname,ID,'Date')]
+    if (nrow(theDateData) == 0)
+      stop("Cannot sort if the date is not present in the Data")
+  }
+  if (nrow(theDateData) != NROW(unique(lpdf$PSCR)) & (verbose >= 3)) {
+    print( ' sorting just lost you these countries' % % 
+             paste(setdiff(unique(lpdf$PSCR), theDateData$PSCR), collapse = ',') % %
+             'as they has no data on ' % % format(ondate, "%Y-%m-%d"))}
+  ordre <- theDateData[,c(varname,ID)]
+  levels <- ordre[order(-ordre[[varname]], ordre[[ID]] ), ][[ID]]
+  factor(lpdf[[ID]], levels = levels) #and what if there are too little levels?
 }
+
 
 sortbyvar<- function(lpti,varname='confirmed',ID='PSCR',ondate=""){
 lpti[[ID]] <- lpti%>% sortIDlevels(varname=varname, ID=ID,ondate=ondate) 
@@ -386,8 +392,8 @@ addRegions <- function(lpdf=JHH,varname="Region",Regiolist="") {
 }
 
 makeDynRegions <- function(lpti=JHH,gridsize=5*6,piecename='World',ratio=5) {
-  lpti<- lpti%>% ungroup %>% 
-    filter( Date==max(Date))%>%
+  lpti<- lpti%>% group_by(PSCR) %>% 
+    filter( Date==max(Date))%>% ungroup %>%
     select( PSCR, confirmed)%>% 
     arrange(desc(confirmed)) 
   nr=1
@@ -784,7 +790,7 @@ days2overtake<- function(
   round(mconf/mnew,1)
 }
 
-overtakeDays_df<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
+overtakeDays_v <- function(lpti,country,who='theyme',varname='confirmed',nr=7){
   if (varname %in% c('active','active_imputed','active_p_m',
                      'active_imputed_p_M')) 
     prefix<- 'net_'
@@ -794,39 +800,8 @@ overtakeDays_df<- function(lpti,country,who='theyme',varname='confirmed',nr=7){
              'recovered_imputed','recovered_imputed_p_M')) 
     prefix<- 'new_'
   newvarname<- prefix%#% varname
-  lastdata<- lpti[lpti$Date==max(lpti$Date), c('PSCR',varname,newvarname)]
-  mydata<- subset(lastdata,PSCR==country)
-  if (who == 'theyme') {
-    colName<- 'days to overtake'% % country
-    countries<- lastdata[lastdata[[varname]]<= mydata[[varname]] &
-                      lastdata[[newvarname]]>=mydata[[newvarname]], 'PSCR']}
-  else if (who == 'Ithem')  {
-    colName<- 'overtakes in ? days'
-    countries<- lastdata[lastdata[[varname]]>= mydata[[varname]] &
-                      lastdata[[newvarname]]<=mydata[[newvarname]], 'PSCR']}
-  else stop('who can only be theyme or Ithem')
-  oc<- days2overtake(lastdata,countries$PSCR,
-                     varname,newvarname)[,country]
-  #head(oc[order(oc,na.last=FALSE)],nr)
-  vec<- oc[order(oc,na.last=FALSE)][1:nr]
-  if (is.null(names(vec))) return (vec)
-  else tib<- tibble(country=names(vec)[2:nr],Days=vec[2:nr])
-  names(tib)[1]<- country
-  names(tib)[2]<- colName
-  tib
-}
-
-overtakeDays_l <- function(lpti,country,who='theyme',varname='confirmed',nr=7){
-  if (varname %in% c('active','active_imputed','active_p_m',
-                     'active_imputed_p_M')) 
-    prefix<- 'net_'
-  else if (varname %in% 
-           c('confirmed','confirmed_p_M',
-             'recovered','recovered_p_M', 'deaths','deaths_p_M',
-             'recovered_imputed','recovered_imputed_p_M')) 
-    prefix<- 'new_'
-  newvarname<- prefix%#% varname
-  lastdata<- lpti[lpti$Date==max(lpti$Date), c('PSCR',varname,newvarname)]
+  lastdata<- lpti[, c('PSCR',varname,newvarname,'Date')] %>% group_by(PSCR)%>% filter(Date == max(Date)) %>% ungroup
+    #lpti[lpti$Date==max(lpti$Date), c('PSCR',varname,newvarname)]
   mydata<- subset(lastdata,PSCR==country)
   if (who == 'theyme') {
     colName<- 'days to overtake'% % country
@@ -840,10 +815,16 @@ overtakeDays_l <- function(lpti,country,who='theyme',varname='confirmed',nr=7){
   oc<- days2overtake(lastdata,countries$PSCR,
                      varname,newvarname)[,country]
   #head(oc[order(oc,na.last=FALSE)],nr)
-  vec<- oc[order(oc,na.last=FALSE)][1:nr]
-
+  oc[order(oc,na.last = FALSE)][1:nr]
 }
-
+overtakeDays_df<- function(...){
+  vec<- overtakeDays_v(...)
+  if (is.null(names(vec))) return (vec)
+  else tib<- tibble(country=names(vec),Days=vec)
+  #names(tib)[1]<- country
+  names(tib)[2]<- 'days'
+  tib
+}
 
 
 addcounterfrommin<-function(lpdf=JHH,minv=0,varname="confirmed",ID="PSCR",counter="day"){

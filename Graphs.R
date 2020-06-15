@@ -9,7 +9,7 @@ source("loadData.R")  #also loads the requirements and the definitions
 #JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','France','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
 
 JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
-    c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe',
+    c('Malta','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
         'Germany','France','Africa','Iran','Russia','Brazil'),
     c('confirmed','new_confirmed','active_imputed','deaths','PSCR',
       'new_active_rate', 'active_imputed_growthRate') ]  %>%
@@ -18,15 +18,15 @@ JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in%
 #overtaking
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-map(c('Germany','United Kingdom','France'),          function(x) overtakeDays_l(JHH,x,who = "Ithem"))
+map(c('Germany','France','Spain',"Italy",'United Kingdom'),          function(x) overtakeDays_v(JHH,x,who = "Ithem"))
 
 
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who = 'Ithem'))
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_l(JHH,x,who = 'theyme'))
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
+map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
 
 
 #compare my countries
-graph3Dard_fia(ECDC,c("Kazakhstan","Belgium","Netherlands","France"))
+graph3Dard_fia(ECDC,c("Spain","Belgium","Netherlands","France"))
 
 graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
 graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 

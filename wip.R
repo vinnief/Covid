@@ -1,8 +1,10 @@
 source("requirements.R")
 source('definitions.R')
 
-addSimVars <- function(lpti,countries,ext='_sim',...){ # doublingDays=-1,pop=0,...){
-  if (!missing(countries)) countries= findIDnames(lpti,countries,searchID='PSCR',fuzzy=FALSE)
+
+
+addSimVars <- function(lpti,countries,ext = '_sim',...){ # doublingDays=-1,pop=0,...){
+  if (!missing(countries)) countries = findIDnames(lpti,countries,searchID = 'PSCR',fuzzy = FALSE)
   else {
     countries = unique(lpti$PSCR)
     if (verbose >= 3) print( "AddSimVars: no country given, simulating:" % % paste(countries,collapse="/"))
@@ -14,6 +16,7 @@ addSimVars <- function(lpti,countries,ext='_sim',...){ # doublingDays=-1,pop=0,.
           lpti}))
   lpti
 }
+
 
 curGraph('GR', myfolder1 = 'June and beyond', from='2020-06-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
 curGraph('GR', myfolder1 = 'May and beyond', from='2020-05-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
