@@ -1,84 +1,23 @@
 source("requirements.R")
 source('definitions.R')
+df=data.frame(a= c(1,2),b= c(0,2.4))
+df[,c('a','b')]<- data.frame(df$a+1, df$b-1)
+
+lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na = "" )
+names(lpti)
+#fileEncoding = "UTF-8-BOM" doesn use bom in readr tidyverse.
+options(warn = 2)
+JHH1 <-  addSimVars(JHH, minVal = 100, nrRows = 1) #%>% 
+JHH1 <-  addSimVars(JHH1, minDate = Sys.Date() - 10, ext = "_endsim")
 
 
 
-addSimVars <- function(lpti,countries,ext = '_sim',...){ # doublingDays=-1,pop=0,...){
-  if (!missing(countries)) countries = findIDnames(lpti,countries,searchID = 'PSCR',fuzzy = FALSE)
-  else {
-    countries = unique(lpti$PSCR)
-    if (verbose >= 3) print( "AddSimVars: no country given, simulating:" % % paste(countries,collapse="/"))
-  }
-  if (!('confirmed' %+% ext %in% names(lpti))) {lpti[,paste(c('confirmed','active','recovered','deaths'),ext,sep="")] <-NA}
-  map(countries, 
-      (function(country){
-          lpti[lpti$PSCR==country,]<- addSimVarsOneCountry(lpti[lpti$PSCR==country,], country,ext,...)
-          lpti}))
-  lpti
-}
-
-
-curGraph('GR', myfolder1 = 'June and beyond', from='2020-06-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
-curGraph('GR', myfolder1 = 'May and beyond', from='2020-05-01', lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
-curGraph('GR', myfolder1 = 'May', from='2020-05-01', until="2020-05-31", lpdf = JHH, regions = JHHRegios, graphlist=myGraphNrs)
-
-JHH0B <- JHH0[JHH0$PSCR=='Belgium',]
-JHHB <- JHH0[JHH0$PSCR=='Belgium',] %>% estimateDoublingDaysOneCountry("Belgium")#
-JHHB <- JHH0 %>% addDoublingDaysperCountry() %>% view
-  #%>% [JHH0$PSCR%in%c('Belgium','Netherlands','France'),]
-  addSimVars('Belgium',minVal=100,ext='_backsim')#%>% 
-  view(JHH[JHH$PSCR=='Belgium',])
-  view(ECDC[ECDC$PSCR=='Belgium',])
-#test missing parameters
-d=23;r=2
-test<- function(d,r){
-  print(myPath)
-  if (missing (r)&!missing(d)) r <- 2^(1/d)
-  if(missing(d)&!missing (r)) d  <- -log2(r)
-  if (missing (d)) print('d still missing ='% %d) else print('d not missing'% %d)
-  if (missing (r)) print('r still missing ='% %r) else print('r not missing'% %r) 
-  myPath <- myPath %//% 'current'
-  poop<- 'oo'
-  f()
-  graphit( ECDC,ECDCRegios$`ECDC world6`,yline=100, savename = 'test')
-  print(myPath)
-}
-f <- function () print (poop)
-test(d=5)
-myPath
-test(r=1.14)
-test()
-
-#why is spain gone? 
-view(graphit(ECDC,c('USA',"Spain"),facet='PSCR')) #,"France"
-View(graphit(ECDC,c('USA',"Belgium","Spain",'Italy'),facet='PSCR')) #,"France" #spain disappears! 
-graphit(ECDC,c("Belgium","Spain",'Italy',"France")) #,"France" #spain disappears! 
-graphit(JHH,c("Belgium","Spain",'Italy',"France"),facet='PSCR') #,"France"
-graph6Dardcra_fiyl(ECDC,c("Belgium","Netherlands")) #,'USA'
-
-JHH[JHH$PSCR== 'Belgium'& JHH$confirmed>=100 & 
-    JHH$Date>="2020-03-06" & JHH$Date<='2020-06-03',] %>% nrow
-JHH[JHH$PSCR== 'Belgium'& JHH$confirmed>=100 & 
-      JHH$Date>="2020-03-06" & JHH$Date<=Sys.Date(),] %>% nrow
-JHH[JHH$PSCR== 'Netherlands'& JHH$confirmed>=100 & 
-      JHH$Date>="2020-03-06" & JHH$Date<=Sys.Date(),] %>% nrow
-
-
-isdouble <- function (country,regiolist) {
-  sum(unlist(llply(regiolist, function (charvect) country %in% charvect)))
-}
-isdouble('US',regios)
-checkdouble <- function(country,regiolist){
-  which(unlist(llply(regiolist, function (x) country%in% x)))}
-checkdouble('USA',JHHRegios)
-
-checkdouble(c('USA','Netherlands'),JHHRegios)
-isdouble(c('Belgium','Netherlands'),regios)
-length(JHHRegios)
+a <- merge(ECDC, testing, by.x = 'countryterritoryCode', by.y = 'ISO code', all.x = TRUE,
+           sort = FALSE)
 
 addCountryTotals<- function(lpdf=JHH){
-  varnames=c("confirmed","recovered", "deaths","population")
-  existingTotals<- c("China","Australia","Canada",'US')
+  varnames = c("confirmed","recovered", "deaths","population")
+  existingTotals <- c("China","Australia","Canada",'US')
   #just to be sure, that if i do it twice i dont get double counts. 
   #And omit US as country and US states. 
   lpti<- lpdf %>%
@@ -105,18 +44,6 @@ addRegionTotals<- function(lpdf=JHH,totRegions=""){
   }
 }
 tail(JHH0%>%  addPopulation()%>% addCountryTotals %>% addRegionTotals%>% filter(Date==max(Date)),10)
-profvis(JHH%>% addSimVarsOneCountry("Belgium",minDate="2920-05-01", ext='_endsim'))
-#check colors
-graph3Dard_fia (JHH,regios$continents)
-
-graph6Dardcra_fiyl(JHH,"Idaho,US")
-graphDddp_fyl(JHH,countries="New York,US")
-graphDccp_fyl(JHH,countries="Belgium")
-graphDccprr_fyl()
-verbose=2
-graphDccprr_fyl(JHH,"Netherlands")
-graphDddp_fyl(JHH,"Netherlands")
-graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day')%>% View
 
 #from loaddata: trial to make the loading only happen if it gives new data
 #while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {

@@ -1,5 +1,6 @@
 #for publication #MSM,Vincent,
-rm(list = setdiff(ls(), c('ECDC0', 'JHH0', 'JHH', 'ECDC', 'JHHRegios', 'ECDCRegios')))
+rm(list = setdiff(ls(), c('ECDC0', 'JHH0', 'JHH', 'ECDC', 'JHHRegios', 'ECDCRegios','testing')))
+options(warn=0)
 source("loadData.R")  #also loads the requirements and the definitions 
 
 #makeDyn Regions sorts by confirmed and countries get added regularly. 
@@ -7,18 +8,19 @@ source("loadData.R")  #also loads the requirements and the definitions
 
 #latest numbers
 #JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','France','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
-
+JHH %>% ungroup %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
+  select(PSCR,active_imputed, new_active_rate,Date) %>% arrange(new_active_rate) %>% tail(20)
 JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
     c('Malta','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
         'Germany','France','Africa','Iran','Russia','Brazil'),
     c('confirmed','new_confirmed','active_imputed','deaths','PSCR',
-      'new_active_rate', 'active_imputed_growthRate') ]  %>%
+      'new_active_rate', 'active_imputed_growthRate','confirmed_p_M') ]  %>%
   arrange(new_active_rate)
-
+JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
 #overtaking
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-map(c('Germany','France','Spain',"Italy",'United Kingdom'),          function(x) overtakeDays_v(JHH,x,who = "Ithem"))
+map(c('Germany','France','Spain',"Italy",'United Kingdom'), function(x) overtakeDays_v(JHH,x,who = "Ithem"))
 
 
 map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
@@ -28,10 +30,6 @@ map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'theyme
 #compare my countries
 graph3Dard_fia(ECDC,c("Spain","Belgium","Netherlands","France"))
 
-graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
-graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 
-graph6Dardcra_finyl(ECDC,regios$MSM,from = Sys.Date()-7)
-graph6Dardcra_finyl(JHH, c("Kazakhstan","Belgium","Netherlands","France"),from = Sys.Date()-10)
 #make all graphs
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
 curGraph('GR', lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs)
@@ -39,9 +37,12 @@ JHHRegios <- makeRegioList(JHH)
 curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs)
 
 graphCodes()
+print(myGraphNrs)
+print(myGraphListbyDate)
+print(myGraphListbyDay)
 myGraphNrs
 myGraphList
-myGraphListbyDate
+
 verbose = 2
 #look at growth rates and growth paths in first days (Synchronized)
 ECDC %>% byRegionthenGraph(regions = ECDCRegios,graphlist = c("graph1dnr_iyl","graph2dac_iyl"))
