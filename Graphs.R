@@ -8,23 +8,26 @@ source("loadData.R")  #also loads the requirements and the definitions
 
 #latest numbers
 #JHH[JHH$Date==max(JHH$Date)&JHH$PSCR %in% c('Malta','World','New York,US',"Kazakhstan",'Belgium','US','Netherlands','Europe','Germany','France','Africa','Iran','Russia','Brazil'),c('confirmed','new_confirmed','active_imputed','deaths','PSCR')]%>% mutate(newrate=round(new_confirmed/active_imputed*100,2))%>% arrange(newrate)
+JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
 JHH %>% ungroup %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
-  select(PSCR,active_imputed, new_active_rate,Date) %>% arrange(new_active_rate) %>% tail(20)
+  select(PSCR,active_imputed, active_imputed_growthRate, new_active_rate,Date) %>% arrange(new_active_rate) %>% tail(20)
 JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
-    c('Malta','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
+    c('Malta','World','New York,US',"Kazakhstan",'Belgium','Peru','Spain','US','Netherlands','Europe',
         'Germany','France','Africa','Iran','Russia','Brazil'),
     c('confirmed','new_confirmed','active_imputed','deaths','PSCR',
       'new_active_rate', 'active_imputed_growthRate','confirmed_p_M') ]  %>%
   arrange(new_active_rate)
-JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
+
 #overtaking
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-map(c('Germany','France','Spain',"Italy",'United Kingdom'), function(x) overtakeDays_v(JHH,x,who = "Ithem"))
+#map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays=2))
+#map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays=2))
+map_dfc(c('Germany','France','Spain',"Italy",'United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem"))
 
-
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
-map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
+map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
+#map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
+map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
 
 
 #compare my countries
