@@ -21,7 +21,6 @@ mac <- function(x,minval=40, ...){
   ifelse(abs(cx)<minval, x, cx   )
 }
 
-
 #pacman p_load automates this and the following also: 
 #automate the syntax... Thanks Simon https://stackoverflow.com/users/1478381/simon-ohanlon
 getpackages <- function(x){
@@ -43,3 +42,8 @@ getpackages (c('profvis',"reshape2","plyr","ggplot2","RColorBrewer","ggthemes","
 #if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
 #for other formats of saving of plots 
 
+mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
+  condition <- eval(substitute(condition), .data, envir)
+  .data[condition, ] <- .data[condition, ] %>% mutate(...)
+  .data
+}
