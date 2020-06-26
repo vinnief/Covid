@@ -21,6 +21,7 @@ ti = Sys.Date()
 JHH <- JHH %>% addSimVars(minVal = 100) #%>% 
 JHH <- JHH %>%  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
 reportDiffTime('adding the simulated values in JHH:',ti,'auto')
+
 writeWithCounters(JHH,name = "Covid19JHH") #no factors!
 #names(JHH)
 
