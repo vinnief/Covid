@@ -19,21 +19,20 @@ JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in%
 
 #overtaking
 #map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays=2))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays=1))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 2))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 1))
 #map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays=2))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays=1))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 2))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 1))
+#map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 2))
 map_dfc(c('Germany','France','Spain',"Italy",'United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem"))
 
 map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
 #map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
 map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-
-
 #compare my countries
 graph3Dard_fia(ECDC,c("Spain","Belgium","Netherlands","France"))
-
 #make all graphs
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
 curGraph('GR', lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs)
@@ -82,14 +81,13 @@ JHH%>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,r
 
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
-all(is.na(JHH[JHH$Date=="2020-01-22", "new_confirmed"]))  # should be true
-findMaxCCF(myPSCR="Italy")
-findMaxCCF(myPSCR="Hubei,China")
-findMaxCCFs(myPSCR="Hubei,China")
-findMaxCCFs(myPSCR="Taiwan*")
-rclags<-findMaxCCFs("new_recovered","new_confirmed")
-rclags<- rclags[!is.nan(rclags$cor),]
-hist(rclags$lag, plot=TRUE,breaks=20)
+findMaxCCF(myPSCR = "Italy")
+findMaxCCF(myPSCR = "Hubei,China")
+findMaxCCFs(myPSCR = "Hubei,China")
+findMaxCCFs(myPSCR = "Taiwan*")
+rclags <- findMaxCCFs("new_recovered","new_confirmed")
+rclags <- rclags[!is.nan(rclags$cor), ]
+hist(rclags$lag, plot = TRUE, breaks = 20)
 rclags[rclags$lag>=0,"lag"] %>% median
 rclags[order(rclags$lag,decreasing = TRUE),][1:20,]
 

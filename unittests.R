@@ -6,6 +6,8 @@ setdiff(unique(ECDC$PSCR),unique(testing$PSCR))
 setdiff(unique(testing$ISOcode),unique(ECDC$ISOCode))
 setdiff(unique(ECDC$ISOCode),unique(testing$`ISOcode`))
 
+#check diff def
+stopifnot(all(is.na(JHH[JHH$Date == "2020-01-22", "new_confirmed"])) )
 
 #check overtakedays tidyeval syntax
 lpti = ECDC
