@@ -17,23 +17,23 @@ JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in%
       'new_active_rate', 'active_imputed_growthRate','confirmed_p_M') ]  %>%
   arrange(new_active_rate)
 
+
 #overtaking
 #map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays=2))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays=1))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 2))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 1))
 #map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays=2))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays=1))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 2))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 1))
+#map(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_v(JHH,x,who = 'theyme'))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 2))
 map_dfc(c('Germany','France','Spain',"Italy",'United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem"))
 
 map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
 #map(c('Indonesia','Peru','India'),function(x) overtakeDays_v(JHH,x,who = 'Ithem'))
 map_dfc(c('Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-
-
 #compare my countries
 graph3Dard_fia(ECDC,c("Spain","Belgium","Netherlands","France"))
-
 #make all graphs
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC world')
 curGraph('GR', lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs)
@@ -52,60 +52,49 @@ verbose = 2
 ECDC %>% byRegionthenGraph(regions = ECDCRegios,graphlist = c("graph1dnr_iyl","graph2dac_iyl"))
 
 #simulate deaths and confirmed   
-ECDC %>% byRegionthenGraph(ECDCRegios,ext='_sim', graphlist=c('graphDccprr_fiyl','graphDddp_fyl'))  #sims
-ECDC %>% byRegionthenGraph(ECDCRegios,ext='_endsim',graphlist=c('graphDccprr_fiyl','graphDddp_fyl')) #simulations 
+ECDC %>% byRegionthenGraph(ECDCRegios,ext = '_sim', graphlist = c('graphDccprr_fiyl','graphDddp_fyl'))  #sims
+ECDC %>% byRegionthenGraph(ECDCRegios,ext = '_endsim',graphlist = c('graphDccprr_fiyl','graphDddp_fyl')) #simulations 
 
 
-if ( weekdays( Sys.Date() , abbreviate=FALSE) == "Friday") ECDC %>% 
-  byRegionthenGraph(ECDCRegios, graphlist= myGraphListbyDate)
+if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday") ECDC %>% 
+  byRegionthenGraph(ECDCRegios, graphlist = myGraphListbyDate)
 
-JHH %>% makeHistoryGraph(regions=JHHRegios,graphlist = 'graphDccprr_fyl')
-JHH %>% byRegionthenGraph(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
-  #makeHistoryGraphsRG(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
+JHH %>% byRegionthenGraph(regions = JHHRegios,graphlist = 'graphDccprr_fyl')
+JHH %>% byRegionthenGraph(regions = JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
+  #byRegionthenGraph(regions=JHHRegios[1:2],graphlist = 'graphDccprr_fyl')
 
 
-verbose=3
+verbose = 3
 
 #do standard graphs for all past dates
-JHH%>% makehistory(regions=JHHRegios, dates=seq(Sys.Date()-0,Sys.Date()-200,-10))  
-ECDC%>% makehistory(regions=ECDCRegios, dates=seq(Sys.Date()-210,Sys.Date()-0,30))  
-
-####corrections to earlier graphs
-verbose=1
-
-#check imputations
-#JHHdifimp<- unique(JHH%>% filter(active != active_imputed)%>% .$PSCR )
-JHH%>% makehistory(regions=
-                     unique(JHH%>% filter(active != active_imputed)%>% .$PSCR ), 
-                   graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_yfil')  ) 
-JHH%>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths)%>%View
+JHH %>% makehistory(regions = JHHRegios, dates = seq(Sys.Date() - 0,Sys.Date() - 250,-10))  
+ECDC %>% makehistory(regions = ECDCRegios, dates = seq(Sys.Date() - 250,Sys.Date() - 0,30))  
 
 ### find mac ccf per country. should be around 21 or at least 15. it is much less!
 #are diffs made properly? 
-all(is.na(JHH[JHH$Date=="2020-01-22", "new_confirmed"]))  # should be true
-findMaxCCF(myPSCR="Italy")
-findMaxCCF(myPSCR="Hubei,China")
-findMaxCCFs(myPSCR="Hubei,China")
-findMaxCCFs(myPSCR="Taiwan*")
-rclags<-findMaxCCFs("new_recovered","new_confirmed")
-rclags<- rclags[!is.nan(rclags$cor),]
-hist(rclags$lag, plot=TRUE,breaks=20)
-rclags[rclags$lag>=0,"lag"] %>% median
+findMaxCCF(myPSCR = "Italy")
+findMaxCCF(myPSCR = "Hubei,China")
+findMaxCCFs(myPSCR = "Hubei,China")
+findMaxCCFs(myPSCR = "Taiwan*")
+rclags <- findMaxCCFs("new_recovered","new_confirmed")
+rclags <- rclags[!is.nan(rclags$cor), ]
+hist(rclags$lag, plot = TRUE, breaks = 20)
+rclags[rclags$lag >= 0,"lag"] %>% median
 rclags[order(rclags$lag,decreasing = TRUE),][1:20,]
 
-rdlags<-findMaxCCFs("new_recovered","new_deaths")
-rdlags<- rdlags[!is.nan(rdlags$cor),]
-hist(rdlags$lag, plot=TRUE,breaks = 20)
+rdlags <- findMaxCCFs("new_recovered","new_deaths")
+rdlags <- rdlags[!is.nan(rdlags$cor),]
+hist(rdlags$lag, plot = TRUE,breaks = 20)
 #rdlags[rdlags$lag<=5&rdlags$lag>=0,"PSCR"]
-rdlags[rdlags$lag>=0,"lag"] %>% median
-rdlags[rdlags$lag>5,"PSCR"]
-rdlags[rdlags$lag>10,"PSCR"]
+rdlags[rdlags$lag >= 0,"lag"] %>% median
+rdlags[rdlags$lag > 5,"PSCR"]
+rdlags[rdlags$lag > 10,"PSCR"]
 rdlags[order(rdlags$lag,decreasing = TRUE),][1:20,]
 
-dclags<-findMaxCCFs("new_deaths","new_confirmed")
-dclags<- dclags[!is.nan(dclags$cor),]
-hist(dclags$lag, plot=TRUE,breaks=20)
-dclags[dclags$lag>=0,"lag"]%>% median
+dclags <- findMaxCCFs("new_deaths","new_confirmed")
+dclags <- dclags[!is.nan(dclags$cor),]
+hist(dclags$lag, plot = TRUE,breaks = 20)
+dclags[dclags$lag >= 0,"lag"] %>% median
 dclags[order(dclags$lag,decreasing = TRUE),][1:20,]
 
 #bug: instead of cor=NA, and lag=NA, we obtain cor =NAN, lag =-28 when var1 is missing. 
