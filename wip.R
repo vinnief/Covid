@@ -1,21 +1,12 @@
 source("requirements.R")
 source('definitions.R')
-df=data.frame(a= c(1,2),b= c(0,2.4))
-df[,c('a','b')]<- data.frame(df$a+1, df$b-1)
-
-lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na = "" )
-names(lpti)
-#fileEncoding = "UTF-8-BOM" doesn use bom in readr tidyverse.
-options(warn = 2)
-JHH1 <-  addSimVars(JHH, minVal = 100, nrRows = 1) #%>% 
-JHH1 <-  addSimVars(JHH1, minDate = Sys.Date() - 10, ext = "_endsim")
-
+#
 
 
 a <- merge(ECDC, testing, by.x = 'countryterritoryCode', by.y = 'ISO code', all.x = TRUE,
            sort = FALSE)
 
-addCountryTotals<- function(lpdf=JHH){
+addCountryTotals <- function(lpdf = JHH){
   varnames = c("confirmed","recovered", "deaths","population")
   existingTotals <- c("China","Australia","Canada",'US')
   #just to be sure, that if i do it twice i dont get double counts. 
