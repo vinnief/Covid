@@ -7,7 +7,15 @@ setdiff(unique(testing$ISOcode),unique(ECDC$ISOCode))
 setdiff(unique(ECDC$ISOCode),unique(testing$`ISOcode`))
 
 
-#
+#check overtakedays tidyeval syntax
+lpti = ECDC
+countries = c('Belgium', 'China',  'Spain')
+varname = 'confirmed'
+newvarname = 'new_confirmed'
+lastDays = 3
+lpti[lpti$PSCR %in% countries, c('PSCR','Date', varname, newvarname)] %>% group_by(PSCR) %>% 
+  filter(Date >= max(Date) - lastDays +1) %>%
+  mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))
 #some graphs: 
 graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
 graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 
