@@ -2,6 +2,7 @@
 #check testing ISOcodes and PSCR
 setdiff(unique(testing$PSCR),unique(ECDC$PSCR))
 setdiff(unique(ECDC$PSCR),unique(testing$PSCR))
+
 setdiff(unique(testing$ISOcode),unique(ECDC$ISOcode))
 setdiff(unique(ECDC$ISOcode),unique(testing$ISOcode))
 
@@ -13,7 +14,7 @@ JHH %>% byRegionthenGraph(  regions = c('really imputed',unique(JHH %>% filter(a
 JHH %>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths) %>% View
 
 
-#View some graphs: 
+#View some graphs:
 graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
 graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 
 graph6Dardcra_finyl(ECDC,regios$MSM,from = Sys.Date()-7)
@@ -35,11 +36,11 @@ graph6Dardcra_fiyl(ECDC,c('Spain','Italy','United Kingdom'))
 
 ##test if mac does not reduce the amounts too much (after all we only average above a threshhold)
 rs<- function(n=200,s=50) {
- x<- rnorm(100,n,s)
- round(rowSums( rbind(x,
- mac.1=mac.(x,sides=1),ma1=ma(x,sides=1),
- mac.2=mac.(x,sides=2),mac.=mac.(x),ma=ma(x)))
- /sum(x)*100,2)
+  x<- rnorm(100,n,s)
+  round(rowSums( rbind(x,
+                       mac.1=mac.(x,sides=1),ma1=ma(x,sides=1),
+                       mac.2=mac.(x,sides=2),mac.=mac.(x),ma=ma(x)))
+        /sum(x)*100,2)
 }
 
 #test addSimVars
@@ -75,14 +76,14 @@ view(ECDC[ECDC$PSCR=='Belgium',])
 #test missing parameters
 d=23;r=2
 test<- function(d,r){
- print(myPath)
- if (missing (r)&!missing(d)) r <- 2^(1/d)
- if(missing(d)&!missing (r)) d <- -log2(r)
- if (missing (d)) print('d still missing ='% %d) else print('d not missing'% %d)
- if (missing (r)) print('r still missing ='% %r) else print('r not missing'% %r) 
- myPath <- myPath %//% 'current'
- poop<- 'oo'
- f()
+  print(myPath)
+  if (missing (r)&!missing(d)) r <- 2^(1/d)
+  if(missing(d)&!missing (r)) d  <- -log2(r)
+  if (missing (d)) print('d still missing ='% %d) else print('d not missing'% %d)
+  if (missing (r)) print('r still missing ='% %r) else print('r not missing'% %r) 
+  myPath <- myPath %//% 'current'
+  poop<- 'oo'
+  f()
 }
 f <- function () print (poop)
 test(d=5)
@@ -92,11 +93,11 @@ test()
 
 # test countries appearing in several regions
 isdouble <- function (country,regiolist) {
- sum(unlist(llply(regiolist, function (charvect) country %in% charvect)))
+  sum(unlist(llply(regiolist, function (charvect) country %in% charvect)))
 }
 isdouble('US',regios)
 checkdouble <- function(country,regiolist){
- which(unlist(llply(regiolist, function (x) country%in% x)))}
+  which(unlist(llply(regiolist, function (x) country %in% x)))}
 checkdouble('USA',JHHRegios)
 
 checkdouble(c('USA','Netherlands'),JHHRegios)
@@ -104,7 +105,7 @@ isdouble(c('Belgium','Netherlands'),regios)
 length(JHHRegios)
 
 #Check colors and palettes
-profvis(JHH %>% addSimVarsOneCountry("Belgium",minDate="2920-05-01", ext='_endsim'))
+profvis(JHH %>% addSimVarsOneCountry("Belgium",minDate = "2920-05-01", ext = '_endsim'))
 #check colors
 graph3Dard_fia (JHH,regios$continents)
 
@@ -115,4 +116,4 @@ graphDccprr_fyl()
 verbose=2
 graphDccprr_fyl(JHH,"Netherlands")
 graphDddp_fyl(JHH,"Netherlands")
-graphit(ECDC,regios$Vincent,"deaths missed", yvars="deaths",xvar='day') %>% View
+graphit(ECDC,regios$Vincent,"deaths missed", yvars = "deaths",xvar = 'day') %>% View
