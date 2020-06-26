@@ -32,6 +32,7 @@ readUSdata <- function(dataversion = "confirmed"){#deaths and recovered are the 
  )
  return(wpdf)
 }
+<<<<<<< HEAD
 readTesting <- function(){
  testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv')%>% 
   select(c('Entity', 'ISO code', 'Cumulative total', 'Daily change in cumulative total')) %>% 
@@ -41,6 +42,21 @@ readTesting <- function(){
   select(-'Cumulative total', -'Daily change in cumulative total')
  coco <- as.data.frame(str_split_fixed(testing$Entity, ' - ', n = 2))
  testing$PSCR <- coco[, 1]
+=======
+
+readTesting <- function(){
+ testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv') %>% 
+  select(c('Entity', 'ISO code', 'Cumulative total', 'Daily change in cumulative total')) %>% 
+  mutate(tests  = `Cumulative total`, 
+      new_tests = `Daily change in cumulative total`, 
+      ISOcode  = `ISO code`) %>%  
+  select(-'Cumulative total', -'Daily change in cumulative total')
+ coco <- as.data.frame(str_split_fixed(testing$Entity, ' - ', n = 2))
+ testing$PSCR <- coco[, 1]
+ testing[testing$PSCR=='United States','PSCR'] <- 'United States of America'
+ testing[testing$PSCR=='Czech Republic','PSCR'] <- 'Czechia'
+ testing$PSCR <- testing$PSCR %>% str_replace_all(' ','_') #str_split(' ') %>% modify(function(l) paste(l, collapse = '_')) %>% unlist() 
+>>>>>>> master
  testing$comment <- coco[.2]
  testing
 }
@@ -341,7 +357,9 @@ regios = c(list(
  WestvsEast = c("WestvsEast", "USA", "United Kingdom", "Italy", "Iran", "Korea, South", "Germany", "France", "Spain", "Sweden", "Norway", "Belgium", "Netherlands", "Singapore", "Japan", "Taiwan*", "Denmark", "Hubei, China", "Hongkong, China", "Jiangsu, China", 'Indonesia'), 
  MENA = c("MENA", "Marocco", "Algeria", "Tunesia", "Libia", "Egypt", "West Bank and Gaza", "Palestine", "Lebanon", "Syria", "Turkey", "Iraq", "Iran", "Afghanistan", "Jordan", "Saudi Arabia", "Kuwait", "Oman", "United Arab Emirates", "UAE", "Yemen", "Bahrain", "Qatar"), 
  SAmerica = c("South America", "Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Guyana", "Suriname", "French Guiana", "Venezuela", "Paraguay", "Peru" , "Uruguay", "Falkland Islands (Malvinas)"), 
- Europe = c("Europe", regios$EU[2:28], regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus", "Moldova", "Georgia", "Armenia", "Azerbaijan", "Andorra", "Monaco", "San Marino", "Vatican", "Holy See", "Albania", "North Macedonia", "Kosovo", "Croatia", "Montenegro", "Bosnia and Herzegovina", "Serbia", "Gibraltar", "Faroe Islands", "Isle of Man", "Channel Islands", "Greenland"), 
+
+ Europe = c("Europe", regios$EU[2:28], regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus", "Moldova", "Georgia", "Armenia", "Azerbaijan", "Andorra", "Monaco", "San Marino", "Vatican", "Holy See", "Albania", "North Macedonia", "Kosovo", "Montenegro", "Bosnia and Herzegovina", "Serbia", "Gibraltar", "Faroe Islands", "Isle of Man", "Channel Islands", "Greenland"), 
+
  NAmerica = c("North America", "USA", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
  Africa = c("Africa", "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"), 
   Oceania = c("Oceania", "Australia", "New Zealand", "Vanuatu", "Tuvalu", "Fiji", "Guam", "French Polynesia", "New Caledonia" )
@@ -431,15 +449,15 @@ provincializeJHH <- function(){
 }
 
 makeRegioList <- function(lpti = JHH, piecename = "JHH"){
- Oceania = piecename  % %  'Oceania'
+ #Oceania = piecename  % %  'Oceania'
  Samerica  = piecename  % %  'South America'
  regios  = c(  
-  lpti%>% makeDynRegions(piecename = piecename % % 'World'), 
-  lpti%>% filter(PSCR %in% regios$Europe )%>% 
+  lpti %>% makeDynRegions(piecename = piecename % % 'World'), 
+  lpti %>% filter(PSCR %in% regios$Europe ) %>% 
    makeDynRegions(gridsize = 20, piecename = piecename % % 'Europe'), 
-  lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename = piecename % % 'Asia'), 
-  lpti%>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename = piecename  % %  'North America'), 
-  lpti%>% filter(PSCR %in% regios$Africa )   %>% makeDynRegions(piecename  = piecename  % %  'Africa') , 
+  lpti %>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename = piecename % % 'Asia'), 
+  lpti %>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename = piecename  % %  'North America'), 
+  lpti %>% filter(PSCR %in% regios$Africa )   %>% makeDynRegions(piecename  = piecename  % %  'Africa') , 
   list(SAmerica  = regios$SAmerica, 
     Oceania  = regios$OceaniaP
   ) #World = "World", #regios['continents'], 'WestvsEast', 'Caribbean', 
@@ -450,22 +468,20 @@ addPopulation <- function(lpdf) {
  population <- read.csv(datapath %#% "/" %#% 'population.csv')[c(1, 3)]
  names(population)[2] <- "population"
  rownames(population) <- population$Country.Name
- lpdf[, "population"] <- population[lpdf%>% pull(PSCR), "population"]
+
+ lpdf[, "population"] <- population[lpdf %>% pull(PSCR), "population"]
+
  popUS <- read.csv(datapath %#% "/" %#% 'USstatespop2019.csv')[c('State', 'p2019')]
  names(popUS)[2] <- "population"
  rownames(popUS) <- popUS$State
  lpdf[grepl(",US", lpdf$PSCR), "population"] <- 
   popUS[lpdf[grep(",US", lpdf$PSCR), ]$Province.State, "population"]
  popunknown <- unique(lpdf[is.na(lpdf$population), ]$PSCR)
- if (verbose >= 2 | length(popunknown) > 0)print("population unknown:"  % %  
+
+ if (verbose >= 2 | length(popunknown) > 0) print("population unknown:"  % %  
+
       ifelse(length(popunknown)  ==  0, 0, paste(popunknown, collapse = "; ")))
  lpdf
-}
-
-mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
- condition <- eval(substitute(condition), .data, envir)
- .data[condition, ] <- .data[condition, ] %>% mutate(...)
- .data
 }
 
 
@@ -1176,7 +1192,7 @@ graphDaa_fia <- function(lpdf = JHH, countries, ...){
 
 graphDaa_fiyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
   graphit(lpdf, countries, xvar = 'Date', 
-     yvars = c( 'active_imputed', 'active'), facet = ID, 
+     yvars = c( 'active_imputed', 'active'), facet = 'PSCR', 
      logy = logy, ... ) #putLegend = TRUE
 }
 
@@ -1197,8 +1213,9 @@ graphs <- function(lpdf  = JHH, countries  = "World", graphlist  = myGraphNrs, .
   do.call(myGraph, args  = list(lpdf, countries, savename, ...))
  }
 }
-reportDiffTime <- function(message, mytime, units = 'mins', precision  = 2){
- print(message  % %  round( difftime(Sys.time(), mytime, units  = units), precision)  % %  units)
+reportDiffTime <- function(message, mytime, units = 'auto', precision  = 2){
+ print(message % % round( difftime(Sys.time(), mytime, units = ifelse(units == 'auto','units',units)), precision) 
+       % %  units)
 }
 
 timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
@@ -1209,12 +1226,15 @@ timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
 }
 
 graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...){
- if(verbose >= 4) print( 'Regions' % %    paste(myRegion, collapse = "/ "))
- if(verbose >= 3) { tir <- Sys.time() ; print(tir%: % myGraph  % %  myRegion[1] ) }
- do.call (myGraph, 
+
+
+ if (verbose >= 4) print( 'Regions' % %    paste(myRegion, collapse = "/ "))
+ if (verbose >= 3) { tir <- Sys.time() ; print(tir %: % myGraph  % %  myRegion[1] ) }
+ do.call(myGraph, 
       args = list(lpdf, myRegion, savename  = ifelse(saveit, myRegion[1], ""), ...))
- if(verbose >= 3) {
-  reportDiffTime (myGraph  % %  myRegion[1] % %  "duration:", tir)}
+ if (verbose >= 3) {
+  reportDiffTime(myGraph  % %  myRegion[1] % %  "duration:", tir)}
+
 }
 
 byRegionthenGraph <- function(lpdf = JHH, regions, saveit = TRUE, 
@@ -1298,10 +1318,10 @@ findMaxCCF <- function(var1 = "new_recovered", var2  = "new_confirmed", myPSCR  
  lpdf <- lpdf[lpdf$Date > "2020-01-22", c("Date", var1, var2)]
  if (all(is.na(lpdf[, var1])) | all(is.na(lpdf[, var2]))) 
   return(data.frame( cor  = NA, lag  = NA)) #
- d <- ccf.vf(lpdf[, var1], lpdf[, var2], lag.max = 30, plot  = FALSE)
- if (verbose >= 2) print (myPSCR)
+ d <- ccf.vf(lpdf[, var1], lpdf[, var2], lag.max = 30, plotit = FALSE)
+ if (verbose >= 2) print(myPSCR)
  res  = data.frame( cor = d$acf[, , 1], lag = d$lag[, , 1])
- if (N%%2  == 0)N = N-1
+ if (N %% 2  == 0) N = N - 1
  a <- res[order(res$cor, decreasing = TRUE)[1:N], ]
  if (verbose >= 3) print(a)
  res_max  = median( a$lag) #which.max(res$cor) #instead of max, take the n largest: order(R, decreasing = TRUE)[1:N]
