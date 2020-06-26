@@ -431,15 +431,15 @@ provincializeJHH <- function(){
 }
 
 makeRegioList <- function(lpti = JHH, piecename = "JHH"){
- Oceania = piecename  % %  'Oceania'
+ #Oceania = piecename  % %  'Oceania'
  Samerica  = piecename  % %  'South America'
  regios  = c(  
-  lpti%>% makeDynRegions(piecename = piecename % % 'World'), 
-  lpti%>% filter(PSCR %in% regios$Europe )%>% 
+  lpti %>% makeDynRegions(piecename = piecename % % 'World'), 
+  lpti %>% filter(PSCR %in% regios$Europe ) %>% 
    makeDynRegions(gridsize = 20, piecename = piecename % % 'Europe'), 
-  lpti%>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename = piecename % % 'Asia'), 
-  lpti%>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename = piecename  % %  'North America'), 
-  lpti%>% filter(PSCR %in% regios$Africa )   %>% makeDynRegions(piecename  = piecename  % %  'Africa') , 
+  lpti %>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename = piecename % % 'Asia'), 
+  lpti %>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename = piecename  % %  'North America'), 
+  lpti %>% filter(PSCR %in% regios$Africa )   %>% makeDynRegions(piecename  = piecename  % %  'Africa') , 
   list(SAmerica  = regios$SAmerica, 
     Oceania  = regios$OceaniaP
   ) #World = "World", #regios['continents'], 'WestvsEast', 'Caribbean', 
@@ -450,14 +450,14 @@ addPopulation <- function(lpdf) {
  population <- read.csv(datapath %#% "/" %#% 'population.csv')[c(1, 3)]
  names(population)[2] <- "population"
  rownames(population) <- population$Country.Name
- lpdf[, "population"] <- population[lpdf%>% pull(PSCR), "population"]
+ lpdf[, "population"] <- population[lpdf %>% pull(PSCR), "population"]
  popUS <- read.csv(datapath %#% "/" %#% 'USstatespop2019.csv')[c('State', 'p2019')]
  names(popUS)[2] <- "population"
  rownames(popUS) <- popUS$State
  lpdf[grepl(",US", lpdf$PSCR), "population"] <- 
   popUS[lpdf[grep(",US", lpdf$PSCR), ]$Province.State, "population"]
  popunknown <- unique(lpdf[is.na(lpdf$population), ]$PSCR)
- if (verbose >= 2 | length(popunknown) > 0)print("population unknown:"  % %  
+ if (verbose >= 2 | length(popunknown) > 0) print("population unknown:"  % %  
       ifelse(length(popunknown)  ==  0, 0, paste(popunknown, collapse = "; ")))
  lpdf
 }
@@ -1197,8 +1197,8 @@ graphs <- function(lpdf  = JHH, countries  = "World", graphlist  = myGraphNrs, .
   do.call(myGraph, args  = list(lpdf, countries, savename, ...))
  }
 }
-reportDiffTime <- function(message, mytime, units = 'mins', precision  = 2){
- print(message  % %  round( difftime(Sys.time(), mytime, units  = units), precision)  % %  units)
+reportDiffTime <- function(message, mytime, units = 'auto', precision  = 2){
+ print(message  % %  round( difftime(Sys.time(), mytime, units  = ifelse(units =='auto','units',units)), precision)  % %  units)
 }
 
 timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
