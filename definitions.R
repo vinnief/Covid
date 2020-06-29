@@ -33,6 +33,8 @@ readUSdata <- function(dataversion = "confirmed"){#deaths and recovered are the 
  return(wpdf)
 }
 
+
+
 readTesting <- function(){
  testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv')  %>%  
   select(c('Entity', 'ISO code','Date', 'Cumulative total', 'Daily change in cumulative total'))  %>%  
@@ -42,9 +44,11 @@ readTesting <- function(){
   select(-'Cumulative total', -'Daily change in cumulative total', -'ISO code')
  coco <- as.data.frame(str_split_fixed(testing$Entity, ' - ', n = 2))
  testing$PSCR <- coco[, 1]
+
  testing[testing$PSCR == 'United States','PSCR'] <- 'United States of America'
  testing[testing$PSCR == 'Czech Republic','PSCR'] <- 'Czechia'
  testing$PSCR <- testing$PSCR  %>%  str_replace_all(' ','_') #str_split(' ')  %>%  modify(function(l) paste(l, collapse = '_'))  %>%  unlist() 
+
  testing$comment <- coco[.2]
  testing
 }
@@ -137,6 +141,8 @@ total <- function(lpdf = JHH, rows = "",
  ans[, setdiff(names(lpdf), names(ans))] <- NA
  ans
 }
+
+
 total <- function(lpdf = JHH, rows = "", ID = "PSCR" , 
                   varnames = c("confirmed", "deaths", "recovered") , 
                   newrow = "") {
@@ -369,6 +375,7 @@ regios <- c(list(EU = c("EU", regios$EU6[2:7], "Ireland", "Denmark", "Greece", "
      regios)
 
 regios = c(list(
+
   other = c("Other", 'Diamond Princess', 'MS Zaandam', 'World'), 
   MSM  = c("MSM", "Netherlands", "Belgium", "United Kingdom", "Germany", "Malta", "Egypt", "Suriname", "China", "Vietnam", "Hungary", "Romania", "Kuwait", "Italy", "Ireland", "Iran", "Kazakstan", "Liberia", "Indonesia", "Ethiopia", "Nigeria", "Ghana", "Uganda", "South Africa", "Canada", "Spain", "France"), 
   Vincent = c("Some Selected Regions", "Belgium", "Germany", "Italy", "France", "Kazakhstan", "Indonesia", "Spain", "Netherlands", "Japan", "New York"), 
@@ -380,6 +387,7 @@ regios = c(list(
   North_America = c("North America", "USA", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
   Africa = c("Africa", "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"), 
    Oceania = c("Oceania", "Australia", "New Zealand", "Vanuatu", "Tuvalu", "Fiji", "Guam", "French Polynesia", "New Caledonia" )
+
       ), 
    regios)
 
@@ -493,10 +501,13 @@ addPopulation <- function(lpdf) {
  lpdf[grepl(",US", lpdf$PSCR), "population"] <- 
   popUS[lpdf[grep(",US", lpdf$PSCR), ]$Province.State, "population"]
  popunknown <- unique(lpdf[is.na(lpdf$population), ]$PSCR)
+
  if (verbose >= 2 | length(popunknown) > 0) print("population unknown:"  % %  
+
       ifelse(length(popunknown)  ==  0, 0, paste(popunknown, collapse = "; ")))
  lpdf
 }
+
 
 imputeRecovered <- function(lpdf = ECDCdata, lagrc = LAGRC, lagrd = LAGRD, # was 22, 16
               dothese = FALSE, correct = FALSE){
@@ -660,11 +671,12 @@ addSimCountry <- function(lpti, country, ...){
  lpti
 }
 
-# from R0 to doubling days: #2^(LAGRC/dd) = (R0+1)   1 should yiel dtLAGRC. 
+# from R0 to doubling days: #2^(LAGRC/dd) = (R0+1)   1 should yield LAGRC. 
 R02doublingDays <- function(R0 = 1){
  LAGRC/(log2(R0 + 1))
 }
 doublingDays2R0 <- function(doublingDays = 3) {2^(LAGRC/doublingDays) - 1}
+
 
 estimateDoublingDaysOneCountry <- function(lpti, variable = 'confirmed', nrDays = 9, minDate = "2019-12-31", maxDate = '2020-12-31'){
  getGR <- function(rowNr){
@@ -1270,12 +1282,15 @@ timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
 }
 
 graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...){
+
+
  if (verbose >= 4) print( 'Regions' % %    paste(myRegion, collapse = "/ "))
  if (verbose >= 3) { tir <- Sys.time() ; print(tir %: % myGraph  % %  myRegion[1] ) }
  do.call(myGraph, 
       args = list(lpdf, myRegion, savename  = ifelse(saveit, myRegion[1], ""), ...))
  if (verbose >= 3) {
   reportDiffTime(myGraph  % %  myRegion[1] % %  "duration:", tir)}
+
 }
 
 byRegionthenGraph <- function(lpdf = JHH, regions, saveit = TRUE, 
