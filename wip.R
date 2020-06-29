@@ -1,41 +1,12 @@
 source("requirements.R")
 source('definitions.R')
-#
-a <- merge(ECDC, testing, by.x = 'countryterritoryCode', by.y = 'ISO code', all.x = TRUE,
+# integrate testing into ECDC & JHH
+a <- merge(ECDC, testing, by.x = c('ISOcode','Date'), by.y = c('ISOcode','Date'), all.x = TRUE,
            sort = FALSE)
 
-#########add totals is dirty. several versions exist. lets try and unify: 
+names(testing)
 
-addCountryTotals <- function(lpdf = JHH){
-  varnames = c("confirmed","recovered", "deaths","population")
-  existingTotals <- c("China","Australia","Canada",'US')
-  #just to be sure, that if i do it twice i dont get double counts. 
-  #And omit US as country and US states. 
-  lpti <- lpdf %>%
-    filter(!(PSCR %in% existingTotals )) #
-  rbind(lpdf, 
-        lpti %>% totals(c("China","Australia", "Canada",'US'),
-                       ID = "Country.Region", varnames = varnames))
-  
-}
-addRegionTotals <- function(lpdf = JHH, totRegions = ""){
-  existingTotals <- c("South America", "Asia", "Africa", "Europe","China","Australia","Canada",'US','North America',"World")
-  #just to be sure, that if i do it twice i dont get double counts. 
-  #And omit US as country and US states. 
-    lpti <- lpdf %>%
-    filter(!(Country.Region == "US" | PSCR %in% existingTotals )) #we have US and USA
-  if (totRegions[1] == "") totRegions <- c(regios)
-  if (verbose >= 3) {
-    print('world totals include the following countries: ')
-    print(paste(World,collapse = ","))}
-  varnames = c("confirmed","recovered", "deaths","population")
-  for (myRegion in totRegions) {
-    lpdf <- rbind(lpdf, 
-            lpti %>% total(regios[[myRegion]], ID = ID, newrow = myRegion[1], varnames = varnames))
-  }
-}
-tail(JHH0 %>%  addPopulation() %>% addCountryTotals %>% addRegionTotals %>% filter(Date == max(Date)),10)
-
+#make gifs
 #from loaddata: trial to make the loading only happen if it gives new data
 #while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
 #   source("loaddata.R")
@@ -47,23 +18,13 @@ tail(JHH0 %>%  addPopulation() %>% addCountryTotals %>% addRegionTotals %>% filt
 #}   } }
 
 
-total.tibble<- function(lpt=JHH,ID=Country.Region,
-                        varnames=c('confirmed',#deaths,
-                                   'recovered')){
-  lpttot<-lpt%>%
-    group_by({{ID}},Date)
-  lpttot<- cbind(
-    #lpttot%>% summarize(newPSCR:=aggreg(PSCR),
-    #          newCountry.Region=aggreg(Country.Region),
-    #          newProvince.State=aggreg(Province.State)), #!! mean_name := mean(!! expr)
-    lpttot%>% summarize_at(.vars=!!!varnames, .funs=colSums)
-  )
-  #confirmed:=sum(confirmed),
-  #active:=sum(active),
-  #recovered=sum(recovered),
-  #deaths=sum(deaths),
-  #colSums(.[,])
-  #if (!!ID=="PSCR")lpttot%>% rename(Coun)
-}
-#JHH[JHH$Country.Region==c('Netherlands'),]%>%total.tibble(PSCR)%>% view()
-#JHH[JHH$Country.Region==c('Netherlands'),]%>%total.tibble(Country.Region)%>% view()
+devtools::install_github("dgrtwo/gganimate")# and install image_magick. 
+# see http://www.ggtern.com/2017/07/23/version-2-2-1-released/
+# add  frame = Date  to aes of ggplot, then
+# gganimate(myplot, "filename.gif" )  # or mp4, html, swf. 
+# p3 <- ggplot(gapminder, aes(gdpPercap, lifeExp, frame = year)) +
+#geom_path(aes(cumulative = TRUE, group = country)) +
+#  scale_x_log10() +
+#  facet_wrap(~continent)
+#12 ggplot extensions: ggcorplot, 
+#https://mode.com/blog/r-ggplot-extension-packages

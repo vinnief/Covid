@@ -13,9 +13,25 @@ JHH %>% byRegionthenGraph(  regions = c('really imputed',unique(JHH %>% filter(a
  graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_fiyl') ,myfolder1 = 'imputationcheck') 
 JHH %>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths) %>% View
 
+# check total and totals vs totals2 and old total
 
+options(warn = 2)
+makelpdfUS()
+JHH0 %>%  addPopulation() %>% addCountryTotals %>% addRegionTotals %>% 
+  group_by(PSCR) %>% 
+  filter(PSCR == 'Netherlands') %>% tail
+
+JHH0 %>%  addPopulation() %>% addTotals2() %>% #addCountryTotals %>% #addRegionTotals %>% 
+  group_by(PSCR) %>% filter(Date == max(Date)) %>% tail(.,10)
+JHH %>% # addPopulation() %>% addCountryTotals %>% #addRegionTotals %>% 
+  group_by(PSCR) %>% filter(PSCR %in% c("China","Australia","Canada",'US') & Date == max(Date)) %>% tail(.,5)
+
+# check addtotalsregion and country
+lptivalid <- JHH[ JHH$confirmed >=  100 & JHH$Date >=  Sys.Date()-5 ,]
+lptivalid %>% filter(PSCR %in% c('China','Asia','Australia', 'Western Australia,Australia','Europe')) %>% view
+lptivalid <- ECDC[ ECDC$confirmed >=  100 & ECDC$Date >=  Sys.Date()-5 ,]
 #View some graphs:
-graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France"),from = "2020-06-10")
+graph3Dard_fina(JHH,c("Kazakhstan","Belgium","Netherlands","France", "Ontario,Canada"),from = "2020-06-10")
 graph3Dard_fina(ECDC,regios$MSM,from = Sys.Date()-7) 
 graph6Dardcra_finyl(ECDC,regios$MSM,from = Sys.Date()-7)
 graph6Dardcra_finyl(JHH, c("Kazakhstan","Belgium","Netherlands","France"),from = Sys.Date()-10)

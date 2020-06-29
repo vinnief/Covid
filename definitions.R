@@ -4,7 +4,7 @@ LAGRC <- 42
 LAGRD <- 36
 LAGDC <- LAGRC-LAGRD
 deathRate = .05
-if(!exists("verbose")) verbose <- 1
+if (!exists("verbose")) verbose <- 1
 
 myDateFormat <- "%Y-%m-%d"
 myPlotPath <- "G:/My Drive/Covid19_plots"
@@ -34,17 +34,17 @@ readUSdata <- function(dataversion = "confirmed"){#deaths and recovered are the 
 }
 
 readTesting <- function(){
- testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv') %>% 
-  select(c('Entity', 'ISO code', 'Cumulative total', 'Daily change in cumulative total')) %>% 
+ testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv')  %>%  
+  select(c('Entity', 'ISO code','Date', 'Cumulative total', 'Daily change in cumulative total'))  %>%  
   mutate(tests  = `Cumulative total`, 
       new_tests = `Daily change in cumulative total`, 
-      ISOcode  = `ISO code`) %>%  
-  select(-'Cumulative total', -'Daily change in cumulative total')
+      ISOcode  = `ISO code`)  %>%   
+  select(-'Cumulative total', -'Daily change in cumulative total', -'ISO code')
  coco <- as.data.frame(str_split_fixed(testing$Entity, ' - ', n = 2))
  testing$PSCR <- coco[, 1]
- testing[testing$PSCR=='United States','PSCR'] <- 'United States of America'
- testing[testing$PSCR=='Czech Republic','PSCR'] <- 'Czechia'
- testing$PSCR <- testing$PSCR %>% str_replace_all(' ','_') #str_split(' ') %>% modify(function(l) paste(l, collapse = '_')) %>% unlist() 
+ testing[testing$PSCR == 'United States','PSCR'] <- 'United States of America'
+ testing[testing$PSCR == 'Czech Republic','PSCR'] <- 'Czechia'
+ testing$PSCR <- testing$PSCR  %>%  str_replace_all(' ','_') #str_split(' ')  %>%  modify(function(l) paste(l, collapse = '_'))  %>%  unlist() 
  testing$comment <- coco[.2]
  testing
 }
@@ -67,7 +67,7 @@ convertdata <- function(wpdf, coltype = "date", values.name = "count", US = FALS
            makePSCR(wpdf$Province.State , wpdf$Country.Region) ))
  lpdf <- reshape2::melt(wpdf, id = ID, 
             variable.name = coltype, value.name = values.name) 
- #lpdf <- wpdf %>% pivot_longer(????)
+ #lpdf <- wpdf  %>%  pivot_longer(????)
  lpdf$Date <- as.Date(paste(lpdf[, coltype], "20", sep = ""), format = "X%m.%d.%Y") #add century, get rid of X
  lpdf$date <- NULL
  return(lpdf)
@@ -80,14 +80,15 @@ findIDnames <- function(lpdf = JHH, testIDnames = c("Neth", "India"), searchID =
  if (!fuzzy) {a1 <- intersect(testIDnames, allIDs)
  }else a1 <- allIDs[unlist(llply(testIDnames, function(a) grep(a, allIDs, ignore.case = TRUE)))]
  if (missing(returnID)) return ( a1) #returnID = searchID
- else if(searchID  == returnID) {
+ else if (searchID  == returnID) {
   if (verbose >= 4) print('no need for returnID if same as searchID')
   return ( a1)} #returnID = searchID
  unique(lpdf[lpdf[, searchID] %in% a1, returnID])
 } 
+
 aggreg <- function(avector){
  len <- length(unique(avector))
- if(len  == 1){avector[1]
+ if (len  == 1){avector[1]
  }else #if (len  == 2) {paste(avector, collapse = "_") }else
   paste(avector[1], len-2, avector[length(avector)], sep = "_")
 }
@@ -125,9 +126,9 @@ total <- function(lpdf = JHH, rows = "",
          Lat = mean(df$Lat) , Long = mean(df$Long), 
          b2
          )
-   if("population"%in% names(df)) ans$population <- sum(df$population)
-   if("imputed"%in% names(df)) ans$imputed <- any(df$imputed)
-   if("Region" %in% names(lpdf)) 
+   if ("population" %in% names(df)) ans$population <- sum(df$population, na.rm = TRUE)
+   if ("imputed" %in% names(df)) ans$imputed <- any(df$imputed)
+   if ("Region" %in% names(lpdf)) 
     ans$Region <- ifelse(newrow !=  "", newrow, aggreg(df$Region))
    if ("County" %in% names(df)) 
     County = ifelse(newrow !=  "", newrow,  as.character(aggreg(df$County)))
@@ -136,23 +137,53 @@ total <- function(lpdf = JHH, rows = "",
  ans[, setdiff(names(lpdf), names(ans))] <- NA
  ans
 }
-#c("Canada", "US", "Australia", "China")
-totals <- function(lpdf = JHH, rows = "", 
-         ID = "Country.Region", 
-         varnames = c("confirmed", "deaths", "recovered")
-         ){
+total <- function(lpdf = JHH, rows = "", ID = "PSCR" , 
+                  varnames = c("confirmed", "deaths", "recovered") , 
+                  newrow = "") {
+  if (rows[1]  == "") rows = unique(lpdf[[ID]])  
+  ans <- lpdf[lpdf[[ID]] %in% rows, ] %>% group_by(Date) %>% 
+    summarize(
+      Country.Region = 
+        ifelse(newrow !=  "", newrow, 
+               aggreg(as.character(Country.Region))), 
+      Province.State = ifelse(newrow !=  "", newrow, aggreg(Province.State)),
+      PSCR = ifelse(newrow !=  "", newrow, 
+                    ifelse(ID  == "PSCR", aggreg(PSCR) , 
+                           ifelse(Province.State  == "", 
+                                  Country.Region, 
+                                  makePSCR(Province.State, Country.Region)
+                           ))),
+      confirmed = sum(confirmed, na.rm = TRUE),
+      recovered = ifelse(!'recovered' %in% varnames, NA, 
+                         sum(recovered, na.rm = TRUE)),
+      deaths = sum(deaths, na.rm = TRUE),
+      Lat = ifelse(!"Lat" %in% names(lpdf), NA, mean(Lat)) , 
+      Long = ifelse(!"Long" %in% names(lpdf), NA, mean(Long)),
+      population = ifelse(!"population" %in% names(lpdf), NA,
+                         sum(population, na.rm = TRUE)),
+      imputed = ifelse(!"imputed" %in% names(lpdf), NA, any(imputed)),
+      Region = ifelse(!"Region" %in% names(lpdf) , NA,
+                      ifelse(newrow != "", newrow, aggreg(Region))),
+      County = ifelse(!"County" %in% names(df) , NA,
+                      ifelse(newrow !=  "", newrow, as.character(aggreg(County))))
+    )
+  ans[, setdiff(names(lpdf), names(ans))] <- NA
+  ans[, setdiff(names(ans), names(lpdf))] <- NULL
+  ans
+}
+
+totals <- function(lpdf = JHH, rows = "", ID = "Country.Region", 
+         varnames = c("confirmed", "deaths", "recovered"), needAggreg=TRUE ){
  if (rows[1]  == "") rows = as.list(unique(lpdf[[ID]]))
  if (verbose >= 3) print(paste("Making the total for ", paste(rows, collapse = "/ "), "in", ID))
- ans <- ldply(rows, function(a) lpdf%>% total(a, ID, varnames, a))
+ ans <- ldply(rows, function(a) lpdf  %>%  total(a, ID, varnames, ifelse(needAggreg,  "", a)))
 }
-       
-totals2 <- function(lpdf, rows = "", # used only for county to state totalling. 
-         ID = "Country.Region", 
-         varnames = c("confirmed", "deaths")
-           # "recovered"?
-         ){
+
+
+totals2 <- function(lpdf, rows = "", # before used only for county to state totalling. deprecated 
+         ID = "Country.Region", varnames = c("confirmed", "deaths") ){
  if (rows[1]  == "") rows = unique(lpdf[, ID])
- if (verbose>5) print(paste("Making totals2 for ", paste(rows, collapse = ", "), "in", ID))
+ if (verbose > 5) print(paste("Making totals2 for ", paste(rows, collapse = ", "), "in", ID))
  ans <- ddply(lpdf[lpdf[, ID] %in% rows, ], c("Date", ID), 
        function(a) {
      Country.Region = aggreg(as.character(a$Country.Region))
@@ -181,10 +212,10 @@ correctnames <- function(df){
 }
 makelpdfUSStates <- function(){
  wc <- readUSdata('confirmed') 
- geo.location <- wc[, c("Combined_Key", "Country_Region", "Province_State", "Admin2", "UID", "Lat", "Long_")]
+ #geo.location <- wc[, c("Combined_Key", "Country_Region", "Province_State", "Admin2", "UID", "Lat", "Long_")]
  wc <- correctnames(wc)
  #write.csv( geo.location, file = datapath %#% "/" %#% "geo.location.US.csv", na = "")
- rm(geo.location)
+ #rm(geo.location)
  # wc <- wc[, !names(wc) %in% c("Admin2" , "UID", "iso2", "iso3", "code3", "FIPS")]
  confirmed <- convertdata(wc, values.name = "confirmed", US = TRUE)
  wd <- readUSdata("deaths")
@@ -206,10 +237,11 @@ makelpdfUSStates <- function(){
  
 makelpdfUS <- function() {
  lpdf <- makelpdfUSStates()
- lpdf <- lpdf %>% totals2("", "Province.State") # depends on all provinces being chosen to sum! 
+ lpdf <- lpdf  %>%  totals(rows = "",  ID = "Province.State", varnames = c('confirmed', 'deaths'), needAggreg = TRUE) 
+    #totals2(rows = "", ID = "Province.State") # depends on all provinces being chosen to sum! 
  lpdf$Combined_Key <- NULL
- if(!all(is.na(lpdf$recovered)))
-  if( max(lpdf$recovered, na.rm = TRUE) <= 0) lpdf$recovered <- as.numeric(NA ) #just in case NA totalled into 0. 
+ if (!all(is.na(lpdf$recovered)))
+  if ( max(lpdf$recovered, na.rm = TRUE) <= 0) lpdf$recovered <- as.numeric(NA ) #just in case NA totalled into 0. 
  lpdf 
 }
 
@@ -256,12 +288,12 @@ sortIDlevels1 <- function(lpdf, varname = confirmed, ondate = ""){
  if (ondate  == ""){ondate = max(lpdf$Date) } else 
   if (nrow(lpdf[lpdf$Date  ==  ondate, ]  == 0)){
    stop("Cannot sort on values of a date which is not present in the Data")}
- PSCRlevels <- lpdf %>% select(c(PSCR, Date, !!varname)) %>% 
-  filter(Date  == ondate) %>% 
+ PSCRlevels <- lpdf  %>%  select(c(PSCR, Date, !!varname))  %>%  
+  filter(Date  == ondate)  %>%  
   arrange(-eval(parse(text = substitute(!!varname))), PSCR, .by_group  = FALSE) 
   arrange(desc({{varname}}), PSCR, .by_group  = FALSE) 
   #arrange(-(!!varname), PSCR, .by_group  = FALSE) 
- lpdf <- lpdf%>%ungroup%>% mutate(PSCR = factor(lpdf$PSCR, levels = PSCRlevels$PSCR))%>%
+ lpdf <- lpdf %>% ungroup %>%  mutate(PSCR = factor(lpdf$PSCR, levels = PSCRlevels$PSCR)) %>% 
   group_by(PSCR)
  lpdf$PSCR
 } #the desc eval parse substitute !! should have been desc !! according to the manuals. but desc does not respect unquo. 
@@ -270,8 +302,8 @@ sortIDlevels1 <- function(lpdf, varname = confirmed, ondate = ""){
 
 sortIDlevels <- function(lpdf, varname  = "confirmed", ID  = "PSCR", ondate){
  if (missing(ondate)) { 
-  theDateData <- lpdf[, c(varname, ID, 'Date')] %>% group_by(PSCR) %>% 
-   filter(Date  ==  max(Date)) %>% ungroup
+  theDateData <- lpdf[, c(varname, ID, 'Date')]  %>%  group_by(PSCR)  %>%  
+   filter(Date  ==  max(Date))  %>%  ungroup
  } else {
   theDateData <- lpdf[lpdf$Date  ==  ondate, c(varname, ID, 'Date')]
   if (nrow(theDateData)  ==  0)
@@ -288,7 +320,7 @@ sortIDlevels <- function(lpdf, varname  = "confirmed", ID  = "PSCR", ondate){
 
 
 sortbyvar <- function(lpti, varname = 'confirmed', ID = 'PSCR', ondate = ""){
-lpti[[ID]] <- lpti%>% sortIDlevels(varname = varname, ID = ID, ondate = ondate) 
+lpti[[ID]] <- lpti %>%  sortIDlevels(varname = varname, ID = ID, ondate = ondate) 
 lpti <- lpti[order(lpti[[ID]], lpti[[varname]]), ] #bUG? WHY SORT AGAIN BY same var? 
 }
 
@@ -296,7 +328,7 @@ makeJHH <- function(name = "JHH", force = FALSE) {
  nameUS <- paste( paste(name, "US", sep = "_"),      "csv", sep = ".")
  namenonUS <- paste( paste(name, "non", "US", sep = "_"),  "csv", sep = ".")
  namedays <- paste(name, "_days.csv", sep = "")
- if(force|(difftime(Sys.time(), file.info(namedays)[, "mtime"], units  = "hours")>6)) {
+ if (force|(difftime(Sys.time(), file.info(namedays)[, "mtime"], units  = "hours")>6)) {
   lpdf <- updateJHHFromWeb(nameUS, namenonUS)
   if (verbose >= 1) print("updating JHH from Github")
  } else {
@@ -305,23 +337,22 @@ makeJHH <- function(name = "JHH", force = FALSE) {
  }
  if (typeof(lpdf$Date)  == "character") 
   lpdf$Date <- as.Date(lpdf$Date, "%Y-%m-%d") #strptime gives timezones! no need for timezones
- if (verbose>0) {a = as.numeric(max(lpdf$Date)-min(lpdf$Date)+1)
-  print(a % % "dates"%, % (nrow(lpdf)/a) % % "regions, last date:" % %  
-      max(lpdf$Date)%, % "with"  % % 
+ if (verbose>0) {a = as.numeric(max(lpdf$Date) - min(lpdf$Date)+1)
+  print(a % % "dates" %, % (nrow(lpdf)/a) % % "regions, last date:" % %  
+      max(lpdf$Date) %, % "with"  % % 
       sum(is.na(lpdf[lpdf$Date >= "2020-02-02", ]))  % % 
       "missing values after 2020-02-01")}
  lpdf
 }
 
-
 ######## make state groups, also useful in tableau
 
 regios <- list(EFTA = c("EFTA", "Iceland", "Liechtenstein", "Switzerland", "Norway"), 
     Benelux = c("Benelux", "Belgium", "Netherlands", "Luxembourg"), 
-    US = c("USA"), #"US", 
+    US = c("USA" ,"US"), 
     SouthWestAsia = c("South West Asia", "Afganistan", "Iran", "Irak", "Syria", "Lebanon", "Turkey", "Israel", "West Bank and Gaza", "Palestine"), 
     SouthEastAsia = c("South East Asia", "Indonesia", "Thailand", "Vietnam", "Laos", "Malaysia", "Cambodia", "Papua New Guinea", "Myanmar", "Burma", "Brunei", "Philippines", "Timor-Leste"), 
-    SAsiaIO = c ("South Asia & Indian Ocean", "India", "Pakistan", "Bangladesh", "Sri Lanka", "Comoros", "Maldives", "Madagascar", "Mauritius", "Seychelles", "Bhutan", "Nepal", "Mayotte", "Reunion"), 
+    SAsiaIO = c("South Asia & Indian Ocean", "India", "Pakistan", "Bangladesh", "Sri Lanka", "Comoros", "Maldives", "Madagascar", "Mauritius", "Seychelles", "Bhutan", "Nepal", "Mayotte", "Reunion"), 
      EastAsia = c("East Asia", "Japan", "Korea, South", "Korea, North", "Taiwan*", "Hong Kong", "Singapore", "Mongolia"), 
      CIS = c("CIS", "Russia", "Belarus", "Armenia", "Azerbaijan", "Kazakhstan", "Kyrgyzstan", "Turkmenistan", "Tajikistan", "Uzbekistan", "Moldova"), 
      China = c("China"))
@@ -334,41 +365,41 @@ regios <- c(list(EU6 = c("EU6", regios$Benelux[2:4], "Germany", "France", "Italy
               "Belarus", "Georgia", "Azerbaijan", "Armenia"))), 
      regios)
 regios <- c(list(EU = c("EU", regios$EU6[2:7], "Ireland", "Denmark", "Greece", "Spain", "Portugal", "Austria", "Sweden", "Finland", "Poland", "Hungary", "Slovakia", "Slovenia", "Czechia", "Estonia", "Lithuania", "Latvia", "Malta", "Cyprus", "Romania", "Bulgaria", "Croatia"), 
-     Caribbean = c("Caribbean", 'Anguilla', "Antigua and Barbuda", "Bahamas" ,  "Barbados", "Bermuda", "Cayman Islands", "Cuba", "Dominica" , "Dominican Republic", "Grenada", "Haiti" , "Jamaica", "Saint Kitts and Nevis" , "Saint Vincent and the Grenadines", "Saint Lucia" , "Trinidad and Tobago", 'Aruba', 'Curacao', "Bonaire, Sint Eustatius and Saba", "British Virgin Islands", 'Guadeloupe', 'Martinique', 'Sint Maarten', 'St Martin', 'Saint Barthelemy', 'Turks and Caicos Islands', 'Montserrat')), 
+     Caribbean = c("Caribbean", 'Anguilla', "Antigua and Barbuda", "Bahamas" ,  "Barbados", "Bermuda", "Cayman Islands", "Cuba", "Dominica" , "Dominican Republic", "Grenada", "Haiti" , "Jamaica", "Saint Kitts and Nevis" , "Saint Vincent and the Grenadines", "Saint Lucia" , "Trinidad and Tobago", 'Aruba', 'Curacao', "Bonaire, Sint Eustatius and Saba", "British Virgin Islands", 'Guadeloupe', 'Martinique', 'Sint Maarten','St Martin', 'Saint Barthelemy', 'Turks and Caicos Islands', 'Montserrat')), 
      regios)
 
 regios = c(list(
- other = c("Other", 'Diamond Princess', 'MS Zaandam', 'World'), 
- MSM  = c("MSM", "Netherlands", "Belgium", "United Kingdom", "Germany", "Malta", "Egypt", "Suriname", "China", "Vietnam", "Hungary", "Romania", "Kuwait", "Italy", "Ireland", "Iran", "Kazakstan", "Liberia", "Indonesia", "Ethiopia", "Nigeria", "Ghana", "Uganda", "South Africa", "Canada", "Spain", "France"), 
- Vincent = c("Some Selected Regions", "Belgium", "Germany", "Italy", "France", "Kazakhstan", "Indonesia", "Spain", "Netherlands", "Japan", "New York"), 
- continents = c("Continents", "Europe", 'North America', "Africa", "South America", "Asia"), #"USA", "US", 
- WestvsEast = c("WestvsEast", "USA", "United Kingdom", "Italy", "Iran", "Korea, South", "Germany", "France", "Spain", "Sweden", "Norway", "Belgium", "Netherlands", "Singapore", "Japan", "Taiwan*", "Denmark", "Hubei, China", "Hongkong, China", "Jiangsu, China", 'Indonesia'), 
- MENA = c("MENA", "Marocco", "Algeria", "Tunesia", "Libia", "Egypt", "West Bank and Gaza", "Palestine", "Lebanon", "Syria", "Turkey", "Iraq", "Iran", "Afghanistan", "Jordan", "Saudi Arabia", "Kuwait", "Oman", "United Arab Emirates", "UAE", "Yemen", "Bahrain", "Qatar"), 
- SAmerica = c("South America", "Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Guyana", "Suriname", "French Guiana", "Venezuela", "Paraguay", "Peru" , "Uruguay", "Falkland Islands (Malvinas)"), 
- Europe = c("Europe", regios$EU[2:28], regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus", "Moldova", "Georgia", "Armenia", "Azerbaijan", "Andorra", "Monaco", "San Marino", "Vatican", "Holy See", "Albania", "North Macedonia", "Kosovo", "Montenegro", "Bosnia and Herzegovina", "Serbia", "Gibraltar", "Faroe Islands", "Isle of Man", "Channel Islands", "Greenland"), 
- NAmerica = c("North America", "USA", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
- Africa = c("Africa", "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"), 
-  Oceania = c("Oceania", "Australia", "New Zealand", "Vanuatu", "Tuvalu", "Fiji", "Guam", "French Polynesia", "New Caledonia" )
+  other = c("Other", 'Diamond Princess', 'MS Zaandam', 'World'), 
+  MSM  = c("MSM", "Netherlands", "Belgium", "United Kingdom", "Germany", "Malta", "Egypt", "Suriname", "China", "Vietnam", "Hungary", "Romania", "Kuwait", "Italy", "Ireland", "Iran", "Kazakstan", "Liberia", "Indonesia", "Ethiopia", "Nigeria", "Ghana", "Uganda", "South Africa", "Canada", "Spain", "France"), 
+  Vincent = c("Some Selected Regions", "Belgium", "Germany", "Italy", "France", "Kazakhstan", "Indonesia", "Spain", "Netherlands", "Japan", "New York"), 
+  continents = c("Continents", "Europe", 'North America', "Africa", "South America", "Asia"), #"USA", "US", 
+  WestvsEast = c("WestvsEast", "USA", "United Kingdom", "Italy", "Iran", "Korea, South", "Germany", "France", "Spain", "Sweden", "Norway", "Belgium", "Netherlands", "Singapore", "Japan", "Taiwan*", "Denmark", "Hubei, China", "Hongkong, China", "Jiangsu, China", 'Indonesia'), 
+  MENA = c("MENA", "Marocco", "Algeria", "Tunesia", "Libia", "Egypt", "West Bank and Gaza", "Palestine", "Lebanon", "Syria", "Turkey", "Iraq", "Iran", "Afghanistan", "Jordan", "Saudi Arabia", "Kuwait", "Oman", "United Arab Emirates", "UAE", "Yemen", "Bahrain", "Qatar"), 
+  South_America = c("South America", "Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Guyana", "Suriname", "French Guiana", "Venezuela", "Paraguay", "Peru" , "Uruguay", "Falkland Islands (Malvinas)"), 
+  Europe = c("Europe", regios$EU[2:28], regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus", "Moldova", "Georgia", "Armenia", "Azerbaijan", "Andorra", "Monaco", "San Marino", "Vatican", "Holy See", "Albania", "North Macedonia", "Kosovo", "Montenegro", "Bosnia and Herzegovina", "Serbia", "Gibraltar", "Faroe Islands", "Isle of Man", "Channel Islands", "Greenland"), 
+  North_America = c("North America", "USA", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
+  Africa = c("Africa", "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Egypt",  "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Western Sahara", "Zambia", "Zimbabwe"), 
+   Oceania = c("Oceania", "Australia", "New Zealand", "Vanuatu", "Tuvalu", "Fiji", "Guam", "French Polynesia", "New Caledonia" )
       ), 
-     regios)
+   regios)
 
 ### data from ECDC - World bank. 
 ### https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide
 makeECDC <- function(){
- lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na  = "" ) %>% #fileEncoding  = "UTF-8-BOM" doesn use bom in readr tidyverse. 
+ lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na  = "" )  %>%  #fileEncoding  = "UTF-8-BOM" doesn use bom in readr tidyverse. 
   mutate( PSCR = countriesAndTerritories, 
       ISOcode  = countryterritoryCode, 
       confirmed_today = cases, 
       deaths_today = deaths, 
       Date  = as.Date(dateRep, format = "%d/%m/%Y"), 
       population  = popData2019, 
-      Region = continentExp) %>%
+      Region = continentExp)  %>% 
   select(-popData2019, geoId, -day, -month, -year, -cases , -countriesAndTerritories, 
-      -dateRep, -continentExp, -countryterritoryCode) %>% 
-  arrange(PSCR, Date) %>% group_by(PSCR) %>% 
+      -dateRep, -continentExp, -countryterritoryCode)  %>%  
+  arrange(PSCR, Date)  %>%  group_by(PSCR)  %>%  
   mutate(confirmed  = cumsum(confirmed_today), 
       deaths  = cumsum(deaths_today), 
-      recovered = as.numeric(NA)) %>%
+      recovered = as.numeric(NA))  %>% 
   select(-confirmed_today, -deaths_today)
  if (verbose > 0) {a = as.numeric(max(lpti$Date) - min(lpti$Date) + 1)
   print(a % % "dates" %, % length(unique(lpti$PSCR)) % % "regions, last date:" % %  
@@ -379,26 +410,27 @@ makeECDC <- function(){
 }
 
 addRegions <- function(lpdf = JHH, varname = "Region", Regiolist = "") { 
- if(!varname %in% names(lpdf)) lpdf[[varname]] <- as.character(NA)
+ if (!varname %in% names(lpdf)) lpdf[[varname]] <- as.character(NA)
  for (Regio in Regiolist) {
-  region = Regio[1] %>% strsplit(" countries") %>% unlist %>% strsplit(" Provinces&States")%>% unlist
+  region = Regio[1]  %>%  strsplit(" countries")  %>%  unlist  %>%  strsplit(" Provinces&States") %>%  unlist
   lpdf[lpdf$Province.State %in% Regio, varname] <- region
   lpdf[lpdf$PSCR %in% Regio, varname] <- region
-  }
+ }
+ lpdf[lpdf$Country.Region == 'US', varname] <- 'North America'
  if (verbose >=  1){
-  print("Regions added:" % %  length(unique(JHH$Region)) )#paste(unique(JHH$Region), collapse = ", "))
-  if(sum(is.na(lpdf$Region))>0){
+  print("Regions added:" % %  length(unique(lpdf[[varname]])) )
+  if (sum(is.na(lpdf[[varname]])) > 0) {
    print(paste("Not attributed regions:")  % % 
-   paste(unique(lpdf[is.na(lpdf$Region), ]$PSCR), collapse = "; "))
+   paste(unique(lpdf[is.na(lpdf[[varname]]), ]$PSCR), collapse = "; "))
   }
  }
  lpdf
 }
 
 makeDynRegions <- function(lpti = JHH, gridsize = 5*6, piecename = 'World', ratio = 5) {
- lpti <- lpti%>% group_by(PSCR) %>% 
-  filter( Date  == max(Date))%>% ungroup %>%
-  select( PSCR, confirmed)%>% 
+ lpti <- lpti %>%  group_by(PSCR)  %>%  
+  filter( Date  == max(Date)) %>%  ungroup  %>% 
+  select( PSCR, confirmed) %>%  
   arrange(desc(confirmed)) 
  nr = 1
  mylist = vector(mode  = "list", length  = 0)
@@ -408,7 +440,7 @@ makeDynRegions <- function(lpti = JHH, gridsize = 5*6, piecename = 'World', rati
   mylist[[piece[1]]] <- piece
   nextone = length(piece)-1
   if (nextone <= 1) nextone = 2
-  lpti <- lpti%>% filter(row_number() >= nextone) #gridsize+1 | confirmed< minneeded)
+  lpti <- lpti %>%  filter(row_number() >= nextone) #gridsize+1 | confirmed< minneeded)
   #nrow(lpti)
   nr <- nr+1
   }
@@ -417,18 +449,18 @@ makeDynRegions <- function(lpti = JHH, gridsize = 5*6, piecename = 'World', rati
  mylist
 }
 
-provincialize <- function(countries, lpdf = JHH){
+provincialize <- function(lpdf = JHH, countries){
  cl1 <- unique(lpdf[lpdf$Country.Region %in% countries, ]$PSCR)
  c(countries[1] % % "Provinces&States", cl1)#, setdiff(cl1, countries))
 }
 
 provincializeJHH <- function(){
  lpdf = JHH
- ChinaP <- provincialize(regios$China, lpdf)
- list(CanadaP = provincialize("Canada", lpdf), 
-    USS = provincialize(regios$US, lpdf), 
-    NorthAmericaS = setdiff(provincialize(c("US", regios$NAmerica), lpdf), "USA"), 
-    OceaniaP = (c(provincialize(regios$Oceania, lpdf), regios$Oceania)), #,             "Australia"), 
+ ChinaP <- provincialize(lpdf, regios$China)
+ list(CanadaP = provincialize(lpdf, "Canada"), 
+    USS = provincialize(lpdf, regios$US), 
+    NorthAmericaS = setdiff(provincialize( lpdf, c(regios$North_America, "US")), "US"), 
+    OceaniaP = (c(provincialize(lpdf, regios$Oceania), regios$Oceania)), #,             "Australia"), 
     AsiaP = c(regios$Asia, (setdiff(ChinaP, "China Provinces&States"))), 
     ChinaP = ChinaP
  )
@@ -436,17 +468,17 @@ provincializeJHH <- function(){
 
 makeRegioList <- function(lpti = JHH, piecename = "JHH"){
  #Oceania = piecename  % %  'Oceania'
- Samerica  = piecename  % %  'South America'
+ #South_America  = piecename  % %  'South America'
  regios  = c(  
-  lpti %>% makeDynRegions(piecename = piecename % % 'World'), 
-  lpti %>% filter(PSCR %in% regios$Europe ) %>% 
+  lpti  %>%  makeDynRegions(piecename = piecename % % 'World'), 
+  lpti  %>%  filter(PSCR %in% regios$Europe )  %>%  
    makeDynRegions(gridsize = 20, piecename = piecename % % 'Europe'), 
-  lpti %>% filter(PSCR %in% c(regios$AsiaP)) %>% makeDynRegions(piecename = piecename % % 'Asia'), 
-  lpti %>% filter(PSCR %in% regios$NorthAmericaS) %>% makeDynRegions(piecename = piecename  % %  'North America'), 
-  lpti %>% filter(PSCR %in% regios$Africa )   %>% makeDynRegions(piecename  = piecename  % %  'Africa') , 
-  list(SAmerica  = regios$SAmerica, 
+  lpti  %>%  filter(PSCR %in% c(regios$AsiaP))  %>%  makeDynRegions(piecename = piecename % % 'Asia'), 
+  lpti  %>%  filter(PSCR %in% regios$NorthAmericaS)  %>%  makeDynRegions(piecename = piecename  % %  'North America'), 
+  lpti  %>%  filter(PSCR %in% regios$Africa )    %>%  makeDynRegions(piecename  = piecename  % %  'Africa') , 
+  list(South_America  = regios$South_America, 
     Oceania  = regios$OceaniaP
-  ) #World = "World", #regios['continents'], 'WestvsEast', 'Caribbean', 
+  ) 
  ) 
 }
 
@@ -454,7 +486,7 @@ addPopulation <- function(lpdf) {
  population <- read.csv(datapath %#% "/" %#% 'population.csv')[c(1, 3)]
  names(population)[2] <- "population"
  rownames(population) <- population$Country.Name
- lpdf[, "population"] <- population[lpdf %>% pull(PSCR), "population"]
+ lpdf[, "population"] <- population[lpdf  %>%  pull(PSCR), "population"]
  popUS <- read.csv(datapath %#% "/" %#% 'USstatespop2019.csv')[c('State', 'p2019')]
  names(popUS)[2] <- "population"
  rownames(popUS) <- popUS$State
@@ -469,69 +501,69 @@ addPopulation <- function(lpdf) {
 imputeRecovered <- function(lpdf = ECDCdata, lagrc = LAGRC, lagrd = LAGRD, # was 22, 16
               dothese = FALSE, correct = FALSE){
  varname = "recovered"
- if(!('recovered' %in% names(lpdf))) lpdf$recovered <- as.numeric(NA)
- #if(any(dothese)) lpdf[, varname %#% "_old"] <- lpdf[, varname]
+ if (!('recovered' %in% names(lpdf))) lpdf$recovered <- as.numeric(NA)
+ #if (any(dothese)) lpdf[, varname %#% "_old"] <- lpdf[, varname]
  if (!"imputed"%in% names(lpdf))lpdf$imputed <- FALSE
- lpdf <- lpdf%>% group_by(PSCR) %>%
+ lpdf <- lpdf %>%  group_by(PSCR)  %>% 
   mutate(recovered_imputed  = 
-       pmin(confirmed-deaths, 
+       pmin(confirmed - deaths, 
           pmax(0, recovered, 
-            lag(confirmed, lagrc)- lag(deaths, lagrd), 
+            lag(confirmed, lagrc) - lag(deaths, lagrd), 
             na.rm = TRUE), 
           na.rm = FALSE)
            ) 
  rowstobecorrected = correct & ( lpdf$recovered < lpdf$recovered_imputed )
  rowstodo <- is.na(lpdf$recovered)|dothese| rowstobecorrected
- # %>% drop() #no need: is vector already
+ #  %>%  drop() #no need: is vector already
  if (verbose >= 3)print("imputing recovered for:" % % 
             length(unique(lpdf[rowstodo, ][["PSCR"]]))
              % %  'Regions.')
- if (verbose >= 5) {print('imputing regions:' );print(paste(unique(lpdf[rowstodo, ][["PSCR"]]), collapse = "; "))}
+ if (verbose >= 5) {print('imputing territories:' );print(paste(unique(lpdf[rowstodo, ][["PSCR"]]), collapse = "; "))}
  if (sum(rowstodo)  == 0) return(lpdf)
- lpdf <- lpdf%>% group_by(PSCR) %>%
-  mutate_cond(rowstodo, imputed = TRUE )#%>%   mutate_cond(rowstodo, recovered = recovered_imputed)
+ lpdf <- lpdf %>%  group_by(PSCR)  %>% 
+  mutate_cond(rowstodo, imputed = TRUE )# %>%    mutate_cond(rowstodo, recovered = recovered_imputed)
 }
 
 frac <- function(n, d){ifelse(d !=  0, n/d, NA)}
 
 diff.sl <- function(avector, n = 1){c(rep(NA, n), diff(avector, n))}
-p_M <- function(a, b)1e6*a/b
+p_M <- function(a, b) 1e6*a/b
 
 extravars <- function(lpdf, lagrc = 0, lagdc = 0){
  tempwarn <- getOption("warn")
  options(warn = -1)
  on.exit(options(warn = tempwarn))
- lpdf <- lpdf %>% ungroup %>% 
-  arrange(PSCR, Date) %>%
-  group_by(PSCR) %>% 
-  mutate( active      =  confirmed - deaths - recovered, 
-      active_imputed   =  confirmed - deaths - recovered_imputed, 
-      new_confirmed    =  mac(diff.sl(confirmed)), 
-      net_active     =  mac(diff.sl(active)), 
-      net_active_imputed =  mac(diff.sl(active_imputed)), 
-      new_recovered    =  mac(diff.sl(recovered)), 
-      new_recovered_imputed = mac(diff.sl(recovered_imputed)), 
-      new_deaths     =  mac(diff.sl(deaths)), 
-      confirmed_p_M    = p_M(confirmed, population), 
-      active_p_M   = p_M(active , population), 
-      active_imputed_p_M      = p_M(active_imputed , population), 
-      recovered_p_M    = p_M(recovered, population), 
-      recovered_imputed_p_M    = p_M(recovered_imputed, population), 
-      deaths_p_M      = p_M(deaths  , population), 
-      new_confirmed_p_M  = p_M(new_confirmed, population), 
-      net_active_p_M   = p_M(net_active  , population), 
-      new_recovered_p_M  = p_M(new_recovered, population), 
-      net_active_imputed_p_M   = p_M(net_active_imputed  , population), 
+ lpdf <- lpdf  %>%  ungroup  %>%  
+  arrange(PSCR, Date)  %>% 
+  group_by(PSCR)  %>%  
+  mutate( active           =  confirmed - deaths - recovered, 
+      active_imputed       =  confirmed - deaths - recovered_imputed, 
+      new_confirmed        =  mac(diff.sl(confirmed)), 
+      net_active           =  mac(diff.sl(active)), 
+      net_active_imputed   =  mac(diff.sl(active_imputed)), 
+      new_recovered        =  mac(diff.sl(recovered)), 
+      new_recovered_imputed=  mac(diff.sl(recovered_imputed)), 
+      new_deaths           =  mac(diff.sl(deaths)), 
+      confirmed_p_M        = p_M(confirmed, population), 
+      active_p_M           = p_M(active , population), 
+      active_imputed_p_M   = p_M(active_imputed , population), 
+      recovered_p_M        = p_M(recovered, population), 
+      recovered_imputed_p_M= p_M(recovered_imputed, population), 
+      deaths_p_M           = p_M(deaths  , population), 
+      new_confirmed_p_M    = p_M(new_confirmed, population), 
+      net_active_p_M       = p_M(net_active  , population), 
+      new_recovered_p_M    = p_M(new_recovered, population), 
+      net_active_imputed_p_M     = p_M(net_active_imputed  , population), 
       new_recovered_imputed_p_M  = p_M(new_recovered_imputed, population), 
-      new_deaths_p_M   = p_M(new_deaths , population), 
-      recovered_per_confirmed = frac(recovered, dplyr::lag(confirmed, lagrc)), 
+      new_deaths_p_M             = p_M(new_deaths , population), 
+      recovered_per_confirmed    = frac(recovered, dplyr::lag(confirmed, lagrc)), 
       recovered_imputed_per_confirmed = 
        frac(recovered_imputed, dplyr::lag(confirmed, lagrc)), 
       deaths_per_confirmed = frac(deaths, dplyr::lag(confirmed, lagdc)), 
-      recovered_per_deaths = frac(recovered, dplyr::lag(deaths, lagrc-lagdc)), 
-      recovered_imputed_per_deaths = 
-       frac(recovered_imputed, dplyr::lag(deaths, lagrc-lagdc)), 
-      new_active_rate   =  round(new_confirmed/active_imputed, 3) )
+      recovered_per_deaths = frac(recovered, dplyr::lag(deaths, lagrc - lagdc)), 
+      recovered_imputed_per_deaths  
+                           = frac(recovered_imputed, dplyr::lag(deaths, lagrc - lagdc)), 
+      new_active_rate      =  round(new_confirmed/dplyr::lag(active_imputed, 1), 3) )
 }
 
 doublingLine <- function(lpti  = JHH, country, minVal, growthRate, 
@@ -539,7 +571,7 @@ doublingLine <- function(lpti  = JHH, country, minVal, growthRate,
             myDeathRate  = deathRate, lagrc  = LAGRC, lagdc  = LAGDC ){
  if (!missing(country)) {
   if (missing(minVal)) minVal <- lpti$confirmed[1]
-  lpti <- lpti %>% filter(PSCR %in% country, confirmed >=  minVal)
+  lpti <- lpti  %>%  filter(PSCR %in% country, confirmed >=  minVal)
   minVal <- lpti$confirmed[1]
   if (missing(pop)) pop <- lpti$population[1]
   if (missing(doublingDays)) 
@@ -554,12 +586,12 @@ doublingLine <- function(lpti  = JHH, country, minVal, growthRate,
  else {maxDate <- max(lpti$Date)}
  if (verbose >=  5) print('doublingline: doublindDays = '  % %  doublingDays)
  if (missing(growthRate)) {growthRate  = 2^(1/doublingDays)}
- nrRows <- maxDate-min(lpti$Date)+1
+ nrRows <- maxDate - min(lpti$Date) + 1
  if (maxDate  ==  -Inf) stop("Max Date equals -inf. Probably we have an empty data set. Did you choose the right country? ")
- if (verbose >=  3) print('dL:'  % %  'double:'  % %  "R0 = "  % %  round(2^(lagrc/doublingDays)-1, 2) %, % 'Simulated'  % %  nrRows % % 'days until'  % %  maxDate)
+ if (verbose >=  3) print('dL:'  % %  'double:'  % %  "R0 = "  % %  round(2^(lagrc/doublingDays) - 1, 2) %, % 'Simulated'  % %  nrRows % % 'days until'  % %  maxDate)
  out = tibble(Date = seq(from = min(lpti$Date), to = maxDate, by = 1))
- doubling <- round(minVal*2^((0:(nrow(out)-1))/(doublingDays) ))
- out <- out %>% mutate ( growthRate, doublingDays, 
+ doubling <- round(minVal * 2^((0:(nrow(out) - 1))/(doublingDays) ) )
+ out <- out  %>%  mutate( growthRate, doublingDays, 
             confirmed  = pmin(doubling, pop), 
             deaths   = round(myDeathRate*lag(confirmed, lagdc, default = 0)), 
             recovered  = lag(confirmed, lagrc, default = 0), 
@@ -570,17 +602,17 @@ doublingLine <- function(lpti  = JHH, country, minVal, growthRate,
 }
 growOnce <- function(lpti, rownr, minVal, doublingDays, growthRate, nrRows, myDeathRate = deathRate, pop, lagrc  = LAGRC, lagdc  = LAGDC){#no need for minVal, doublingDays, nrRows but makes passing arguments easier
  prevrow <- lpti[rownr - 1, ]
- currow <- prevrow %>% #we randomize because this overcomes low rates& small minVals
+ currow <- prevrow  %>%  #we randomize because this overcomes low rates& small minVals
   mutate(Date  = Date + 1, 
       confirmed  = confirmed +
        round(rpois(1, pmax(0, active*(growthRate - 1) *
-                 (population-recovered-active)/population))))
- if(rownr <=  lagdc) currow$deaths <- 0 
-  else currow$deaths <- round(myDeathRate*lpti[rownr-lagdc, ]$confirmed) 
+                 (population - recovered - active) / population))))
+ if (rownr <=  lagdc) currow$deaths <- 0 
+  else currow$deaths <- round(myDeathRate*lpti[rownr - lagdc, ]$confirmed) 
  currow$recovered <- 
-     ifelse(rownr <= lagrc, 0, round(lpti[rownr-lagrc, ]$confirmed*(1-myDeathRate)))
- currow <-  currow%>% mutate (population = pop-deaths, 
-               active = confirmed-deaths-recovered
+     ifelse(rownr <= lagrc, 0, round(lpti[rownr - lagrc, ]$confirmed*(1 - myDeathRate)))
+ currow <-  currow %>%  mutate(population = pop - deaths, 
+               active = confirmed - deaths - recovered
                )
  currow[setdiff(names(lpti), names(currow))] <- NA
  currow
@@ -591,48 +623,48 @@ simulGrow <- function(lpti, country, ...){
  if (verbose >=  4) {print('doublingline made' );print(out)} #to compare with growonce results. 
  nrRows <- NROW(out)
  pop  = out$population[1]
- if (nrRows<2) return(out)
+ if (nrRows < 2) return(out)
  
  growthRate <- out$growthRate[1] #confirmed_
- for(rownr in 2:nrRows) { # one could try pmap here!
+ for (rownr in 2:nrRows) { # one could try pmap here!
   out[rownr, ] <- growOnce(out, rownr = rownr, growthRate = growthRate, pop = pop, ...) 
  }
  out
 }
 
 addSimCountry <- function(lpti, country, ...){ 
- out <- simulGrow(lpti = lpti, country = country, ...)%>%
-     imputeRecovered %>% extravars
- if(missing(country)){
-  out <- out%>% mutate(
-   Country.Region = doublingDays%_%'days', 
+ out <- simulGrow(lpti = lpti, country = country, ...)  %>% 
+     imputeRecovered  %>%  extravars
+ if (missing(country)) {
+  out <- out  %>%  mutate(
+   Country.Region = doublingDays  %_% 'days', 
    PSCR = doublingDays  % %  'days', 
    Province.State  =  doublingDays  % %  'days', 
    Region  ==  doublingDays  % %  'days', 
    Lat = 90, Long = 90)
  } else {
   doublingDays = out$doublingDays[1] #confirmed_ #bug. what are the names of vars in out? 
-  out <- out%>% mutate(
-   Country.Region = country  % % doublingDays%_%'days', 
+  out <- out  %>%  mutate(
+   Country.Region = country  % % doublingDays %_% 'days', 
    PSCR = country  % % doublingDays  % %  'days', 
    Province.State  = country  % %  doublingDays  % %  'days', 
    Region  ==  lpti2$Region[1]  % % doublingDays  % %  'days', 
-   Lat <- lpti2$Lat[1], 
-   Long <- lpti2$Long[1] )
+   Lat = lpti2$Lat[1], 
+   Long = lpti2$Long[1] )
  }
  missingCols <- setdiff(names(lpti), names(out))
- if(verbose >= 5 &length(missingCols>0)) 
-  print(' addsimcountry:'  % % missingCols % %  'filled with NAs')
+ if (verbose >= 5 & length(missingCols > 0)) 
+  print('addsimcountry:'  % % missingCols % %  'filled with NAs')
  out[missingCols] <- NA
- lpti <- rbind (lpti, out ) # bug: need to adjust the names of simulated variables in out.
+ lpti <- rbind(lpti, out ) # bug: need to adjust the names of simulated variables in out.
  lpti
 }
 
-# from R0 to doubling days: not correct. 42 should give 1. 
+# from R0 to doubling days: #2^(LAGRC/dd) = (R0+1)   1 should yiel dtLAGRC. 
 R02doublingDays <- function(R0 = 1){
- log2(LAGRC/R0)
+ LAGRC/(log2(R0 + 1))
 }
-
+doublingDays2R0 <- function(doublingDays = 3) {2^(LAGRC/doublingDays) - 1}
 
 estimateDoublingDaysOneCountry <- function(lpti, variable = 'confirmed', nrDays = 9, minDate = "2019-12-31", maxDate = '2020-12-31'){
  getGR <- function(rowNr){
@@ -655,14 +687,14 @@ estimateDoublingDaysOneCountry <- function(lpti, variable = 'confirmed', nrDays 
 
 
 addDoublingDaysPerCountry <- function(lpti, variable = 'confirmed', ...){
- if (!(variable%_%'doublingDays' %in% names(lpti))) 
-  lpti[[variable%_%'doublingDays']] <- as.numeric(NA)
- if(!(variable %_% 'growthRate' %in% names(lpti))) 
-  lpti[[variable %_% 'growthRate']] <- as.numeric(NA)
- lpti %>% group_by(PSCR) %>% 
+ if (!(variable  %_%  'doublingDays' %in% names(lpti))) 
+  lpti[[variable  %_%  'doublingDays']] <- as.numeric(NA)
+ if (!(variable  %_%  'growthRate' %in% names(lpti))) 
+  lpti[[variable  %_%  'growthRate']] <- as.numeric(NA)
+ lpti  %>%  group_by(PSCR)  %>%  
   (function(lpti){
-   lpti[lpti[[variable]]>0 , c(variable%_%'doublingDays', variable%_%'growthRate')] <- 
-    estimateDoublingDaysOneCountry(lpti[ lpti[[variable]]>0, ], 
+   lpti[lpti[[variable]]>0 , c(variable %_% 'doublingDays', variable  %_%  'growthRate')] <- 
+    estimateDoublingDaysOneCountry(lpti[ lpti[[variable]] > 0, ], 
                     variable = variable, ...) 
    lpti
   })
@@ -673,33 +705,32 @@ addSimVars <- function(lpti, countries, minVal  = 100, ext  = '_sim', minDate  =
             maxDate  = Sys.Date(),  ...){ # doublingDays = -1, pop = 0, ...){
  if (!missing(countries)) countries  = findIDnames(lpti, countries, searchID  = 'PSCR', fuzzy  = FALSE)
  else {
-  countries  = unique(lpti$PSCR)
-  if (verbose >=  3) {
+   countries  = unique(lpti$PSCR)
+   if (verbose >=  3) {
    print( "AddSimVars: no country given, simulating:"  % %  length(countries)  % %  'countries' )
    if (verbose >=  4) print(paste(countries, collapse  = "/"))}
  }
  if (!('confirmed' %#% ext %in% names(lpti))) {
-  lpti[, c('confirmed', 'active', 'recovered', 'deaths') %#% ext ] <- NA}
- # this means if you raise minVal, you leave the old simulation for countries that do not reach it. 
+   lpti[, c('confirmed', 'active', 'recovered', 'deaths') %#% ext ] <- NA}
  lptivalid <- lpti[ lpti$confirmed >=  minVal & lpti$Date >=  minDate & lpti$Date <=  maxDate, ]
  for (country in countries) {
-  nrRows <- NROW(lptivalid[lptivalid$PSCR  ==  country, ])
-  if ( nrRows  ==  0) {
-   if (verbose >=  4 )
-   {print('addsimvarsCountry not simulated'  % %  country  % %  'minVal = '  % %  minVal )
+   nrRows <- NROW(lptivalid[lptivalid$PSCR  ==  country, ])
+   if ( nrRows  ==  0) {
+     if (verbose >=  4 )
+       {print('addsimvarsCountry not simulated'  % %  country  % %  'minVal = '  % %  minVal )
+       }
    }
-  }
   else {
-   details <- lptivalid[lptivalid$PSCR  ==  country, ][1, ]
-   temp <- simulGrow(lptivalid[lptivalid$PSCR  ==  country, ], country, ...) 
-   names(temp)[names(temp) %in% c('confirmed', 'deaths', 'recovered', 'active')] <- 
+    details <- lptivalid[lptivalid$PSCR  ==  country, ][1, ]
+    temp <- simulGrow(lptivalid[lptivalid$PSCR  ==  country, ], country, ...) 
+    names(temp)[names(temp) %in% c('confirmed', 'deaths', 'recovered', 'active')] <- 
                    c('confirmed', 'deaths', 'recovered', 'active') %#% ext
-   newnrRows <- nrow(temp)
-   lpti[lpti$PSCR  ==  country & lpti$confirmed >=  minVal & lpti$Date >=  minDate & lpti$Date <=  maxDate, 
-           c('confirmed', 'deaths', 'recovered', 'active') %#% ext] <- 
-    temp[1:nrRows, c('confirmed', 'deaths', 'recovered', 'active') %#% ext]
-   if (newnrRows > nrRows) { # we have simulated extra! 
-    temp <- temp %>% mutate(
+    newnrRows <- nrow(temp)
+    lpti[lpti$PSCR == country & lpti$confirmed >= minVal & lpti$Date >= minDate & 
+         lpti$Date <=  maxDate, c('confirmed', 'deaths', 'recovered', 'active') %#% ext] <- 
+                 temp[1:nrRows, c('confirmed', 'deaths', 'recovered', 'active') %#% ext]
+    if (newnrRows > nrRows) { # we have simulated extra! 
+    temp <- temp  %>%  mutate(
      Country.Region = details$Country.Region, 
      PSCR = details$PSCR, 
      Province.State  = details$Province.State, 
@@ -708,60 +739,92 @@ addSimVars <- function(lpti, countries, minVal  = 100, ext  = '_sim', minDate  =
      Long  = details$Long )
     temp[, setdiff(names(lpti), names(temp))] <- NA
     lpti <- rbind(lpti, 
-           temp[nrRows+1:newnrRows, names(lpti)])
+           temp[nrRows + 1:newnrRows, names(lpti)])
    }
-   else if (newnrRows < nrRows) print( country  % %  'has' % %  newnrRows-nrRows  % %  ' extra rows. Oi va voi!')
+   else if (newnrRows < nrRows) print( country  % %  'has' % %  newnrRows % %'instead of'% % nrRows  % %  'rows. Oi va voi!')
   }
  }
  lpti
 }
 
 graph_DemoDoubling <- function(lpti = ECDC, doublingDays = 3, nrRows = -1){
- simulGrow(lpti, "France", minVal = 10, doublingDays) %>% 
-  graphit("France" % % doublingDays  % %  "days", xvar = 'day', yvars = c('active', 'recovered', 'deaths', 'confirmed', "population") , logy = TRUE, until = max(.$Date)) %>%
-  .[c('deaths', 'active', 'confirmed', 'recovered')] %>% view #apply(2, max, na.rm = TRUE) 
+ simulGrow(lpti, "France", minVal = 10, doublingDays)  %>%  
+  graphit("France" % % doublingDays  % %  "days", xvar = 'day', yvars = c('active', 'recovered', 'deaths', 'confirmed', "population") , logy = TRUE, until = max(.$Date))  %>% 
+  .[c('deaths', 'active', 'confirmed', 'recovered')]  %>%  view  
 }
 
 
 addTotals3 <- function(lpti = ECDC, totregions = "", ID = 'Region'){
- if (totregions[1]  == "") totregions <- c("World", unique(lpti$Region))
- lpti1 <- lpti %>%
+ if (missing(totregions)) totregions <- unique(lpti$Region)
+ lpti1 <- lpti  %>% 
   #just to be sure, that if i do it twice i dont get double counts. 
   #And omit USA as country, as we have the individual states already. 
   filter(!(!!ID %in% totregions)) 
- World <- unique(lpti1[[ID]])
  varnames  = c("confirmed", "recovered", "deaths", "population")
- if(!('Lat' %in% names(lpti))) lpti1$Lat <- NA
- if(!('Long' %in% names(lpti))) lpti1$Long <- NA
+ if (!('Lat' %in% names(lpti))) lpti1$Lat <- NA
+ if (!('Long' %in% names(lpti))) lpti1$Long <- NA
+ lpti <- rbind(lpti, lpti  %>%  total("", newrow = "World")) 
  for (regio in totregions[!is.na(totregions)])
   lpti <- rbind(lpti, 
-        lpti1%>% total(regio , ID = ID, varnames = varnames, newrow = regio))
+        lpti1  %>%  total(regio , ID = ID, varnames = varnames, newrow = regio))
+  
  lpti
 }
 
+addCountryTotals <- function(lpdf = JHH, varnames = c("confirmed","recovered", "deaths","population")){
+  existingTotals <- c("China","Australia","Canada",'US')
+  #just to be sure, that if i do it twice i dont get double counts. 
+  #And omit US as country and US states. 
+  lpti <- lpdf  %>% 
+    filter(!(PSCR %in% existingTotals )) #
+  rbind(lpti, 
+        lpti  %>%  totals(c("China","Australia", "Canada",'US'),
+                        ID = "Country.Region", varnames = varnames, needAggreg = FALSE))
+}
 
-addTotals2 <- function(lpdf = JHH, totregions = "", ID = 'PSCR'){
- lpti <- lpdf %>%
-  filter(!(Country.Region  == "US" | !!ID %in% c("South America", "Asia", "Africa", "Europe", "China", "Australia", "Canada", 'North America', "World") )) #%>%   filter()
+addRegionTotals <- function(lpdf = JHH, totRegions, 
+                            varnames = c("confirmed","recovered", "deaths","population") ){
+  existingTotals <- c("China","Australia","Canada",'US')
+  newTotals <- c("South_America", "Asia", "Africa", "Europe",'North_America',"World")
+  lpdf <- lpdf  %>%  filter(!(PSCR %in% newTotals))
+  #just to be sure, that if i do it twice i dont get double counts. 
+  #And omit US as country and US states. 
+  if ( 'Country.Region' %in% names(lpdf))   
+    lpti <- lpdf  %>%  filter(!(Country.Region == "US")) #we have US and USA in JHH
+  else lpti <- lpdf
+  lpti <- lpti  %>%  filter( ! PSCR %in% existingTotals ) #avoid double counting
+  World <- unique(lpti[['PSCR']])
+  if (missing(totRegions)) totRegions <- newTotals
+    #c(regios,list('World' = c('World',World))) ## this is buggy if we do it again we will have twice benelux etc. 
+  if (verbose >= 3) {
+    print('world totals include the following countries: ')
+    print(paste(World,collapse = ","))}
+  
+  for (myRegion in regios[totRegions]) {
+    lpdf <- rbind(lpdf, 
+                  total(lpti, myRegion, ID = 'PSCR', newrow = myRegion[1], varnames = varnames))
+  }
+  lpdf
+}
+
+addTotals2 <- function(lpdf = JHH, totregions = "", ID = 'PSCR', 
+                       varnames = c("confirmed", "recovered", "deaths", "population")){
+ lpti <- lpdf  %>% 
+  filter(!(Country.Region  == "US" | !!ID %in% c("South America", "Asia", "Africa", "Europe", "China", "Australia", "Canada", 'North America', "World") )) # %>%    filter()
  #just to be sure, that if i do it twice i dont get double counts. 
  #And omit USA as country, as we have the individual states already.
- 
  World <- unique(lpti[[ID]])
  if (verbose >= 2) {
-  print('world totals include the following countries: ')
-  print(World)}
- varnames = c("confirmed", "recovered", "deaths", "population")
-    #, 'recovered_imputed', "active_imputed") # we impute AFTER this functionso no need for these. 
- rbind(lpdf, 
-    lpti %>% totals(c("China", "Australia", "Canada"), 
-           ID = "Country.Region", varnames = varnames), 
-    lpdf %>% totals(c("US"), ID = "Country.Region", varnames = varnames), 
-    lpti %>% total(regios$Europe, ID = ID, newrow = "Europe", varnames = varnames), 
-    lpti %>% total(regios$Africa, ID = ID, newrow = "Africa", varnames = varnames), 
-    lpti %>% total(regios$Asia, ID = ID, newrow = "Asia", varnames = varnames), 
-    lpti %>% total(regios$SAmerica, ID = ID, newrow = "South America", varnames = varnames), 
-    lpti %>% total(regios$NAmerica, ID = ID, newrow = "North America", varnames = varnames), #bug solved :instead of taking the states, US data, we now use the USA data, whichs has recovered available. 
-    lpti %>% total(World , ID = ID, newrow = "World", varnames = varnames)
+    print('world totals include the following countries: ')
+    print(World)}
+ rbind(addCountryTotals(lpdf),
+    lpti  %>%  total(regios$Europe, ID = ID, newrow = "Europe", varnames = varnames), 
+    lpti  %>%  total(regios$Africa, ID = ID, newrow = "Africa", varnames = varnames), 
+    lpti  %>%  total(regios$Asia, ID = ID, newrow = "Asia", varnames = varnames), 
+    lpti  %>%  total(regios$South_America, ID = ID, newrow = "South America", varnames = varnames), 
+    lpti  %>%  total(regios$North_America, ID = ID, newrow = "North America", varnames = varnames), 
+    #bug solved :instead of taking the states, US data, we now use the USA data, whichs has recovered available. 
+    lpti  %>%  total(World , ID = ID, newrow = "World", varnames = varnames)
  ) 
 }
 
@@ -770,7 +833,7 @@ days2overtake <- function(lpti = JHH ,
   varname = 'confirmed', newvarname = 'new_confirmed'){
  #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
 
- lastdata <- lpti#[lpti$PSCR %in% countries,] %>%    filter(Date  == max(Date))
+ lastdata <- lpti#[lpti$PSCR %in% countries,]  %>%     filter(Date  == max(Date))
                                                                                          
  lastdata <- (lastdata[order( -lastdata[[varname]]), ])
  variable <- lastdata[[varname]] 
@@ -792,12 +855,12 @@ overtakeDays_v <- function(lpti, country, who = 'theyme', varname = 'confirmed',
        'recovered_imputed', 'recovered_imputed_p_M')) 
   prefix <- 'new_'
  newvarname <- prefix %#% varname
- lastdata <- lpti[, c('PSCR','Date', varname, newvarname)] %>% group_by(PSCR) %>% 
-   filter(Date >= max(Date) - lastDays + 1) %>%
-   mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1)) %>%  
-   mutate_at( .vars=4, .funs= ma) %>%
+ lastdata <- lpti[, c('PSCR','Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
+   filter(Date >= max(Date) - lastDays + 1)  %>% 
+   mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))  %>%   
+   mutate_at( .vars=4, .funs= ma)  %>% 
    filter(Date  == max(Date))
- #lastdata <- lpti[, c('PSCR', 'Date', varname, newvarname)] %>% group_by(PSCR) %>% 
+ #lastdata <- lpti[, c('PSCR', 'Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
   # filter(Date  ==  max(Date))  
  mydata <- subset(lastdata, PSCR  ==  country)
  if (who  ==  'theyme') {
@@ -829,8 +892,8 @@ overtakeDays_df <- function(...){
 
 addcounterfrommin <- function(lpdf = JHH, minv = 0, varname = "confirmed", ID = "PSCR", counter = "day"){
  lpdf[, counter] <- as.numeric(NA)
- lpdf <- lpdf%>% filter(!is.na(!!varname))  #[!is.na(lpdf[, varname]), ] #should not have any! effect for "confirmed" 
- if(sum(lpdf[, varname] >= minv)>0) 
+ lpdf <- lpdf %>%  filter(!is.na(!!varname))  #[!is.na(lpdf[, varname]), ] #should not have any! effect for "confirmed" 
+ if (sum(lpdf[, varname] >= minv)>0) 
   lpdf[lpdf[[varname]] >= minv, ] <- 
      ddply(lpdf[lpdf[[varname]] >= minv, ], ID, 
       function(lpdf){
@@ -861,8 +924,8 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
            xvar = "day", yvars = c("confirmed", "recovered"), 
            logx = FALSE, logy = TRUE, sorted = TRUE){
  if (!(xvar %in% names(lpdf))) 
-  lpdf <- lpdf %>% addcounterfrommin(minVal, varname = "confirmed", ID = ID, counter = xvar)
- #lpdf <- lpdf %>% filter/mutate(confirmed >= minVal) #bug? is new, moved here from addcountersfrommin
+  lpdf <- lpdf  %>%  addcounterfrommin(minVal, varname = "confirmed", ID = ID, counter = xvar)
+ #lpdf <- lpdf  %>%  filter/mutate(confirmed >= minVal) #bug? is new, moved here from addcountersfrommin
  if (logy){ #get rid of negative and zeros for the log
   
   eps <-  1e-5
@@ -871,14 +934,14 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
     #if all NAs, one row replaces zero rows -> error!
     lpdf[(!is.na(lpdf[, varname]))&lpdf[, varname] <=  eps, varname] <- NA 
  } }
- if(logx) lpdf[lpdf[[xvar]] <= 0, xvar] <- 1 #bug? should be NA to be honest 
- if(sorted) {
+ if (logx) lpdf[lpdf[[xvar]] <= 0, xvar] <- 1 #bug? should be NA to be honest 
+ if (sorted) {
   lpdf[[ID]] <- sortIDlevels(lpdf = lpdf, varname = yvars[1]) 
   if (verbose >=  7) print(unique(lpdf[[ID]]))
   lpdf <- lpdf[order(lpdf[[ID]], lpdf[[xvar]]), ] 
   if (verbose >= 5) print('Dataprep'  % %  levels(lpdf[[ID]]))
  } 
- lpdf <- lpdf[, c(xvar, ID, yvars)]# , 'Date' ungroup %>% arrange(PSCR)
+ lpdf <- lpdf[, c(xvar, ID, yvars)]# , 'Date' ungroup  %>%  arrange(PSCR)
 }
 #Bug potential: after the sort, PSCR is a factor. before, it was character!
 
@@ -895,21 +958,21 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  lastdate <- min(max(lpdf$Date), until)
  if (missing(countries)) {
   countries <- unique(lpdf[[returnID]])
-  if(length(countries> 40)) return(print('too many countries, you wont see anything. Please select less countries'))
+  if (length(countries> 40)) return(print('too many countries, you wont see anything. Please select less countries'))
   }
   countries <- findIDnames(lpdf, testIDnames = countries, searchID = ID, 
               fuzzy = fuzzy, returnID = returnID) #}
  ID <- returnID
  if (verbose >= 7) {print(countries)}
- lpdf <- lpdf%>% filter(PSCR %in% countries) #&Date <= until) 
+ lpdf <- lpdf %>%  filter(PSCR %in% countries) #&Date <= until) 
  y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
  if (str_length(y_lab)>80) 
   y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
   ifelse(logy, "(log)", "")
- mytitle <- #format(min(lpdf$Date), format  = "%Y %m-%d")  % %  'till'  % %  
-       #format(lastdate, format  = "%m%d")  % %  
-  "C19" % %  savename % %  y_lab % % 
-         "by"  % %  xvar  % %  "for"  % %  minVal %#% "+"  % %  "confirmed"
+ mytitle <- savename % % y_lab % % "by" % % xvar % %  "for" % % minVal %#% "+"  % %  "confirmed"
+ myFilename <- "C19" % % mytitle
+ mytitle <- "C19" % % format(min(lpdf$Date), format  = "%Y %m-%d")  % %  'till'  % %  
+       format(lastdate, format  = "%m%d")  % %  mytitle
  
  if (nrow(lpdf)  ==  0 ) {if (verbose >=  4) {print('graphit'  % %  mytitle  % % " No data")}
            return() }
@@ -919,11 +982,11 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  if (nrow(lpdf)  == 0| all(is.na(lpdf[, xvar]))|all(is.na(lpdf[, yvars])))
   return(if (verbose >= 4) print ('graphit'  % %  paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more regions?")))
  
-  lpdf <- lpdf %>% 
+  lpdf <- lpdf  %>%  
    melt(lpdf , id = c(ID, xvar), measure.vars = yvars, 
-          variable.name = "variable", value.name = "count")%>%
+          variable.name = "variable", value.name = "count") %>% 
    mutate ( mygroup = PSCR %, % variable, 
-        variable = factor(variable, levels  = yvars)) %>%   drop_na()#
+        variable = factor(variable, levels  = yvars))  %>%    drop_na()#
  if (verbose >= 7) {print('graphit summary pdf:');print(summary(lpdf))}
  
  if (facet  == 'variable') lpdf$mygroup <- lpdf[[ID]] 
@@ -939,7 +1002,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
                       ifelse(facet  == ID, 'variable', ID))
                   ), na.action = na.omit)
   
- if(area){posalpha <- ifelse(position  == 'identity', 0.4, 1)
+ if (area){posalpha <- ifelse(position  == 'identity', 0.4, 1)
   myplot <- myplot + geom_area(aes_string(
       color = ifelse(len  == 1 |facet  == ID, 'variable' , 'mygroup'), 
       fill = ifelse(len  == 1|facet  == ID,  'variable' , 'mygroup')), 
@@ -952,7 +1015,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   myplot <- myplot + #line plot
    geom_line(alpha = 0.3, size = size*0.7)+
    geom_point(size = size, aes_string(  shape = 'variable'))+
-   if(!putlegend| facet  == FALSE) geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
+   if (!putlegend| facet  == FALSE) geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
       method  = list(dl.trans(x  = x+0.1 , y = y+0.1), "last.points", cex  = 1.2)) 
   if ( yline ) myplot <- myplot + geom_hline( yintercept  = yline, na.rm  = TRUE) 
   if (length(unique(lpdf$variable)) <= 6 ) 
@@ -961,7 +1024,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
      myscale <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
                          "lawngreen", "tomato"), #darkorange
                     guide = ifelse(putlegend, "legend", FALSE))
-  }else if(nrgroups<13) {
+  }else if (nrgroups<13) {
    palette = ifelse (nrgroups <8, "Dark2", "Paired") #Spectral Set2 
    myscale <- scale_color_brewer(palette = palette)
   } else myscale <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
@@ -970,7 +1033,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  
  if (!isFALSE(facet)) {
   myplot <- myplot+ facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
- if(xvar  == "Date") myplot <- myplot+scale_x_date(labels  = date_format("%d-%m"))
+ if (xvar  == "Date") myplot <- myplot+scale_x_date(labels  = date_format("%d-%m"))
  myplot <- myplot + ylab(y_lab)+
   xlab(paste(xvar, ifelse(logx, "(log scale)", "")))+ 
   ggtitle(mytitle) + theme_light()+   
@@ -978,9 +1041,9 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  
  breaks <- rep(c(.5, 1, 2), 21)*10^rep((-10:10), each = 3)
  minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
- if( logy  !=  FALSE) myplot <- myplot+scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)+
+ if ( logy  !=  FALSE) myplot <- myplot+scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)+
   annotation_logticks() 
- if(logx) myplot <- myplot+scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
+ if (logx) myplot <- myplot+scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
  myplot <- myplot+ theme(
   axis.text  = element_text(color  = "blue", angle  = 45, 
                hjust  = 1, vjust  = 0.5, size  = rel(.8)),   
@@ -988,19 +1051,19 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   strip.text  = element_text(color  = 'black'))
 
  if (savename !=  "") {
-  if(facet  == FALSE) savename <-  paste(savename, "all-in-one")
-  if(area) savename <- paste(savename, "area plot")
+  if (facet  == FALSE) savename <-  paste(savename, "all-in-one")
+  if (area) savename <- paste(savename, "area plot")
   if (myfolder  == "") { myfolder <- myfolder1 %//% sort(initials(yvars)) % % 'by' % % xvar}
   else myfolder <- myfolder1 %//% myfolder
-  if(area)myfolder <- myfolder  % %  "area plot"
+  if (area) myfolder <- myfolder  % %  "area plot"
   if (logy) myfolder <- myfolder  % % 'log scale'
-  if(facet  == FALSE) myfolder <-  paste(myfolder, "all-in-one")
+  if (facet  == FALSE) myfolder <-  paste(myfolder, "all-in-one")
   if (verbose >=  4) print("graphit making plot"  % %  myfolder %#% "/" %#% mytitle)
   myplot <- myplot + theme(text = element_text(size  = 20), 
   axis.text  = element_text(color  = "blue", size  = rel(.8)) )
   if (myfolder  !=  "") myPath <- myPath %//% myfolder
   if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
-  png(filename  = myPath %//% mytitle %#% ".png", width  = 1600, height  = 900)
+  png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
   on.exit(while (!is.null(dev.list())) dev.off() )
   
    print(myplot)
@@ -1194,9 +1257,9 @@ graphs <- function(lpdf  = JHH, countries  = "World", graphlist  = myGraphNrs, .
   do.call(myGraph, args  = list(lpdf, countries, savename, ...))
  }
 }
-reportDiffTime <- function(message, mytime, units = 'auto', precision  = 2){
- print(message % % round( difftime(Sys.time(), mytime, units = ifelse(units == 'auto','units',units)), precision) 
-       % %  units)
+reportDiffTime <- function(message, startTime, units = 'auto', precision  = 2){
+ print(message % % round( difftime( Sys.time(), startTime, units = units), precision) 
+       % %  ifelse(units == 'auto','units',units))
 }
 
 timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
@@ -1220,19 +1283,19 @@ byRegionthenGraph <- function(lpdf = JHH, regions, saveit = TRUE,
  ### this is writeRegioGraph in same order
  if (typeof(regions)  == "character") { regions = list(regions) }
  walk(graphlist, function(myGraph){
-  if(verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myGraph)}
+  if (verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myGraph)}
   walk(regions, function(myRegion)
      graphOnRegion(lpdf = lpdf, myRegion, myGraph, saveit = saveit, ...) )
-  if(verbose >= 2) {reportDiffTime(myGraph, tig)}
+  if (verbose >= 2) {reportDiffTime(myGraph, tig)}
  })
 }
 byGraphthenRegion <- function(lpdf = JHH, regions, graphlist = c('graphDggnar_fiyl'), saveit = TRUE, ...){ 
  if (typeof(regions)  == "character") { regions = list(regions) }
  walk(regions, function(myRegion){
-  if(verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myRegion[1])}
+  if (verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myRegion[1])}
   walk(graphlist, function(myGraph)
     graphOnRegion(lpdf  = lpdf, myRegion, myGraph, saveit = saveit, ...) )
-  if(verbose >= 2) {reportDiffTime(myRegion[1], tig)}
+  if (verbose >= 2) {reportDiffTime(myRegion[1], tig)}
  })
 } 
 
@@ -1258,18 +1321,18 @@ makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs,
                 myDateFormat )
  fromdates[is.na(fromdates)] <- '2019-12-31'
  map2(fromdates, todates, function(from, to){
-  if(verbose >= 1) {
+  if (verbose >= 1) {
    ti_da = Sys.time() 
    print(format(ti_da, "%H:%M:%S ")  % %  "doing"  % %  as.Date(until, origin = "1970-01-01"))
   }
-  if(nrow(lpdf[lpdf$Date <=  until, ])>0) {
+  if (nrow(lpdf[lpdf$Date <=  until, ])>0) {
    byRegionthenGraph(lpdf, regions, graphlist, saveit  = TRUE, 
             from  = from, until  = to, 
        myfolder1  = min(to, max(format(JHH$Date, format  = '%Y-%m-%d') )), ...)
   }
   else print("no data from " % %  as.Date(from, origin = "1970-01-01")  % % 
              'to'  % %  as.Date(to, origin = "1970-01-01"))
-  if(verbose >= 1) {
+  if (verbose >= 1) {
    reportDiffTime( as.Date(to, origin = "1970-01-01")  % %  "duration: ", ti_da)}
   while(!is.null(dev.list())) dev.off() 
  })
