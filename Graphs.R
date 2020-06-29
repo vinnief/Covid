@@ -18,6 +18,7 @@ JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in%
       'new_active_rate', 'active_imputed_growthRate','confirmed_p_M') ]  %>%
   arrange(new_active_rate)
 
+
 #overtaking
 
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 2))
