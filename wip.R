@@ -1,9 +1,49 @@
 source("requirements.R")
 source('definitions.R')
+
+
+
+#check addSimVars
+lpti <- ECDC[ECDC$PSCR %in% c("Cases_on_an_international_conveyance_Japan", "Cayman_Islands", "Central_African_Republic"),]
+minVal <- 100; minDate = '2019-12-31'; maxDate = Sys.Date()
+
+ for (country in countries <- unique(lpti$PSCR)) {
+   
+   if (any(is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))) { 
+     print(country % % 'nrows' % % nrRows % % newnrRows) 
+     print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))))}
+ }
+country <- 'Cayman_Islands' 
+print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))))
+lpti[lpti$PSCR == country & lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date <=  maxDate,] %>% view
+
+lpti %>% view
+lpti %>% addSimVars(minVal = 100) #error. 
+lpti <- ECDC[ECDC$PSCR %in% c("Cases_on_an_international_conveyance_Japan", "Cayman_Islands"),]
+lpti %>% addSimVars(minVal = 100) #no error. 
+lpti[lpti$confirmed_doublingDays < 0, ] %>% view #39 totally NA rows 
+lpti[is.na(lpti$confirmed_doublingDays), ] %>% view # 3172 rows
+ECDC[is.na(ECDC$PSCR),] %>% view()   #0 rows. 
+E10 <- ECDC %>% addSimVars(minVal = 100) #error with Cayman_Islands
+#
+
+
+
+
+
+
+lpti <- ECDC[ECDC$PSCR == 'Europe',]
+lpti %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim2") %>% view #one row less. 
+options(warn = 2)
+E10 <- ECDC %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") # europe -1 extra row generated
+## also, NAs produced by rpois (42 times) and 
+# In `[<-.data.frame`(`*tmp*`, lpti$PSCR == country, , value = structure(list( ... :
+#provided 51 variables to replace 47 variables
+
+
 # integrate testing into ECDC & JHH
 a <- merge(ECDC, testing, by.x = c('ISOcode','Date'), by.y = c('ISOcode','Date'), all.x = TRUE,
            sort = FALSE)
-
 names(testing)
 
 #make gifs

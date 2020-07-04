@@ -8,6 +8,22 @@ multigrep<- function( searchlist,inlist,ignorecase=FALSE){
 multigrep(testcountries,unique(alldata$Country.Region),ignorecase=TRUE)
 #this one finds exact names when needed
 
+correctMissingLastDay1 <- function(lpti = ECDC){
+  maxDate <- max(lpti$Date)
+  lpti <- lpti %>% group_by(PSCR) 
+  missingPSCR <- setdiff( unique(lpti$PSCR) ,
+                          lpti %>% filter(Date == maxDate) %>% pull(PSCR) )
+  for (myPSCR in missingPSCR) {
+    for (myDate in #maxDate 
+         (max(as.Date(filter(lpti,PSCR == myPSCR)$Date, format = '%Y-%m-%d')) + 1):as.Date(maxDate, format = '%Y-%m-%d')
+    ) {
+      missingRow <- 
+        lpti %>% filter(PSCR == myPSCR & Date == max(Date)) %>% mutate(Date = as.Date(myDate, origin = '1970-01-01'))
+      #print(missingRow)
+      lpti <- rbind(lpti,missingRow)
+    }} 
+  lpti
+}
 
 imputeRecovered<- function(lpdf=JHH,lagrc=22,lagrd=15,dothese=FALSE,redo=FALSE){
 #lpdf<- pdata.frame(lpdf,index=c("PSCR", "Date"),stringsAsFactors=FALSE)
