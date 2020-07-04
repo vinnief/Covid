@@ -1,4 +1,5 @@
 source("requirements.R")
+print(version)
 #Global assumptions
 LAGRC <- 42
 LAGRD <- 36
@@ -7,7 +8,14 @@ deathRate = .05
 if (!exists("verbose")) verbose <- 1
 
 myDateFormat <- "%Y-%m-%d"
-myPlotPath <- "G:/My Drive/Covid19_plots"
+if (.Platform$OS.type == "unix")  {myPlotPath <- "~/Covid19_plots"
+ } else myPlotPath <- "G:/My Drive/Covid19_plots"
+ #R.version$os or Sys.info()["sysname"] 
+
+switch(Sys.info()[['sysname']],
+       Windows= {print("I'm a Windows PC.")},
+       Linux  = {print("I'm a penguin.")},
+       Darwin = {print("I'm a Mac.")})
 myPath <- myPlotPath 
 if (!dir.exists(myPlotPath)) dir.create(myPlotPath, recursive = TRUE)
 datapath = './data'
@@ -113,7 +121,7 @@ findIDnames <- function(lpdf = JHH, testIDnames = c("Neth", "India"), searchID =
  lpdf <- as.data.frame(lpdf)
  allIDs <- (unique(lpdf[, searchID]))  #error maybe? [ for dataframe 
  if (!fuzzy) {a1 <- intersect(testIDnames, allIDs)
- }else a1 <- allIDs[unlist(llply(testIDnames, function(a) grep(a, allIDs, ignore.case = TRUE)))]
+ } else a1 <- allIDs[unlist(llply(testIDnames, function(a) grep(a, allIDs, ignore.case = TRUE)))]
  if (missing(returnID)) return ( a1) #returnID = searchID
  else if (searchID  == returnID) {
   if (verbose >= 4) print('no need for returnID if same as searchID')
