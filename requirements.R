@@ -1,32 +1,33 @@
-`%+%`<- function(x,y){paste(x,y,sep="")}
-`%#%`<- function(x,y){paste(x,y,sep="")}
-`%_%`<- function(x,y){paste(x,y,sep="_")}
-`%,%`<- function(x,y){paste(x,y,sep=",")}
-`%, %`<- function(x,y){paste(x,y,sep=", ")}
-`% %`<- function(x,y){paste(x,y,sep=" ")}
-`%: %`<- function(x,y){paste(x,y,sep=": ")}
-`%//%` <- function(a,b){paste(a,b,sep="/")}
-# note %/% is remainder!!!
+#`%+%`<- function(x,y) {paste(x,y,sep = "")}
+`%#%` <- function(x,y) {paste(x,y,sep = "")}
+`%-%` <- function(x,y) {paste(x,y,sep = "-")}
+`%_%` <- function(x,y) {paste(x,y,sep = "_")}
+`%,%` <- function(x,y) {paste(x,y,sep = ",")}
+`%, %` <- function(x,y) {paste(x,y,sep = ", ")}
+`% %`  <- function(x,y) {paste(x,y,sep = " ")}
+`%: %` <- function(x,y) {paste(x,y,sep = ": ")}
+`%//%` <- function(a,b) {paste(a,b,sep = "/")}
+# note %/% is remainder of division modulo!!!
 
-ma <- function(x, n = 5,na.rm=TRUE,...){ #... = sides=2
-  n=min(length(x),n)
-  cx<- stats::filter(x, rep(1 / n, n), method="convolution", ...)
-  if( na.rm)cx<-        ifelse(is.na(cx),x,cx) 
+ma <- function(x, n = 5, na.rm = TRUE, ...) { #... = sides=2
+  n = min(length(x),n)
+  cx <- stats::filter(x, rep(1 / n, n), method = "convolution", ...)
+  if ( na.rm) cx <-        ifelse(is.na(cx),x,cx) 
   cx}
 
 
 mac <- function(x,minval=40, ...){
-  cx<- ma(x,...)
-  #cx<- ifelse(is.na(cx),x,cx)
-  ifelse(abs(cx)<minval, x, cx   )
+  cx <- ma(x,...)
+  #cx <- ifelse(is.na(cx),x,cx)
+  ifelse(abs(cx) < minval, x, cx   )
 }
 
 #pacman p_load automates this and the following also: 
 #automate the syntax... Thanks Simon https://stackoverflow.com/users/1478381/simon-ohanlon
 getpackages <- function(x){
-  for( i in x ){
+  for (i in x ) {
     #  require returns TRUE invisibly if it was able to load package
-    if( ! require( i , character.only = TRUE ) ){
+    if ( !require( i , character.only = TRUE ) ) {
       #  If package was not able to be loaded then re-install
       install.packages( i , dependencies = TRUE )
       #  Load package after installing
@@ -35,7 +36,7 @@ getpackages <- function(x){
   }
 }
 #library(profvis)
-getpackages (c('profvis',"reshape2","plyr","ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel","tidyverse")) #"plm",
+getpackages(c('profvis',"reshape2","plyr","ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel","tidyverse")) #"plm",
 
 # note ggrepel also does labels next to lines. 
 

@@ -1,6 +1,9 @@
 source("requirements.R")
 source('definitions.R')
 
+#traceback() # to trace the nested calls leading to an error. 
+#suppressWarnings() to suppresswarnings of the functioninside. does not stop the warning: "geom_path: Each group consists of only one observation. Do you need to adjust the group aesthetic?"
+options(warn = 2)
 
 
 #check addSimVars
@@ -35,11 +38,18 @@ E10 <- ECDC %>% addSimVars(minVal = 100) #error with Cayman_Islands
 lpti <- ECDC[ECDC$PSCR == 'Europe',]
 lpti %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim2") %>% view #one row less. 
 options(warn = 2)
-E10 <- ECDC %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") # europe -1 extra row generated
+E10 <- ECDC %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") # europe -1 extra row generated this is ok. it was because Spain delivers data later. 
+# 2020-07-05 data:  UK has 7 out of 11 rows. 2020-07-03: 10 out of 11
+#
 ## also, NAs produced by rpois (42 times) and 
 # In `[<-.data.frame`(`*tmp*`, lpti$PSCR == country, , value = structure(list( ... :
 #provided 51 variables to replace 47 variables
 
+#check which graph gives 
+#"geom_path: Each group consists of only one observation. Do you need to adjust the group aesthetic?" 
+graph2dac_iyl(JHH,JHHRegios$`JHH World13`, from = '2020-06-01', to = '2020-07-01') #gives error because no data with minVal = 100
+options(warn = 2)
+curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, saveit = FALSE)
 
 # integrate testing into ECDC & JHH
 a <- merge(ECDC, testing, by.x = c('ISOcode','Date'), by.y = c('ISOcode','Date'), all.x = TRUE,

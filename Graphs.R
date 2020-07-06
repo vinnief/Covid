@@ -12,7 +12,16 @@ tim = Sys.time()
 curGraph('GR', lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs)
 reportDiffTime('JHH graphs',tim,units = 'mins')
 
-
+#do a month
+byRegionthenGraph(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-01-01", to = '2020-01-31', myFolderDate = 'January')
+byRegionthenGraph(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June')
+makeHistoryGraphsRG(ECDC,ECDCRegios, graphlist = myGraphNrs, 
+                    fromdates = '2020' %-% '01':'07' %-% '01', 
+                    #c('2020-01-01','2020-02-01','2020-03-01',
+                     #             '2020-04-01','2020-04-01','2020-05-01',
+                      #            '2020-06-01','2020-07-01'), 
+                    todates = '2020' %-% '02':'08' %-% '01'
+                    )
 #check what graphs are defined 
 #graphCodes()
 myGraphListbyDate
