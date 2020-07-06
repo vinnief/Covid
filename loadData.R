@@ -1,5 +1,6 @@
 source("requirements.R")#load libraries
 source("definitions.R")# make sure we have our definitions. 
+
 #execute the data loading, first JHH then ECDC then testing
 ti <-  Sys.time()
 JHH <- makeJHH(force = TRUE) 
@@ -39,7 +40,7 @@ reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',
 
 tim = Sys.time()
 ECDC <- ECDC %>%  
-  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #,maxDate = Sys.Date() - 1
+  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #, maxDate = Sys.Date() - 1
   # Because of missing Spain data, growth in Europe on last day is negative. hence sim does not work
 #ECDC <- ECDC %>% addSimVars(minVal = 100)  #gives errors. cayman islands follows conveyance_Japan
  #reportDiffTime('adding the simulated values in ECDC:',tim,'mins')
