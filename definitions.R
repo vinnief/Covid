@@ -1,15 +1,23 @@
 source("requirements.R")
+print(version)
 #Global assumptions
 LAGRC <- 42
 LAGRD <- 36
-LAGDC <- LAGRC-LAGRD
+LAGDC <- LAGRC - LAGRD
 deathRate = .05
 if (!exists("verbose")) verbose <- 1
 
 myDateFormat <- "%Y-%m-%d"
-myPlotPath <- "G:/My Drive/Covid19_plots"
+if (.Platform$OS.type == "unix")  {myPlotPath <- "~/Covid19_plots"
+ } else myPlotPath <- "G:/My Drive/Covid19_plots"
+ #R.version$os or Sys.info()["sysname"] 
+
+switch(Sys.info()[['sysname']],
+       Windows = {print("I'm a Windows PC.")},
+       Linux   = {print("I'm a penguin.")},
+       Darwin  = {print("I'm a Mac.")})
 myPath <- myPlotPath 
-if (!dir.exists(myPlotPath)) dir.create(myPlotPath, recursive = TRUE)
+if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
 datapath = './data'
 if (!dir.exists(datapath)) dir.create(datapath, recursive = TRUE)
 
@@ -113,7 +121,7 @@ findIDnames <- function(lpdf = JHH, testIDnames = c("Neth", "India"), searchID =
  lpdf <- as.data.frame(lpdf)
  allIDs <- (unique(lpdf[, searchID]))  #error maybe? [ for dataframe 
  if (!fuzzy) {a1 <- intersect(testIDnames, allIDs)
- }else a1 <- allIDs[unlist(llply(testIDnames, function(a) grep(a, allIDs, ignore.case = TRUE)))]
+ } else a1 <- allIDs[unlist(llply(testIDnames, function(a) grep(a, allIDs, ignore.case = TRUE)))]
  if (missing(returnID)) return ( a1) #returnID = searchID
  else if (searchID  == returnID) {
   if (verbose >= 4) print('no need for returnID if same as searchID')
@@ -460,13 +468,13 @@ makeECDC <- function(){
  lpti
 }
 
-correctMissingLastDay <- function(lpti = ECDC){
+correctMissingLastDay <- function(lpti = ECDC0){
   maxDate <- max(lpti$Date)
   lpti <- lpti %>% group_by(PSCR) 
   missingPSCR <- setdiff( unique(lpti$PSCR) ,
                           lpti %>% filter(Date == maxDate) %>% pull(PSCR) )
   for (myPSCR in missingPSCR) {
-    countryData <- filter(lpti,PSCR == myPSCR )
+    countryData <- filter(lpti, PSCR == myPSCR )
     lastDate <- max(countryData$Date)
     missingRows <- countryData %>% filter( Date == lastDate)
     lastDate <- as.Date(lastDate, format = '%Y-%m-%d')
@@ -475,7 +483,7 @@ correctMissingLastDay <- function(lpti = ECDC){
       if (verbose >= 2) print(missingRows)
       lpti <- rbind(lpti,missingRows)
     }
-  lpti
+  # lpti
 }
 
 addRegions <- function(lpdf = JHH, varname = "Region", Regiolist = "") { 
@@ -983,7 +991,7 @@ addcounterfrommin <- function(lpdf = JHH, minv = 0, varname = "confirmed", ID = 
 ### make day vars for tableau & Excel
 makecountname <- function(countname, minv){paste(countname, minv, sep = "_")}
 
-writeWithCounters <- function(lpdf = JHH, varname = "confirmed", ID = "PSCR", name = "JHH"){
+writeWithCounters <- function(lpdf = JHH, varname = "confirmed", ID = "PSCR", name = "JHH") {
   lpdf <- as.data.frame(lpdf)
    lpdf <- lpdf[!is.na(lpdf[c(varname)]), ]
   for (minv in c(1, 20, 100, 400, 1000, 2000, 5000, 1e4, 5e4, 1e5, 5e5, 1e6)) {
