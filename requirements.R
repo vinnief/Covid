@@ -35,8 +35,8 @@ getpackages <- function(x){
   }
 }
 #getpackages (c('rvest'))
-getpackages (c('rvest', "tidyverse",'profvis',"reshape2","plyr","ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel")) #"plm",
-require(tidyverse)
+getpackages (c('rvest',"reshape2", "tidyverse",'profvis',"ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel")) #"plm",
+#require(tidyverse) #,"plyr"
 # note ggrepel also does labels next to lines. 
 
 #if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
