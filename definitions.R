@@ -826,7 +826,7 @@ addSimVars <- function(lpti, countries, minVal  = 100, ext  = '_sim', minDate  =
 
 graph_DemoDoubling <- function(lpti = ECDC, doublingDays = 3, nrRows = -1){
  simulGrow(lpti, "France", minVal = 10, doublingDays)  %>%  
-  graphit("France" % % doublingDays  % %  "days", xvar = 'day', yvars = c('active', 'recovered', 'deaths', 'confirmed', "population") , logy = TRUE, until = max(.$Date))  %>% 
+  graphit("France" % % doublingDays  % %  "days", xvar = 'day', yvars = c('active', 'recovered', 'deaths', 'confirmed', "population") , logy = TRUE, to = max(.$Date))  %>% 
   .[c('deaths', 'active', 'confirmed', 'recovered')]  %>%  view  
 }
 
@@ -1025,14 +1025,14 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
 graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
           yvars  = c("active", "recovered", "deaths", "confirmed"), 
           fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, yline  = FALSE, 
-          myfolder1  = 'random', myfolder  = "", savename  = "", putlegend = TRUE, size = 2, 
+          myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, 
           returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, 
-          sorted  = TRUE, from = '2019-12-01', until  = Sys.Date()){
+          sorted  = TRUE, from = '2019-12-01', to  = Sys.Date()){
  
- lpdf <- as.data.frame(lpti[lpti$Date >=  from & lpti$Date <=  until & lpti$confirmed >=  minVal, ])
- if (verbose >= 7)print(lpti)
- if (typeof(until)  == "character") until = as.Date(until, format = "%Y-%m-%d")
- lastdate <- min(max(lpdf$Date), until)
+ lpdf <- as.data.frame(lpti[lpti$Date >=  from & lpti$Date <=  to & lpti$confirmed >=  minVal, ])
+ #if (verbose >= 7)print(lpdf)
+ if (typeof(to)  == "character") to = as.Date(to, format = "%Y-%m-%d")
+ lastdate <- max(lpdf$Date)
  if (missing(countries)) {
   countries <- unique(lpdf[[returnID]])
   if (length(countries> 40)) return(print('too many countries, you wont see anything. Please select less countries'))
@@ -1041,18 +1041,19 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
               fuzzy = fuzzy, returnID = returnID) #}
  ID <- returnID
  if (verbose >= 7) {print(countries)}
- lpdf <- lpdf %>%  filter(PSCR %in% countries) #&Date <= until) 
+ lpdf <- lpdf %>%  filter(PSCR %in% countries) 
+ if (verbose >= 7) print(lpdf)
  y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
  if (str_length(y_lab) > 80) 
   y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
   ifelse(logy, "(log)", "")
  mytitle <- savename % % y_lab % % "by" % % xvar % %  "for" % % minVal %#% "+"  % %  "confirmed"
  myFilename <- "C19" % % mytitle
+ 
+ if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  4) {print('graphit'  % %  mytitle  % % " No data")} ) }
  mytitle <- "C19" % % format(min(lpdf$Date), format  = "%Y-%m-%d")  % % '-' % %  
        format(lastdate, format  = "%Y-%m-%d")  % %  mytitle
  
- if (nrow(lpdf)  ==  0 ) {if (verbose >=  4) {print('graphit'  % %  mytitle  % % " No data")}
-           return() }
  lpdf <- dataprep(lpdf, ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars, logx  = logx, 
           logy  = logy, sorted  = sorted)
  if (verbose >= 5) {print('graphit columns left');print( names(lpdf))}
@@ -1096,7 +1097,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
       method  = list(dl.trans(x  = x+0.1 , y = y+0.1), "last.points", cex  = 1.2)) 
   if ( yline ) myplot <- myplot + geom_hline( yintercept  = yline, na.rm  = TRUE) 
   if (length(unique(lpdf$variable)) <= 6 ) 
-   myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 10, 5, 6)) #shape = "\u2620"
+   myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
   if (nrgroups <= 6){
      myscale <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
                          "lawngreen", "tomato"), #darkorange
@@ -1130,17 +1131,19 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  if (savename !=  "") {
   if (facet  == FALSE) savename <-  paste(savename, "all-in-one")
   if (area) savename <- paste(savename, "area plot")
-  if (myfolder  == "") { myfolder <- myfolder1 %//% sort(initials(yvars)) % % 'by' % % xvar}
-  else myfolder <- myfolder1 %//% myfolder
-  if (area) myfolder <- myfolder  % %  "area plot"
-  if (logy) myfolder <- myfolder  % % 'log scale'
-  if (facet  == FALSE) myfolder <-  paste(myfolder, "all-in-one")
-  if (verbose >=  4) print("graphit making plot"  % %  myfolder %#% "/" %#% mytitle)
+  if (myFolderType  == "") { myFolderType <- myFolderDate %//% sort(initials(yvars)) % % 'by' % % xvar}
+  else myFolderType <- myFolderDate %//% myFolderType
+  if (area) myFolderType <- myFolderType  % %  "area plot"
+  if (logy) myFolderType <- myFolderType  % % 'log scale'
+  if (facet  == FALSE) myFolderType <-  paste(myFolderType, "all-in-one")
+  if (verbose >=  4) print("graphit making plot"  % %  myFolderType %#% "/" %#% mytitle)
   myplot <- myplot + theme(text = element_text(size  = 20), 
   axis.text  = element_text(color  = "blue", size  = rel(.8)) )
-  if (myfolder  !=  "") myPath <- myPath %//% myfolder
+  if (myFolderType  !=  "") myPath <- myPath %//% myFolderType
   if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
+  suppressWarnings(#options(warn = -2)
   png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
+  )
   on.exit(while (!is.null(dev.list())) dev.off() )
   
    print(myplot)
@@ -1255,28 +1258,28 @@ graph1dr_iyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
  graphit(lpdf, countries, xvar  = 'deaths', yvars  = c('recovered_imputed'), 
          logy  = logy, logx  = TRUE, ...)
 }
-graph1Drr_il <- function(lpdf = JHH, countries, myfolder  = '', ...){
+graph1Drr_il <- function(lpdf = JHH, countries, myFolderType  = '', ...){
  graphit(lpdf, countries, xvar = "Date", 
          yvars = c('recovered_imputed_per_confirmed'), 
-         myfolder = myfolder %#%"recovery rate", 
+         myFolderType = myFolderType %#%"recovery rate", 
          putlegend = FALSE , ...   )
 }
 #Simulation included
 graphDccp_fyl <- function(lpdf = JHH, countries, logy = TRUE , ext = "_sim", ...){
- graphit(lpdf, countries, myfolder = "Confirmed infections simulated", 
+ graphit(lpdf, countries, myFolderType = "Confirmed infections simulated", 
      yvars = c('confirmed' %#% ext, 'confirmed', "population"), 
      logy = logy, facet = 'PSCR')
 }
 
 graphDccprr_fiyl <- function(lpdf = JHH, countries, logy = TRUE, ext = '_sim', ...){
- graphit(lpdf, countries, myfolder = "Confirmed recovered simulated", 
+ graphit(lpdf, countries, myFolderType = "Confirmed recovered simulated", 
      yvars = c('confirmed' %#% ext, 'confirmed', "population", 'recovered' %#% ext, 
          'recovered_imputed'), 
      logy = logy, facet  = 'PSCR', ...)
 }
 
 graphDddp_fyl <- function(lpdf = JHH, countries, logy  = TRUE, ext = "_sim", ...){
- graphit(lpdf, countries, minVal = minVal, myfolder = "deaths simulated", 
+ graphit(lpdf, countries, minVal = minVal, myFolderType = "deaths simulated", 
      yvars = c('deaths' %#% ext, 'deaths', "population"), 
      logy = logy, facet = 'PSCR', ...)
 }
@@ -1346,9 +1349,7 @@ timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
  if (verbose >=  verbosity) {reportDiffTime(myCall %:% message, tistart)}
 }
 
-graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...){
-
-
+graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...) {
  if (verbose >= 4) print( 'Regions' % %    paste(myRegion, collapse = "/ "))
  if (verbose >= 3) { tir <- Sys.time() ; print(tir %: % myGraph  % %  myRegion[1] ) }
  do.call(myGraph, 
@@ -1384,9 +1385,9 @@ makeDate <- function(chardate = "", format  = myDateFormat){
       error = function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:", myDateFormat ))})
 }
 
-curGraph <- function(ord = 'GR', myfolder1  = 'current', ...){
- if (ord  ==  'RG' ) byRegionthenGraph( myfolder1  = myfolder1 , ...)
- else byGraphthenRegion(myfolder1  = myfolder1, ...)
+curGraph <- function(ord = 'GR', myFolderDate  = 'current', ...){
+ if (ord  ==  'RG' ) byRegionthenGraph( myFolderDate  = myFolderDate , ...)
+ else byGraphthenRegion(myFolderDate  = myFolderDate, ...)
 }
 
 makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs, 
@@ -1403,24 +1404,20 @@ makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs,
  map2(fromdates, todates, function(from, to){
   if (verbose >= 1) {
    ti_da = Sys.time() 
-   print(format(ti_da, "%H:%M:%S ")  % %  "doing"  % %  as.Date(until, origin = "1970-01-01"))
+   print(format(ti_da, "%H:%M:%S ")  % %  "doing"  % %  as.Date(from, origin = "1970-01-01") % % as.Date(to, origin = "1970-01-01"))
   }
-  if (nrow(lpdf[lpdf$Date <=  until, ])>0) {
+  if (nrow(lpdf[lpdf$Date >= from & lpdf$Date <= to, ]) > 0) {
    byRegionthenGraph(lpdf, regions, graphlist, saveit  = TRUE, 
-            from  = from, until  = to, 
-       myfolder1  = min(to, max(format(JHH$Date, format  = '%Y-%m-%d') )), ...)
+            from  = from, to  = to, 
+       myFolderDate  = max(from, min(format(JHH$Date, format  = '%Y-%m-%d')) ) %//% min(to, max(format(JHH$Date, format  = '%Y-%m-%d'))), ...)
   }
   else print("no data from " % %  as.Date(from, origin = "1970-01-01")  % % 
              'to'  % %  as.Date(to, origin = "1970-01-01"))
   if (verbose >= 1) {
    reportDiffTime( as.Date(to, origin = "1970-01-01")  % %  "duration: ", ti_da)}
-  while(!is.null(dev.list())) dev.off() 
+  while (!is.null(dev.list())) dev.off() 
  })
 }
-
-#options(warn = 2 ) #all warnings become errors, stops execution. 
-#traceback() # to trace the nested calls leading to an error. 
-#suppresswarnings() to suppresswarnings of the functioninside. 
 
 # check th lags between recovered, confirmed and deaths 
 ccf.vf <- function(var1 = c(1, 2), var2 = c(2, 2), lag.max  = 30, saveit  = FALSE, 
