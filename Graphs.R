@@ -21,6 +21,7 @@ walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "202
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-04-01", to = '2020-04-30', myFolderDate = 'April', ordre = 'RG')
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June', ordre = 'RG')
 
+
 writeWithCounters(ECDC,name = "Covid19ECDC")
 writeWithCounters(JHH,name = "Covid19JHH") 
 #check what graphs are defined 
