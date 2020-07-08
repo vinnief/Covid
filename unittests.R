@@ -1,22 +1,23 @@
 #Unittests #
 #check testing ISOcodes and PSCR
-setdiff(unique(testing$PSCR),unique(ECDC$PSCR))
-setdiff(unique(ECDC$PSCR),unique(testing$PSCR))
+setdiff(unique(testing$PSCR), unique(ECDC$PSCR))
+setdiff(unique(ECDC$PSCR), unique(testing$PSCR))
 
-setdiff(unique(testing$ISOcode),unique(ECDC$ISOcode))
-setdiff(unique(ECDC$ISOcode),unique(testing$ISOcode))
+setdiff(unique(testing$ISOcode), unique(ECDC$ISOcode))
+setdiff(unique(ECDC$ISOcode), unique(testing$ISOcode))
 
 #check def of diff.sl
 stopifnot(all(is.na(JHH[JHH$Date == "2020-01-22", "new_confirmed"])) )
 #see where imputations are made
-JHH %>% byRegionthenGraph(  regions = c('really imputed',unique(JHH %>% filter(active != active_imputed) %>% .$PSCR )), 
+JHH %>% walkThrough(  regions = c('really imputed',unique(JHH %>% filter(active != active_imputed) %>% .$PSCR )), 
  graphlist = c('graphDrr_fia','graphDaa_fia','graphDaa_fiyl') ,myfolder1 = 'imputationcheck') 
 JHH %>% filter(PSCR %in% "Wyoming,US") %>% select(PSCR,confirmed,active_imputed,recovered_imputed,deaths) %>% View
 
 # check total and totals vs totals2 and old total
 
 options(warn = 2)
-makelpdfUS()
+assertthat::assert_that(nrow(ECDC %>% filter(!is.na(recovered)) ) == 0)
+assertthat::assert_that(nrow(ECDC %>% filter(active > 0) ) == 0)
 JHH0 %>%  addPopulation() %>% addCountryTotals %>% addRegionTotals %>% 
   group_by(PSCR) %>% 
   filter(PSCR == 'Netherlands') %>% tail
@@ -30,6 +31,8 @@ JHH %>% # addPopulation() %>% addCountryTotals %>% #addRegionTotals %>%
 lptivalid <- JHH[ JHH$confirmed >=  100 & JHH$Date >=  Sys.Date() - 5 ,]
 lptivalid %>% filter(PSCR %in% c('China','Asia','Australia', 'Western Australia,Australia','Europe')) %>% view
 lptivalid <- ECDC[ ECDC$confirmed >=  100 & ECDC$Date >=  Sys.Date() - 5 ,]
+
+
 #View some graphs:
 #Canada has problems if data not sorted. 
 graph3Dard_fia(JHH,c("Spain","Belgium","Netherlands",'Illinois,US','Ontario,Canada',"France"))
@@ -48,13 +51,13 @@ setdiff((sortIDlevels(ECDC, ondate = Sys.Date()-2) %>% unique ) ,(ECDC$PSCR %>% 
 setdiff((sortIDlevels(ECDC) %>% unique ) ,(ECDC$PSCR %>% unique))# TRUE 
 NROW (sortIDlevels(JHH, ondate = Sys.Date()-1) %>% unique ) == NROW (JHH$PSCR %>% unique) # TRUE
 
-graph6Dardcra_fiyl(ECDC,ECDCRegios$`ECDC world3`) # still missing !
+graph6Dardcra_fiyl(ECDC,ECDCRegios$`ECDC world3`) # Spain is there
 graph6Dardcra_fiyl(ECDC,c('Spain','Italy','United Kingdom'))
 
 
 ##test if mac does not reduce the amounts too much (after all we only average above a threshhold)
-rs<- function(n=200,s=50) {
-  x<- rnorm(100,n,s)
+rs <- function(n=200,s=50) {
+  x <- rnorm(100,n,s)
   round(rowSums( rbind(x,
                        mac.1=mac.(x,sides=1),ma1=ma(x,sides=1),
                        mac.2=mac.(x,sides=2),mac.=mac.(x),ma=ma(x)))
