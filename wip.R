@@ -4,6 +4,10 @@ source('definitions.R')
 #traceback() # to trace the nested calls leading to an error. 
 #suppressWarnings() to suppresswarnings of the functioninside. does not stop the warning: "geom_path: Each group consists of only one observation. Do you need to adjust the group aesthetic?"
 options(warn = 2)
+verbose <- 7
+verbose <-  1
+
+withVisible(graph6Dardcra_fiMnyl(ECDC,ECDCRegios$`ECDC world3`, from = '2020-02-01', to = '2020-02-28'))# ,logy = FALSE) # ) # no more geom_path warnings! 
 
 
 #check addSimVars

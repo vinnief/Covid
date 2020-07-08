@@ -483,7 +483,7 @@ correctMissingLastDay <- function(lpti = ECDC0){
       if (verbose >= 2) print(missingRows)
       lpti <- rbind(lpti,missingRows)
     }
-  # lpti
+  lpti
 }
 
 addRegions <- function(lpdf = JHH, varname = "Region", Regiolist = "") { 
@@ -839,13 +839,13 @@ graph_DemoDoubling <- function(lpti = ECDC, doublingDays = 3, nrRows = -1){
 }
 
 
-addTotals3 <- function(lpti = ECDC, totregions = "", ID = 'Region'){
- if (missing(totregions)) totregions <- unique(lpti$Region)
- lpti1 <- lpti  %>% 
-  #just to be sure, that if i do it twice i dont get double counts. 
-  #And omit USA as country, as we have the individual states already. 
-  filter(!(!!ID %in% totregions)) 
- varnames  = c("confirmed", "recovered", "deaths", "population")
+addTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
+ if (missing(totregions)) totregions <- unique(lpti[[ID]])
+ lpti1 <- lpti  %>% filter(!(!!ID %in% totregions)) 
+  #just to be sure, that if i do it twice i dont get double counts. We will get double entries tho! 
+ #this might show up in the graphs or not depending on sorting. 
+ varnames  = c("confirmed", "recovered", "deaths", "population") #bug? recovered is not filled in ECDC0. 
+ #Africa totals recovered and active seem to mirror imputed values. 
  if (!('Lat' %in% names(lpti))) lpti1$Lat <- NA
  if (!('Long' %in% names(lpti))) lpti1$Long <- NA
  lpti <- rbind(lpti, lpti  %>%  total("", newrow = "World")) 
@@ -918,16 +918,16 @@ days2overtake <- function(lpti = JHH ,
   varname = 'confirmed', newvarname = 'new_confirmed'){
  #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
 
- lastdata <- lpti#[lpti$PSCR %in% countries,]  %>%     filter(Date  == max(Date))
+  lastdata <- lpti#[lpti$PSCR %in% countries,]  %>%     filter(Date  == max(Date))
                                                                                          
- lastdata <- (lastdata[order( -lastdata[[varname]]), ])
- variable <- lastdata[[varname]] 
- names(variable) <- lastdata$PSCR
- newvar <-  lastdata[[newvarname]]
- names(newvar) <- lastdata$PSCR
- mconf <- outer(variable, variable, `-`)
- mnew <- -(outer(newvar, newvar, `-`))
- round(mconf/mnew, 1)
+  lastdata <- (lastdata[order( -lastdata[[varname]]), ])
+  variable <- lastdata[[varname]] 
+  names(variable) <- lastdata$PSCR
+  newvar <-  lastdata[[newvarname]]
+  names(newvar) <- lastdata$PSCR
+  mconf <- outer(variable, variable, `-`)
+  mnew <- -(outer(newvar, newvar, `-`))
+  round(mconf/mnew, 1)
 }
 
 overtakeDays_v <- function(lpti, country, who = 'theyme', varname = 'confirmed', nr = 10, lastDays=3){
@@ -939,23 +939,21 @@ overtakeDays_v <- function(lpti, country, who = 'theyme', varname = 'confirmed',
        'recovered', 'recovered_p_M', 'deaths', 'deaths_p_M', 
        'recovered_imputed', 'recovered_imputed_p_M')) 
   prefix <- 'new_'
- newvarname <- prefix %#% varname
- lastdata <- lpti[, c('PSCR','Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
-   filter(Date >= max(Date) - lastDays + 1)  %>% 
-   mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))  %>%   
-   mutate_at( .vars=4, .funs= ma)  %>% 
-   filter(Date  == max(Date))
- #lastdata <- lpti[, c('PSCR', 'Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
-  # filter(Date  ==  max(Date))  
+  newvarname <- prefix %#% varname
+  lastdata <- lpti[, c('PSCR','Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
+    filter(Date >= max(Date) - lastDays + 1)  %>% 
+    mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))  %>%   
+    #mutate_at( .vars = 4, .funs = ma)  %>% 
+    filter(Date  == max(Date))
  mydata <- subset(lastdata, PSCR  ==  country)
  if (who  ==  'theyme') {
   countries <- lastdata[lastdata[[varname]] <=  mydata[[varname]] &
               lastdata[[newvarname]] >=  mydata[[newvarname]], 'PSCR']
-  colName <- 'days to overtake'  % %  country  } 
+  colName <- 'overtakes'  % %  country  } 
  else if (who  ==  'Ithem') {
   countries <- lastdata[lastdata[[varname]] >=  mydata[[varname]] &
               lastdata[[newvarname]] <=  mydata[[newvarname]], 'PSCR']
-  colName <- country  % %  'will overtake in'  }
+  colName <- country  % %  'overtakes'  }
  else stop('who can only be theyme or Ithem')
  oc <- days2overtake(lastdata[lastdata$PSCR %in% countries$PSCR,], varname, newvarname)[, country]
  if (is.null(names(oc))) names(oc)  = c(colName, rep('?', length(oc) - 1)) 
@@ -1009,28 +1007,27 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
            xvar = "day", yvars = c("confirmed", "recovered"), 
            logx = FALSE, logy = TRUE, sorted = TRUE){
  if (!(xvar %in% names(lpdf))) 
-  lpdf <- lpdf  %>%  addcounterfrommin(minVal, varname = "confirmed", ID = ID, counter = xvar)
- #lpdf <- lpdf  %>%  filter/mutate(confirmed >= minVal) #bug? is new, moved here from addcountersfrommin
+    lpdf <- lpdf  %>%  addcounterfrommin(minVal, varname = "confirmed", ID = ID, counter = xvar)
  if (logy){ #get rid of negative and zeros for the log
-  
-  eps <-  1e-5
-  for (varname in yvars) {
-   if (sum((!is.na(lpdf[, varname]))&lpdf[, varname] <=  eps)>0) 
-    #if all NAs, one row replaces zero rows -> error!
-    lpdf[(!is.na(lpdf[, varname]))&lpdf[, varname] <=  eps, varname] <- NA 
- } }
- if (logx) lpdf[lpdf[[xvar]] <= 0, xvar] <- 1 #bug? should be NA to be honest 
+    eps <-  1e-5
+    for (varname in yvars) {
+      if (sum((!is.na(lpdf[, varname])) & lpdf[, varname] <=  eps) > 0) 
+      #if all NAs, one row replaces zero rows -> error!
+        lpdf[(!is.na(lpdf[, varname])) & lpdf[, varname] <=  eps, varname] <- NA 
+    } }
+ if (logx) lpdf[lpdf[[xvar]] <= 0, xvar] <- NA #was 1
  if (sorted) {
   lpdf[[ID]] <- sortIDlevels(lpdf = lpdf, varname = yvars[1]) 
-  if (verbose >=  7) print(unique(lpdf[[ID]]))
+  if (verbose >=  7) {print('dataprep ID before sort:');print(unique(lpdf[[ID]]))}
   lpdf <- lpdf[order(lpdf[[ID]], lpdf[[xvar]]), ] 
-  if (verbose >= 5) print('Dataprep'  % %  levels(lpdf[[ID]]))
+  if (verbose >= 5) print('Dataprep IDs after sort:'  % %  
+                            paste(levels(lpdf[[ID]]), collapse = '-'))
  } 
  lpdf <- lpdf[, c(xvar, ID, yvars)]# , 'Date' ungroup  %>%  arrange(PSCR)
 }
 #Bug potential: after the sort, PSCR is a factor. before, it was character!
 
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
+graphit_nocheck_for_single_point <- function(lpti, countries, minVal = 1, ID  = "PSCR", xvar  = "Date", 
           yvars  = c("active", "recovered", "deaths", "confirmed"), 
           fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, yline  = FALSE, 
           myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, 
@@ -1038,7 +1035,6 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
           sorted  = TRUE, from = '2019-12-01', to  = Sys.Date()){
  
  lpdf <- as.data.frame(lpti[lpti$Date >=  from & lpti$Date <=  to & lpti$confirmed >=  minVal, ])
- #if (verbose >= 7)print(lpdf)
  if (typeof(to)  == "character") to = as.Date(to, format = "%Y-%m-%d")
  lastdate <- max(lpdf$Date)
  if (missing(countries)) {
@@ -1078,59 +1074,60 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  if (facet  == 'variable') lpdf$mygroup <- lpdf[[ID]] 
  else if (facet  == ID) lpdf$mygroup <- lpdf$variable
  nrgroups <- length(unique(lpdf$mygroup))
- if (verbose >= 5) print( 'graphit'  % %  parse(text = substitute(xvar)) % % "from" % %  #bug why not just xvar? why parse substitute? 
+ if (verbose >= 5) print( 'graphit'  % %  ((xvar)) % % "from" % %  #bug why not just xvar? why parse substitute? parse(text = substitute(xvar
              min(lpdf[, xvar]) % %  "to" % % max(lpdf[, xvar]) %, % 
             "group by " % %  lpdf$mygroup[1] %, % "facets"  % %  facet)
- len <- length(unique(lpdf[, ID]))
+ nrIDs <- length(unique(lpdf[, ID]))
  myplot <- ggplot(lpdf, aes_string(y = "count", x = xvar, group = 'mygroup', 
-               color = ifelse(len  == 1,  
+               color = ifelse(nrIDs  == 1,  
                       'variable' , 
                       ifelse(facet  == ID, 'variable', ID))
                   ), na.action = na.omit)
   
  if (area) {posalpha <- ifelse(position  == 'identity', 0.4, 1)
   myplot <- myplot + geom_area(aes_string(
-      color = ifelse(len  == 1 |facet  == ID, 'variable' , 'mygroup'), 
-      fill = ifelse(len  == 1|facet  == ID,  'variable' , 'mygroup')), 
+      color = ifelse(nrIDs  == 1 | facet  == ID, 'variable' , 'mygroup'), 
+      fill = ifelse(nrIDs  == 1 | facet  == ID,  'variable' , 'mygroup')), 
       position  = position, alpha = posalpha)
   myscale_fill <- scale_fill_manual(values  = c("red", "green", "black", "darkorange", "lawngreen"))
-  if (nrgroups <= 2) scale_f <- scale_fill_manual(values  = c("lawngreen", "cyan"))#, "black", "darkorange", "lawngreen"))
-  myplot <- myplot+myscale_fill+ 
+  if (nrgroups <= 2) myscale_fill <- scale_fill_manual(values  = c("lawngreen", "cyan"))#, "black", "darkorange", "lawngreen"))
+  myplot <- myplot + myscale_fill + 
    scale_color_manual(values  = c("red", "green", "black", "darkorange", "lawngreen"))
  }else {
   myplot <- myplot + #line plot
-   geom_line(alpha = 0.3, size = size*0.7)+
-   geom_point(size = size, aes_string(  shape = 'variable'))+
-   if (!putlegend| facet  == FALSE) geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
-      method  = list(dl.trans(x  = x+0.1 , y = y+0.1), "last.points", cex  = 1.2)) 
+   geom_line(alpha = 0.3, size = size*0.7) +
+   geom_point(size = size, aes_string(  shape = 'variable')) +
+   if (!putlegend | facet  == FALSE) geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
+      method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", cex  = 1.2)) 
   if ( yline ) myplot <- myplot + geom_hline( yintercept  = yline, na.rm  = TRUE) 
   if (length(unique(lpdf$variable)) <= 6 ) 
    myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
   if (nrgroups <= 6){
-     myscale <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
+     myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
                          "lawngreen", "tomato"), #darkorange
                     guide = ifelse(putlegend, "legend", FALSE))
   }else if (nrgroups<13) {
    palette = ifelse (nrgroups <8, "Dark2", "Paired") #Spectral Set2 
-   myscale <- scale_color_brewer(palette = palette)
-  } else myscale <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
-  myplot <- myplot + myscale 
+   myscale_color <- scale_color_brewer(palette = palette)
+  } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
+  myplot <- myplot + myscale_color 
  } 
  
  if (!isFALSE(facet)) {
-  myplot <- myplot+ facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
- if (xvar  == "Date") myplot <- myplot+scale_x_date(labels  = date_format("%d-%m"))
- myplot <- myplot + ylab(y_lab)+
-  xlab(paste(xvar, ifelse(logx, "(log scale)", "")))+ 
-  ggtitle(mytitle) + theme_light()+   
-  guides(col  = guide_legend(nrow = 30, ncol  = min(2, (nrgroups-1) %/% 30+1))) 
+  myplot <- myplot + 
+    facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
+ if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"))
+ myplot <- myplot + ylab(y_lab) +
+  xlab(paste(xvar, ifelse(logx, "(log scale)", ""))) + 
+  ggtitle(mytitle) + theme_light() +   
+  guides(col  = guide_legend(nrow = 30, ncol  = min(2, (nrgroups - 1) %/% 30 + 1))) 
  
  breaks <- rep(c(.5, 1, 2), 21)*10^rep((-10:10), each = 3)
  minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
- if ( logy  !=  FALSE) myplot <- myplot+scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)+
+ if ( logy  !=  FALSE) myplot <- myplot + scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks) +
   annotation_logticks() 
- if (logx) myplot <- myplot+scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
- myplot <- myplot+ theme(
+ if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
+ myplot <- myplot + theme(
   axis.text  = element_text(color  = "blue", angle  = 45, 
                hjust  = 1, vjust  = 0.5, size  = rel(.8)),   
   strip.background  = element_rect(fill = "white", color = 'black'),   
@@ -1139,8 +1136,8 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  if (savename !=  "") {
   if (facet  == FALSE) savename <-  paste(savename, "all-in-one")
   if (area) savename <- paste(savename, "area plot")
-  if (myFolderType  == "") { myFolderType <- myFolderDate %//% sort(initials(yvars)) % % 'by' % % xvar}
-  else myFolderType <- myFolderDate %//% myFolderType
+  myFolderType <- myFolderDate %//% ifelse(myFolderType  == "",  
+               sort(initials(yvars)) % % 'by' % % xvar, myFolderType)
   if (area) myFolderType <- myFolderType  % %  "area plot"
   if (logy) myFolderType <- myFolderType  % % 'log scale'
   if (facet  == FALSE) myFolderType <-  paste(myFolderType, "all-in-one")
@@ -1162,8 +1159,148 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
  invisible(lpdf)
 }# 
 
+graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
+                    yvars  = c("active", "recovered", "deaths", "confirmed"), 
+                    fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, yline  = FALSE, 
+                    myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, 
+                    returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, 
+                    sorted  = TRUE, from = '2019-12-01', to  = Sys.Date()){
+  
+  lpdf <- as.data.frame(lpti[lpti$Date >=  from & lpti$Date <=  to & lpti$confirmed >=  minVal, ])
+  lastdate <- max(lpdf$Date)
+  if (typeof(to)  == "character") to = as.Date(to, format = "%Y-%m-%d")
+  if (missing(countries)) {
+    countries <- unique(lpdf[[returnID]])
+    if (length(countries > 40)) return(print('too many countries, you wont see anything. Please select less countries'))
+  } else countries <- findIDnames(lpdf, testIDnames = countries, searchID = ID, 
+                           fuzzy = fuzzy, returnID = returnID) #}
+  ID <- returnID
+  if (verbose >= 7) {print(countries)}
+  lpdf <- lpdf[lpdf[[ID]] %in% countries,] #PSCR
+  if (verbose >= 9) {print('graphit countrydata' );print(head(lpdf))}
+  y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
+  if (str_length(y_lab) > 80) 
+    y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
+    ifelse(logy, "(log)", "")
+  mytitle <- savename % % y_lab % % "by" % % xvar % %  "for" % % minVal %#% "+"  % %  "confirmed"
+  myFilename <- "C19" % % mytitle
+  
+  if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  4) {print('graphit'  % %  mytitle  % % " No data")} ) }
+  mytitle <- "C19" % % format(min(lpdf$Date), format  = "%Y-%m-%d")  % % '-' % %  
+    format(lastdate, format  = "%Y-%m-%d")  % %  mytitle
+  
+  lpdf <- dataprep(lpdf, ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
+                   logx  = logx, logy  = logy, sorted  = sorted)
+  if (verbose >= 5) {print('graphit columns left');print( names(lpdf))}
+  if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
+    return(if (verbose >= 4) print('graphit'  % %  paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more regions?")))
+  
+  lpdf <- lpdf  %>%  
+    melt(lpdf , id = c(ID, xvar), measure.vars = yvars, 
+         variable.name = "variable", value.name = "count") %>% 
+    mutate( mygroup = PSCR %, % variable, #!!ID? you would get zigzags if ID <> PSCR and you havent totalled. 
+            variable = factor(variable, levels  = yvars)) %>% drop_na()
+  if (verbose >= 7) {print('graphit summary pdf:');print(summary(lpdf))}
+  
+  if (facet  == 'variable') lpdf$mygroup <- lpdf[[ID]] else 
+    if (facet  == ID) lpdf$mygroup <- lpdf$variable
+  lines_only <- lpdf %>% select(!!ID,mygroup) %>% group_by_at(c(1,2)) %>% 
+    filter(n() > 1) ## bughere
+  if (verbose >= 5) {view(lines_only)}
+  lines_only <- lines_only %>% unique()
+  if (verbose >= 5) {view('country-lines with 2+ datapoints:') ; print(lines_only)}
+  
+  lpdf_lines_only <- lpdf[lpdf[[ID]] %in% lines_only[[ID]] & 
+                            lpdf$mygroup %in% lines_only$mygroup, ] 
+  if (verbose >= 5) {view(lpdf_lines_only)}
+  nrgroups <- length(unique(lpdf$mygroup))
+  if (verbose >= 5) print( 'graphit'  % %  xvar % % "from" % %  #bug  was parse(text = substitute(xvar))
+                             min(lpdf[, xvar]) % %  "to" % % max(lpdf[, xvar]) %, % 
+                             "group by " % %  lpdf$mygroup[1] %, % "facets"  % %  facet)
+  nrIDs <- length(unique(lpdf[, ID]))
+  myplot <- ggplot(lpdf, 
+                   aes_string(y = "count", x = xvar, group = 'mygroup', 
+                              color = ifelse(nrIDs  == 1,  'variable' , 
+                                             ifelse(facet  == ID, 'variable', ID))
+                   ), na.action = na.omit)
+  
+  if (area) {posalpha <- ifelse(position  == 'identity', 0.4, 1)
+  myplot <- myplot + geom_area(aes_string(
+    color = ifelse(nrIDs  == 1 | facet  == ID, 'variable' , 'mygroup'), 
+    fill = ifelse(nrIDs  == 1 | facet  == ID,  'variable' , 'mygroup')), 
+    position  = position, alpha = posalpha)
+  myscale_fill <- scale_fill_manual(values  = c("red", "green", "black", "darkorange", "lawngreen"))
+  if (nrgroups <= 2) myscale_fill <- scale_fill_manual(values  = c("lawngreen", "cyan"))#, "black", "darkorange", "lawngreen"))
+  myplot <- myplot + myscale_fill + 
+    scale_color_manual(values  = c("red", "green", "black", "darkorange", "lawngreen"))
+  } else {
+    myplot <- myplot + #line plot
+      geom_line(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) +
+      geom_point(size = size, aes_string(  shape = 'variable')) +
+      if (!putlegend | facet  == FALSE) 
+        geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
+                method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", 
+                               cex  = 1.2)) 
+    if ( yline ) myplot <- myplot + geom_hline( yintercept  = yline, na.rm  = TRUE) 
+    if (length(unique(lpdf$variable)) <= 6 ) 
+      myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
+    if (nrgroups <= 6){
+      myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
+                                               "lawngreen", "tomato"), #darkorange
+                                    guide = ifelse(putlegend, "legend", FALSE))
+    }else if (nrgroups<13) {
+      palette = ifelse (nrgroups <8, "Dark2", "Paired") #Spectral Set2 
+      myscale_color <- scale_color_brewer(palette = palette)
+    } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
+    myplot <- myplot + myscale_color 
+  } 
+  
+  if (!isFALSE(facet)) {
+    myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
+  if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"))
+  myplot <- myplot + ylab(y_lab) +
+    xlab(paste(xvar, ifelse(logx, "(log scale)", ""))) + 
+    ggtitle(mytitle) + theme_light() +   
+    guides(col  = guide_legend(nrow = 30, ncol  = min(2, (nrgroups - 1) %/% 30 + 1))) 
+  
+  breaks <- rep(c( 1, 5), 21)*10^rep((-10:10), each = 2)
+  minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
+  if ( logy  !=  FALSE) myplot <- myplot + scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks) +
+    annotation_logticks() 
+  if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
+  myplot <- myplot + theme(
+    axis.text  = element_text(color  = "blue", angle  = 45, 
+                              hjust  = 1, vjust  = 0.5, size  = rel(.8)),   
+    strip.background  = element_rect(fill = "white", color = 'black'),   
+    strip.text  = element_text(color  = 'black'))
+  
+  if (savename !=  "") {
+    if (facet  == FALSE) savename <-  paste(savename, "all-in-one")
+    if (area) savename <- paste(savename, "area plot")
+    if (myFolderType  == "") { myFolderType <- myFolderDate %//% sort(initials(yvars)) % % 'by' % % xvar}
+    else myFolderType <- myFolderDate %//% myFolderType
+    if (area) myFolderType <- myFolderType  % %  "area plot"
+    if (logy) myFolderType <- myFolderType  % % 'log scale'
+    if (facet  == FALSE) myFolderType <-  paste(myFolderType, "all-in-one")
+    if (verbose >=  4) print("graphit making plot"  % %  myFolderType %#% "/" %#% mytitle)
+    myplot <- myplot + theme(text = element_text(size  = 20), 
+                             axis.text  = element_text(color  = "blue", size  = rel(.8)) )
+    if (myFolderType  !=  "") myPath <- myPath %//% myFolderType
+    if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
+    on.exit(while (!is.null(dev.list())) dev.off() )
+    #suppressWarnings(#options(warn = -2)
+      png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
+    print(myplot)
+    #)
+    dev.off()
+  }else {
+    print(myplot + theme(title  = element_text(size  = 11)))
+  }
+  invisible(lpdf)
+}
+
+
 #geom_point(shape = "\u2620", size  = 4) #skulls
-#geom_point(aes(shape = cyl, color = cyl, size = cyl))
 #+scale_color_manual(values = c('#999999', '#E69F00', '#56B4E9'))
  
 graphCodes <- function(){ 
@@ -1387,15 +1524,36 @@ byGraphthenRegion <- function(lpdf = JHH, regions, graphlist = c('graphDggnar_fi
   if (verbose >= 2) {reportDiffTime(myRegion[1], tig)}
  })
 } 
+walkThrough <- function(lpdf = JHH, regions, saveit = TRUE, 
+                              graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl'), ordre = 'RG', ...){
+  if (typeof(regions)  == "character") { regions = list(regions) }
+  if (ordre == 'RG') {
+      walk(graphlist, function(myGraph){
+      if (verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myGraph)}
+      walk(regions, function(myRegion)
+          graphOnRegion(lpdf = lpdf, myRegion, myGraph, saveit = saveit, ...) )
+      if (verbose >= 2) {reportDiffTime(myGraph, tig)}
+    })} else {
+    walk(regions, function(myRegion){
+      if (verbose >= 2) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myRegion[1])}
+      walk(graphlist, function(myGraph)
+        graphOnRegion(lpdf  = lpdf, myRegion, myGraph, saveit = saveit, ...) )
+      if (verbose >= 2) {reportDiffTime(myRegion[1], tig)}
+    })}
+}
+
 
 makeDate <- function(chardate = "", format  = myDateFormat){
  tryCatch(as.Date(chardate, format = format), 
       error = function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:", myDateFormat ))})
 }
 
-curGraph <- function(ord = 'GR', myFolderDate  = 'current', ...){
- if (ord  ==  'RG' ) byRegionthenGraph( myFolderDate  = myFolderDate , ...)
+curGraph <- function(ordre = 'GR', myFolderDate  = 'current', ...){
+ if (ordre  ==  'RG' ) byRegionthenGraph( myFolderDate  = myFolderDate , ...)
  else byGraphthenRegion(myFolderDate  = myFolderDate, ...)
+}
+curGraph <- function(myFolderDate  = 'current', ...){
+  walkThrough( myFolderDate  = myFolderDate , ...)
 }
 
 makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs, 
@@ -1409,15 +1567,15 @@ makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs,
                 ". Either enter an R date or a string in the following Date format:"  % % 
                 myDateFormat )
  fromdates[is.na(fromdates)] <- '2019-12-31'
- map2(fromdates, todates, function(from, to){
+ walk2(fromdates, todates, function(from, to){
   if (verbose >= 1) {
    ti_da = Sys.time() 
    print(format(ti_da, "%H:%M:%S ")  % %  "doing"  % %  as.Date(from, origin = "1970-01-01") % % as.Date(to, origin = "1970-01-01"))
   }
   if (nrow(lpdf[lpdf$Date >= from & lpdf$Date <= to, ]) > 0) {
-   byRegionthenGraph(lpdf, regions, graphlist, saveit  = TRUE, 
-            from  = from, to  = to, 
-       myFolderDate  = max(from, min(format(JHH$Date, format  = '%Y-%m-%d')) ) %//% min(to, max(format(JHH$Date, format  = '%Y-%m-%d'))), ...)
+   byRegionthenGraph(lpdf, regions, graphlist, saveit  = TRUE, from  = from, to  = to, 
+       myFolderDate  = max(format(from, format  = '%Y-%m-%d'), min(lpdf$Date) ) % % 'to' % % 
+                       min(format(to, format  = '%Y-%m-%d'), max(lpdf$Date)), ...)
   }
   else print("no data from " % %  as.Date(from, origin = "1970-01-01")  % % 
              'to'  % %  as.Date(to, origin = "1970-01-01"))
@@ -1425,6 +1583,35 @@ makeHistoryGraphsRG <- function(lpdf, regions, graphlist = myGraphNrs,
    reportDiffTime( as.Date(to, origin = "1970-01-01")  % %  "duration: ", ti_da)}
   while (!is.null(dev.list())) dev.off() 
  })
+}
+
+makeHistoryGraphs <- function(lpdf, regions, graphlist = myGraphNrs, 
+                              fromDates, toDates, ...){
+  on.exit({options(warn = 0) }) 
+  if (missing(regions) ) stop("no regions to graph")
+  if (missing(fromDates) ) {
+    if (missing(toDates)) {
+        fromDates = min(lpdf$Date)
+        toDates  = max(lpdf$Date)
+      } else {fromDates <- rep(min(lpdf$Date, length(toDates)))} 
+  } else {
+    if (missing(toDates)) {
+      toDates <- rep(max(lpdf$Date, length(fromDates)))  
+    }}
+  walk2(fromDates, toDates, function(from, to){
+    if (verbose >= 1) {
+      ti_da = Sys.time() 
+      print(format(ti_da, "%H:%M:%S ")  % %  "doing"  % %  as.Date(from, origin = "1970-01-01") % % as.Date(to, origin = "1970-01-01"))
+    }
+    if (nrow(lpdf[lpdf$Date >= from & lpdf$Date <= to, ]) > 0) {
+      walkThrough(lpdf, regions, graphlist, saveit  = TRUE, from  = from, to  = to, 
+                  myFolderDate  = from % % 'to' % % to, ...)
+    }
+    else print("no data from " % %  from  % % 'to'  % % to )
+    if (verbose >= 1) {
+      reportDiffTime( as.Date(to, origin = "1970-01-01")  % %  "duration: ", ti_da)}
+    while (!is.null(dev.list())) dev.off() 
+  })
 }
 
 # check th lags between recovered, confirmed and deaths 
