@@ -844,11 +844,11 @@ addTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
  lpti1 <- lpti  %>% filter(!(!!ID %in% totregions)) 
   #just to be sure, that if i do it twice i dont get double counts. We will get double entries tho! 
  #this might show up in the graphs or not depending on sorting. 
- varnames  = c("confirmed",  "deaths", "population") #bug? "recovered", is not filled in ECDC0. 
+ varnames  = c("confirmed",  "deaths", "population") 
  #Africa totals recovered and active seem to mirror imputed values. 
  if (!('Lat' %in% names(lpti))) lpti1$Lat <- NA
  if (!('Long' %in% names(lpti))) lpti1$Long <- NA
- lpti <- rbind(lpti, lpti  %>%  total("", newrow = "World", varnames = varnames)) 
+ lpti <- rbind(lpti, lpti  %>%  total("", varnames = varnames, newrow = "World")) 
  for (regio in totregions[!is.na(totregions)])
   lpti <- rbind(lpti, 
         lpti1  %>%  total(regio , ID = ID, varnames = varnames, newrow = regio))

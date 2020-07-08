@@ -1,5 +1,5 @@
 ---
-title: "Covid Trendlines"
+title: "__Covid Trendlines__"
 author: "VF"
 date: "March- July 2020"
 output: 

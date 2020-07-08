@@ -7,6 +7,7 @@ options(warn = 2)
 verbose <- 7
 verbose <-  1
 
+
 #check addSimVars
 lpti <- ECDC[ECDC$PSCR %in% c("Cases_on_an_international_conveyance_Japan", "Cayman_Islands", "Central_African_Republic"),]
 minVal <- 100; minDate = '2019-12-31'; maxDate = Sys.Date()
