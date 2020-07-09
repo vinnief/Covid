@@ -84,7 +84,7 @@ graph6Dardcra_finyl(JHH, JHHRegios$`JHH World1`)
 If you want to write the data to disk, make sure to define the correct datapath so that R can write to it. By default it is a subfolder of the scripts folder. Note that the data will also be written to a subfolder of the plots folder. 
 ``` {r}
 dataPath <- './data'
-if (!dir.exists(datapath)) dir.create(datapath, recursive = TRUE)
+if (!dir.exists(dataPath)) dir.create(dataPath, recursive = TRUE)
 writeWithCounters(ECDC,name = "Covid19ECDC")
 writeWithCounters(JHH,name = "Covid19JHH") 
 ```
