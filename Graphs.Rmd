@@ -1,0 +1,46 @@
+---
+title: "Graphs"
+author: "VF"
+date: "9 July 2020"
+output: html_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Graph and save lots of graphs on all regions present, paginated by by size of the Covid impact 
+(total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
+Make aand save all graphs, make sure the paths are correct!
+```{r , echo = FALSE} 
+switch(Sys.info()[['sysname']],
+       Windows = {print("I'm a Windows PC.");myPlotPath <- "G:/My Drive/Covid19_plots"},
+       Linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
+       Darwin  = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"})
+
+if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
+
+tim = Sys.time()
+#curGraph(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, ordre = 'GR')
+walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+reportDiffTime('ECDC graphs',tim, units = 'mins')
+
+tim = Sys.time()
+#curGraph( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+reportDiffTime('JHH graphs',tim,units = 'mins')
+``` 
+
+Development one month at a time
+```{r}
+walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-01-01", to = '2020-01-31', myFolderDate = 'January', ordre = 'RG')
+walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-04-01", to = '2020-04-30', myFolderDate = 'April', ordre = 'RG')
+walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June', ordre = 'RG')
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+Note that the `{r, echo = FALSE}` parameter can be added to the code chunk to prevent printing of the R code that generated the plot.

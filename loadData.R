@@ -49,34 +49,6 @@ ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC World')
 testing <- readTesting()
 write.csv(testing,myPlotPath %//% "data" %//% 'testing.csv' )
 
-#show some data table output
-#latest numbers
-JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
-JHH %>% ungroup %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
-  select(PSCR,confirmed, active_imputed, deaths, new_confirmed, new_active_rate, active_imputed_growthRate, 
-         active_imputed_p_M) %>% arrange(new_active_rate) %>% tail(15)
-JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
-      c('EU','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
-        'Germany','France','Africa','Iran','Russia','Brazil'),
-    c('PSCR','confirmed','active_imputed','deaths','new_confirmed',
-      'new_active_rate', 'active_imputed_growthRate','active_imputed_p_M') ]  %>%
-  arrange(new_active_rate)
 
-
-#overtaking
-
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 4))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 1))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 1))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 4))
-
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 7))
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 7))
-
-map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "theyme", lastDays = 4))
-map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
-map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
-
-
-# end now run Graphs.R
+# end now run Graphs.R or output.md
 

@@ -6,20 +6,21 @@ LAGRD <- 36
 LAGDC <- LAGRC - LAGRD
 deathRate = .05
 if (!exists("verbose")) verbose <- 1
-
 myDateFormat <- "%Y-%m-%d"
 if (.Platform$OS.type == "unix")  {myPlotPath <- "~/Covid19_plots"
- } else myPlotPath <- "G:/My Drive/Covid19_plots"
- #R.version$os or Sys.info()["sysname"] 
+} else myPlotPath <- "G:/My Drive/Covid19_plots"
+#R.version$os or Sys.info()["sysname"] 
+
 
 switch(Sys.info()[['sysname']],
-       Windows = {print("I'm a Windows PC.")},
-       Linux   = {print("I'm a penguin.")},
-       Darwin  = {print("I'm a Mac.")})
-myPath <- myPlotPath 
+       Windows = {print("I'm a Windows PC.");myPlotPath <- "G:/My Drive/Covid19_plots"},
+       Linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
+       Darwin  = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"})
+dataPath = './data'
+
+#myPath <- myPlotPath 
 if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
-datapath = './data'
-if (!dir.exists(datapath)) dir.create(datapath, recursive = TRUE)
+if (!dir.exists(dataPath)) dir.create(dataPath, recursive = TRUE)
 
 #data loading
 #*Note*: the data of John hopkins, 
@@ -259,7 +260,7 @@ makelpdfUSStates <- function(){
  wc <- readUSdata('confirmed') 
  #geo.location <- wc[, c("Combined_Key", "Country_Region", "Province_State", "Admin2", "UID", "Lat", "Long_")]
  wc <- correctnames(wc)
- #write.csv( geo.location, file = datapath %#% "/" %#% "geo.location.US.csv", na = "")
+ #write.csv( geo.location, file = dataPath %#% "/" %#% "geo.location.US.csv", na = "")
  #rm(geo.location)
  # wc <- wc[, !names(wc) %in% c("Admin2" , "UID", "iso2", "iso3", "code3", "FIPS")]
  confirmed <- convertdata(wc, values.name = "confirmed", US = TRUE)
@@ -293,7 +294,7 @@ makelpdfUS <- function() {
 makelpdf <- function() {
  wc <- readdata('confirmed') #"Confirmed")
  geo.location <- wc[c("Country.Region", "Province.State", "Lat", "Long")]
- #write.csv( geo.location, file = datapath %#% "/" %#% "geo.location.csv", na = "")
+ #write.csv( geo.location, file = dataPath %#% "/" %#% "geo.location.csv", na = "")
  confirmed <- convertdata(wc, values.name = "confirmed")
  wd <- readdata("deaths")
  deaths <- convertdata(wd, values.name = "deaths")
@@ -319,9 +320,9 @@ updateJHHFromWeb <- function(nameUS = "JHH_US.csv", namenonUS = "JHH_non_US.csv"
  }
 
 readLocalData <- function(nameUS = "JHH_US.csv", namenonUS = "JHH_non_US.csv"){
- #CUS <- read.csv(datapath %#% "/" %#% nameUS, stringsAsFactors = FALSE)#colClasses = ("Date" = "character"))
+ #CUS <- read.csv(dataPath %#% "/" %#% nameUS, stringsAsFactors = FALSE)#colClasses = ("Date" = "character"))
  CUS2 <- read_csv(nameUS)
- #Cworld <- read.csv(datapath %#% "/" %#% namenonUS, stringsAsFactors = FALSE)
+ #Cworld <- read.csv(dataPath %#% "/" %#% namenonUS, stringsAsFactors = FALSE)
  Cworld2 <- read_csv(namenonUS)
  #lpdf <- rbind(Cworld, CUS)
  lpdf2 <- rbind(Cworld2, CUS2)
@@ -378,7 +379,7 @@ makeJHH <- function(name = "JHH", force = FALSE) {
   if (verbose >= 1) print("updating JHH from Github")
  } else {
   if (verbose >= 1) print(paste("loading local", namedays))
-  lpdf <- read.csv(datapath %#% "/" %#% namedays, stringsAsFactors  = FALSE)
+  lpdf <- read.csv(dataPath %#% "/" %#% namedays, stringsAsFactors  = FALSE)
  }
  if (typeof(lpdf$Date)  == "character") 
   lpdf$Date <- as.Date(lpdf$Date, "%Y-%m-%d") #strptime gives timezones! no need for timezones
@@ -560,11 +561,11 @@ makeRegioList <- function(lpti = JHH, piecename = "JHH"){
 }
 
 addPopulation <- function(lpdf) {
- population <- read.csv(datapath %#% "/" %#% 'population.csv')[c(1, 3)]
+ population <- read.csv(dataPath %#% "/" %#% 'population.csv')[c(1, 3)]
  names(population)[2] <- "population"
  rownames(population) <- population$Country.Name
  lpdf[, "population"] <- population[lpdf  %>%  pull(PSCR), "population"]
- popUS <- read.csv(datapath %#% "/" %#% 'USstatespop2019.csv')[c('State', 'p2019')]
+ popUS <- read.csv(dataPath %#% "/" %#% 'USstatespop2019.csv')[c('State', 'p2019')]
  names(popUS)[2] <- "population"
  rownames(popUS) <- popUS$State
  lpdf[grepl(",US", lpdf$PSCR), "population"] <- 
@@ -998,7 +999,7 @@ writeWithCounters <- function(lpdf = JHH, varname = "confirmed", ID = "PSCR", na
                 counter = makecountname("day", minv))
   }
   filename = paste(name, "days.csv", sep = "_")
-  write_csv(lpdf, path = datapath %#% "/" %#% filename, na = "")
+  write_csv(lpdf, path = dataPath %#% "/" %#% filename, na = "")
   write_csv(lpdf, path = myPlotPath %//% "data" %//% filename, na = "")
   if (verbose >= 1) print(paste("Written the current data with counters to disk as", filename, "for use in Tableau or Excel"))
 }
@@ -1144,7 +1145,7 @@ graphit_nocheck_for_single_point <- function(lpti, countries, minVal = 1, ID  = 
   if (verbose >=  4) print("graphit making plot"  % %  myFolderType %#% "/" %#% mytitle)
   myplot <- myplot + theme(text = element_text(size  = 20), 
   axis.text  = element_text(color  = "blue", size  = rel(.8)) )
-  if (myFolderType  !=  "") myPath <- myPath %//% myFolderType
+  if (myFolderType  !=  "") myPath <- myPlotPath %//% myFolderType
   if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
   suppressWarnings(#options(warn = -2)
   png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
@@ -1285,7 +1286,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
     if (verbose >=  4) print("graphit making plot"  % %  myFolderType %#% "/" %#% mytitle)
     myplot <- myplot + theme(text = element_text(size  = 20), 
                              axis.text  = element_text(color  = "blue", size  = rel(.8)) )
-    if (myFolderType  !=  "") myPath <- myPath %//% myFolderType
+    if (myFolderType  !=  "") myPath <- myPlotPath %//% myFolderType else myPath <- myPlotPath
     if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
     on.exit(while (!is.null(dev.list())) dev.off() )
     #suppressWarnings(#options(warn = -2)
