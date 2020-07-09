@@ -1,0 +1,99 @@
+---
+title: "Graphs"
+author: "VF"
+date: "9 July 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Resulting graphs and cleaned and prepared data can be found at 
+https://drive.google.com/drive/folders/1Yo0IW4awCIvWMP6jYVKpn3kLgEolse0e?usp=sharing
+#for publication 
+```{r cleanup load latest graph definitions and data, echo=FALSE}
+rm(list = setdiff(ls(), c('ECDC0', 'JHH0', 'JHH', 'ECDC', 'JHHRegios', 'ECDCRegios','testing')))
+source('definitions.R')
+options(warn = 0)
+if (!exists('JHH')) source('loadData.R') else 
+  if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  
+```
+Graph active_imputed, recovered, deaths, and confirmed for some selected territories, 
+based on JHH data:
+```{r demo graph}
+graphit(JHH, regios$Vincent, xvar = 'Date', 
+        yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
+        facet = "PSCR", logy = TRUE)
+```
+Show table outputs: 
+```{r}
+#show some data table output
+#latest numbers
+JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
+JHH %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
+  select(PSCR,confirmed, active_imputed, deaths, new_confirmed, new_active_rate, active_imputed_growthRate, 
+         active_imputed_p_M) %>% arrange(new_active_rate) %>% tail(10)
+JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
+      c('EU','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
+        'Germany','France','Africa','Iran','Russia','Brazil'),
+    c('PSCR','confirmed','active_imputed','deaths','new_confirmed',
+      'new_active_rate', 'active_imputed_growthRate','active_imputed_p_M') ]  %>%
+  arrange(new_active_rate)
+
+```
+Who overtakes us based the JHH data set on latest day data? 
+```{r} 
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 1))
+```
+And on 7 day averages in JHH? 
+```{r}
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 7))
+```
+
+And according to ECDC? 
+```{r}
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 7))
+```
+Who is more affected? 
+```{r}
+graph3Dard_fia(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'))
+```
+Who do we overtake?
+```{r}
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 7))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 7))
+```
+Some other countries now: 
+```{r}
+graph3Dard_fia(JHH, c('Germany','France','United Kingdom'))
+map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "theyme", lastDays = 7))
+map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem", lastDays = 7))
+
+```
+For the New York state, Indonesia, Peru, India: 
+```{r}
+graph3Dard_fia(JHH, c('New York,US','Indonesia','Peru','India'))
+map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
+map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
+```
+See how the most affected regions in the world are developing: (pop the graph out to a new window and enlarge to see more detail)
+```{r}
+graph6Dardcra_finyl(JHH, JHHRegios$`JHH World1`)
+```
+If you want to write the data to disk, make sure to define the correct datapath so that R can write to it. By default it is a subfolder of the scripts folder. Note that the data will also be written to a subfolder of the plots folder. 
+``` {r}
+dataPath <- './data'
+if (!dir.exists(datapath)) dir.create(datapath, recursive = TRUE)
+writeWithCounters(ECDC,name = "Covid19ECDC")
+writeWithCounters(JHH,name = "Covid19JHH") 
+```
+check what graphs are defined 
+```{r}
+graphCodes()
+myGraphListbyDate
+myGraphListbyDay
+myGraphNrs
+myGraphList
+```
+
