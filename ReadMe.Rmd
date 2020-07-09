@@ -64,9 +64,11 @@ To load the definitions and see what graphs are defined, use
 source('definitions.R')
 ```
 
-to load the data:
+to load the data: (s bit slow as it needs to prepare after loading)
 ``` {r }
-source('loaddata.R') #do this once, before the chunks below!
+if (!exists('JHH')) source('loadData.R') else 
+  if (max(JHH$Date)< Sys.Date()-1) source('loadData.R')
+ #do this as little as needed. at least once, before the chunks below!
 ```
 To do one page with (a)ctive, (r)ecovered, (d)eaths, 
 (f)acet per PSCR, using (i)mputed recoveries, (a)rea graphs, 
@@ -75,7 +77,7 @@ not saving to disk but showing on screen:
 graphOnRegion(lpdf=JHH, myRegion = JHHRegios$`JHH World1`, myGraph='graph3Dard_fia', saveit = FALSE) 
 ``` 
 or equivalently 
-``` {r}
+``` {r }
 graph3Dard_fia(JHH, countries = JHHRegios$ `JHH World2`)
 ```
 see other graphs you can make with:
@@ -86,7 +88,10 @@ graphCodes() # shows the naming system
 In order to make and save all current graphs to disk: 
 edit the save paths below to what you need, 
 then run the lines in output.Rmd or Graphs.R that you need. E.g.: 
-```{r message = FALSE}
+```{r save graphs, eval=FALSE, message=FALSE, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+if (!exists('graphit')) source('definitions.R')
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date)< Sys.Date()-1) source('loadData.R')
 
