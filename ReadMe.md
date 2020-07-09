@@ -84,10 +84,20 @@ myGraphList #will give you all graphs defined
 graphCodes() # shows the naming system
 ```
 In order to make and save all current graphs to disk: 
-edit the save paths at the start of 'definitions.R' to what you need, 
-then run the lines in Graphs.R that you need. E.g.: 
+edit the save paths below to what you need, 
+then run the lines in output.Rmd or Graphs.R that you need. E.g.: 
 ```{r message = FALSE}
-#source('Loaddata.R') #if you ran this chunck or the chunck above no need to redo this line
+if (!exists('JHH')) source('loadData.R') else 
+  if (max(JHH$Date)< Sys.Date()-1) source('loadData.R')
+
+switch(get_os(), 
+       windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
+       linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
+       osx     = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"},
+       ...     = {print('not recognized OS');myPlotPath <- "~/Covid19_plots"})
+
+if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
+
 walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG') 
 walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
 ```
