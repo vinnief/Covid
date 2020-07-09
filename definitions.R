@@ -1610,11 +1610,9 @@ makeHistoryGraphs <- function(lpdf, regions, graphlist = myGraphNrs,
         fromDates = min(lpdf$Date)
         toDates  = max(lpdf$Date)
     } else {fromDates <- as.character(rep(min(lpdf$Date), length(toDates)))} 
-    }} else {if (missing(toDates)) {
-      toDates <- as.character(as.Date(
-                  fromDates[2:length(fromDates)]) - 1)
-      fromDates <- fromDates[1:(length(fromDates) -1)]
-      #rep(max(lpdf$Date, length(fromDates)))  
+    } else {if (missing(toDates)) {
+      toDates <- as.character(as.Date(fromDates[2:length(fromDates)]) - 1)
+      fromDates <- fromDates[1:(length(fromDates) - 1)]
     }}
   walk2(fromDates, toDates, function(from, to){
     if (verbose >= 1) {
