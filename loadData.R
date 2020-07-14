@@ -38,11 +38,11 @@ ECDC  <- ECDC0 %>% correctMissingLastDay() %>%
 reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
 
 tim = Sys.time()
-ECDC <- ECDC %>%  
-  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #, maxDate = Sys.Date() - 1
+#ECDC <- ECDC %>%  
+  #addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #, maxDate = Sys.Date() - 1
   # Because of missing Spain data, growth in Europe on last day is negative. hence sim does not work
 #ECDC <- ECDC %>% addSimVars(minVal = 100)  #gives errors. cayman islands follows conveyance_Japan
-reportDiffTime('adding the simulated values in ECDC:',tim,'secs')
+#reportDiffTime('adding the simulated values in ECDC:',tim,'secs')
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC World')
 #writeWithCounters(ECDC,name = "Covid19ECDC")
 

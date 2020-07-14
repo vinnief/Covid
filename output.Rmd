@@ -11,29 +11,38 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Resulting graphs and cleaned and prepared data can be found at 
 https://drive.google.com/drive/folders/1Yo0IW4awCIvWMP6jYVKpn3kLgEolse0e?usp=sharing
-#for publication 
-```{r cleanup load latest graph definitions and data, echo=FALSE}
+for publication 
+```{r Init & load latest graph definitions and data, echo=FALSE}
 rm(list = setdiff(ls(), c('ECDC0', 'JHH0', 'JHH', 'ECDC', 'JHHRegios', 'ECDCRegios','testing')))
-source('definitions.R')
 options(warn = 0)
 if (!exists('JHH')) source('loadData.R') else 
-  if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  
+  if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  else source('definitions.R')
+
 ```
 Graph active_imputed, recovered, deaths, and confirmed for some selected territories, 
 based on JHH data:
 ```{r demo graph}
 graphit(JHH, regios$Vincent, xvar = 'Date', 
         yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
-        facet = "PSCR", logy = TRUE)
+        facet = "PSCR", logy = TRUE,from = "2020-06-01")
 ```
-Show table outputs: 
 ```{r}
+graphit_r(JHH, regios$Vincent, xvar = 'Date', 
+        yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
+        logy = TRUE,from = "2020-01-01")
+```
+
+Show table outputs: 
+```{r latest numbers with most growth}
 #show some data table output
-#latest numbers
-JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
+
+#JHH[JHH$Date == max(JHH$Date),'Date'][1,1]
 JHH %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
   select(PSCR,confirmed, active_imputed, deaths, new_confirmed, new_active_rate, active_imputed_growthRate, 
          active_imputed_p_M) %>% arrange(new_active_rate) %>% tail(10)
+```
+and Countries we' re interested in latest numbers: 
+```{r }
 JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
       c('EU','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
         'Germany','France','Africa','Iran','Russia','Brazil'),
@@ -43,57 +52,64 @@ JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in%
 
 ```
 Who overtakes us based the JHH data set on latest day data? 
-```{r} 
+```{r overtaking 1, eval=FALSE, include=FALSE}
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 1))
 ```
 And on 7 day averages in JHH? 
-```{r}
+```{r overtaking week based}
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 7))
 ```
 
 And according to ECDC? 
-```{r}
+```{r overtaking based on ECDC}
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 7))
 ```
 Who is more affected? 
-```{r}
+```{r graph it}
 graph3Dard_fia(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'))
 ```
 Who do we overtake?
-```{r}
+```{r we overtake}
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'Ithem',lastDays = 7))
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 7))
 ```
-Some other countries now: 
-```{r}
+Lets see who is going to overtake the UK, France, or GErmany soon: 
+```{r UK France Germany}
 graph3Dard_fia(JHH, c('Germany','France','United Kingdom'))
 map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "theyme", lastDays = 7))
 map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem", lastDays = 7))
-
 ```
-For the New York state, Indonesia, Peru, India: 
-```{r}
-graph3Dard_fia(JHH, c('New York,US','Indonesia','Peru','India'))
-map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
-map_dfc(c('New York,US','Indonesia','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
+Not overtaking anyone does not mean the epidemic is under control. It just means your epidemic is alsready larger than all states that grow slower. It also means you have better control than more severely touched territories. 
+For New York state, Indonesia, Peru, India: 
+```{r NY Id In Pe}
+graph3Dard_fia(JHH, c('New York,US','California,US','Florida,US','Texas,US','Peru','India'))
+map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
+map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
 ```
 See how the most affected regions in the world are developing: (pop the graph out to a new window and enlarge to see more detail)
-```{r}
+```{r most affected graph}
 graph6Dardcra_finyl(JHH, JHHRegios$`JHH World1`)
 ```
+```{r deaths and recovered by confirmed}
+graph2crd_il(JHH,JHHRegios$`JHH Europe3`)
+```
 If you want to write the data to disk, make sure to define the correct datapath so that R can write to it. By default it is a subfolder of the scripts folder. Note that the data will also be written to a subfolder of the plots folder. 
-``` {r}
+``` {r save the data}
 dataPath <- './data'
 if (!dir.exists(dataPath)) dir.create(dataPath, recursive = TRUE)
 writeWithCounters(ECDC,name = "Covid19ECDC")
 writeWithCounters(JHH,name = "Covid19JHH") 
 ```
-check what graphs are defined 
+The motor in all this is the graphit function. It is quite powerful but hass a lot of parameters. Several functions preset some parameters, Below a lost of Graphs defined. 
+```{r show the system}
+setdiff(myGraphList, c(myGraphListbyDate, myGraphListbyDay, myGraphNrs))
+c( myGraphListbyDate, myGraphListbyDay, myGraphNrs)
+```
+There is a system in the naming: 
 ```{r}
 graphCodes()
-myGraphListbyDate
-myGraphListbyDay
-myGraphNrs
-myGraphList
+```
+```{python eval=FALSE, include=FALSE}
+2^100
 ```
 
