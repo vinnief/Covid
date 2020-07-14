@@ -10,7 +10,8 @@ Please make sure myPlotPath is correct!
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 if (!exists('graphit')) source('definitions.R')
-if (!exists('JHH')) source('loadData.R')
+if (!exists('JHH')) source('loadData.R') else 
+  if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  
 switch(get_os(), 
        windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
        linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
@@ -27,32 +28,30 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 ```{r , echo = FALSE} 
 
 tim = Sys.time()
-#curGraph(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, ordre = 'GR')
 walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
 reportDiffTime('ECDC graphs',tim, units = 'mins')
 
 tim = Sys.time()
-#curGraph( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, ordre = 'RG')
 walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
 reportDiffTime('JHH graphs',tim,units = 'mins')
 ``` 
 
 Development one month at a time
-```{r}
+```{r eval=FALSE, include=FALSE}
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-01-01", to = '2020-01-31', myFolderDate = 'January', ordre = 'RG')
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-04-01", to = '2020-04-30', myFolderDate = 'April', ordre = 'RG')
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June', ordre = 'RG')
 ```
 
 do all months up to today
-```{r}
+```{r eval=FALSE, include=FALSE}
 verbose = 1
 makeHistoryGraphs(JHH, regions = JHHRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
 makeHistoryGraphs(ECDC, regions = ECDCRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 
 ```
 A more convoluted way: 
-```{r}
+```{r eval=FALSE, include=FALSE}
 startDate = "2020-01-01"
 fromDates <- as.character(seq(as.Date(startDate), length = 12, by = "1 month"))
 toDates <- as.character(seq(as.Date(fromDates[2]), length = 12, by = "1 month") - 1)
@@ -66,13 +65,14 @@ makeHistoryGraphs(JHH,JHHRegios, graphlist = myGraphNrs,
 ```
 This do once in a while, to do all the non-numbererd graphs. 
 
-```{r}
+```{r byDate once a week}
 if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday")  
-  walkThrough(ECDC, ECDCRegios, graphlist = myGraphListbyDate, myFoldetDate = 'weekly')
+  walkThrough(JHH, JHHRegios[1:10], graphlist = myGraphListbyDate,
+              myFolderDate = 'weekly')
 ```
 
 Simulate how the non-social distancing situation would have turned out: deaths, recovered, and confirmed   
-```{r}
+```{r sims , eval=FALSE, include=FALSE}
 graphDddp_fyl(JHH,regios$Vincent,savename  = "deaths missed") 
 walkThrough(JHH, regions = JHHRegios,graphlist = 'graphDccprr_fyl')
 

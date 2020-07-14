@@ -48,3 +48,4 @@ mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
   .data[condition, ] <- .data[condition, ] %>% mutate(...)
   .data
 }
+
