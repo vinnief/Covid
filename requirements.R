@@ -35,9 +35,11 @@ getpackages <- function(x){
     }
   }
 }
-#getpackages (c('rvest'))
-getpackages (c('rvest',"plyr", "reshape2", "tidyverse",'profvis',"ggplot2","RColorBrewer","ggthemes","scales","directlabels", "ggrepel")) #"plm",
-#require(tidyverse) #,
+
+getpackages(c('rvest',"plyr", "scales", "reshape2", "tidyverse",'profvis',
+              "RColorBrewer","ggthemes", "directlabels", "ggrepel")) 
+  #"plm",#"scales","ggplot2",
+
 # note ggrepel also does labels next to lines. 
 
 #if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
@@ -48,3 +50,4 @@ mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
   .data[condition, ] <- .data[condition, ] %>% mutate(...)
   .data
 }
+
