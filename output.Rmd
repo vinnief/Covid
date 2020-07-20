@@ -27,7 +27,7 @@ graphit(JHH, regios$Vincent, xvar = 'Date',
         facet = "PSCR", logy = TRUE,from = "2020-06-01")
 ```
 ```{r}
-graphit_r(JHH, regios$Vincent, xvar = 'Date', 
+graphit(JHH, regios$Vincent, xvar = 'Date', 
         yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
         logy = TRUE,from = "2020-01-01")
 ```

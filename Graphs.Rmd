@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date) < Sys.Date() - 1) {source('loadData.R')  
-   } else if (!exists('graphit')) source('definitions.R')
+   } else source('definitions.R')
 switch(get_os(), 
        windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
        linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
@@ -29,11 +29,11 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 ```{r , echo = FALSE} 
 
 tim = Sys.time()
-walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
 reportDiffTime('ECDC graphs',tim, units = 'mins')
 
 tim = Sys.time()
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
 reportDiffTime('JHH graphs',tim,units = 'mins')
 ``` 
 
