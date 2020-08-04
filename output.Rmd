@@ -19,17 +19,20 @@ if (!exists('JHH')) source('loadData.R') else
   if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  else source('definitions.R')
 
 ```
+```{r save Rdata}
+save.image(".RData") #D:/gits/Covid19/
+```
 Graph active_imputed, recovered, deaths, and confirmed for some selected territories, 
 based on JHH data:
 ```{r demo graph}
 graphit(JHH, regios$Vincent, xvar = 'Date', 
-        yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
+        yvars = c('net_active_imputed','new_recovered','new_deaths','new_confirmed'),
         facet = "PSCR", logy = TRUE,from = "2020-06-01")
 ```
 ```{r}
-graphit(JHH, regios$Vincent, xvar = 'Date', 
-        yvars = c('active_imputed','recovered_imputed', 'deaths','confirmed'),
-        logy = TRUE,from = "2020-01-01")
+
+graphit_r(JHH, regios$Vincent, xvar = 'day', logx =  TRUE , logy = TRUE, from = "2020-07-01",
+          yvars = c('new_confirmed_p_M'), labmeth = 'label_repel')
 ```
 
 Show table outputs: 
@@ -41,32 +44,36 @@ JHH %>% filter(Date == max(Date)) %>% filter(!is.nan(new_active_rate)) %>%
   select(PSCR,confirmed, active_imputed, deaths, new_confirmed, new_active_rate, active_imputed_growthRate, 
          active_imputed_p_M) %>% arrange(new_active_rate) %>% tail(10)
 ```
-and Countries we' re interested in latest numbers: 
+and Countries we're interested in latest numbers: 
 ```{r }
 JHH[JHH$Date == max(JHH$Date) & JHH$PSCR %in% 
-      c('EU','World','New York,US',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
-        'Germany','France','Africa','Iran','Russia','Brazil'),
-    c('PSCR','confirmed','active_imputed','deaths','new_confirmed',
-      'new_active_rate', 'active_imputed_growthRate','active_imputed_p_M') ]  %>%
+      c('EU','World',"Kazakhstan",'Belgium','Spain','US','Netherlands','Europe',
+        'Germany','France','Africa','Russia','Brazil'),
+    c('PSCR','active_imputed','active_imputed_p_M','new_deaths','new_confirmed',
+      'new_active_rate', 'active_imputed_growthRate','confirmed') ]  %>%
   arrange(new_active_rate)
 
 ```
 Who overtakes us based the JHH data set on latest day data? 
 ```{r overtaking 1, eval=FALSE, include=FALSE}
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 1))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),
+        function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 1))
 ```
 And on 7 day averages in JHH? 
 ```{r overtaking week based}
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 7))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),
+        function(x) overtakeDays_df(JHH,x,who = 'theyme',lastDays = 7))
 ```
 
 And according to ECDC? 
 ```{r overtaking based on ECDC}
-map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 7))
+map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'), 
+        function(x) overtakeDays_df(ECDC,x,who = 'theyme',lastDays = 7))
 ```
 Who is more affected? 
 ```{r graph it}
 graph3Dard_fia(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'))
+graph3Dard_fina(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'))
 ```
 Who do we overtake?
 ```{r we overtake}
@@ -76,15 +83,18 @@ map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDay
 Lets see who is going to overtake the UK, France, or GErmany soon: 
 ```{r UK France Germany}
 graph3Dard_fia(JHH, c('Germany','France','United Kingdom'))
+graph3Dard_fina(JHH, c('Germany','France','United Kingdom'))
 map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "theyme", lastDays = 7))
 map_dfc(c('Germany','France','United Kingdom'), function(x) overtakeDays_df(JHH,x,who = "Ithem", lastDays = 7))
 ```
 Not overtaking anyone does not mean the epidemic is under control. It just means your epidemic is alsready larger than all states that grow slower. It also means you have better control than more severely touched territories. 
 For New York state, Indonesia, Peru, India: 
 ```{r NY Id In Pe}
-graph3Dard_fia(JHH, c('New York,US','California,US','Florida,US','Texas,US','Peru','India'))
-map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
-map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru','India'),function(x) overtakeDays_df(JHH,x,who = 'theyme'))
+graph3Dard_fina(JHH, c('New York,US','California,US','Florida,US','Texas,US','Peru',"Arizona,US"))
+map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru',"Arizona,US"),
+        function(x) overtakeDays_df(JHH,x,who = 'Ithem'))
+map_dfc(c('New York,US','California,US','Florida,US','Texas,US','Peru',"Arizona,US"),
+        function(x) overtakeDays_df(JHH,x,who = 'theyme'))
 ```
 See how the most affected regions in the world are developing: (pop the graph out to a new window and enlarge to see more detail)
 ```{r most affected graph}
@@ -92,6 +102,10 @@ graph6Dardcra_finyl(JHH, JHHRegios$`JHH World1`)
 ```
 ```{r deaths and recovered by confirmed}
 graph2crd_il(JHH,JHHRegios$`JHH Europe3`)
+graph2crd_il(JHH,JHHRegios$`JHH Europe2`)
+graph1dnar_iyl(JHH, JHHRegios$`JHH Europe2`)
+ graphit(JHH, JHHRegios$`JHH Europe2`, minVal=1, xvar = 'day', 
+          yvars = c('new_active_rate'), logy = TRUE, intercept = stableRate) 
 ```
 If you want to write the data to disk, make sure to define the correct datapath so that R can write to it. By default it is a subfolder of the scripts folder. Note that the data will also be written to a subfolder of the plots folder. 
 ``` {r save the data}

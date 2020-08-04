@@ -36,8 +36,8 @@ getpackages <- function(x){
   }
 }
 
-getpackages(c('rvest',"plyr", "scales", "reshape2", "tidyverse",'profvis',
-              "RColorBrewer","ggthemes", "directlabels", "ggrepel")) 
+getpackages(c('rvest',"plyr","lubridate", "scales", "reshape2", "tidyverse",'profvis',
+              "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall")) 
   #"plm",#"scales","ggplot2",
 
 # note ggrepel also does labels next to lines. 
@@ -50,4 +50,7 @@ mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
   .data[condition, ] <- .data[condition, ] %>% mutate(...)
   .data
 }
-
+#install.packages("JuliaCall")
+library(JuliaCall)
+julia <- julia_setup(JULIA_HOME = "C:/Users/feltkamp/AppData/Local/Programs/Julia/Julia-1.4.2/bin")
+#julia <- julia_setup(JULIA_HOME = "C:/JuliaPro-1.3.1-2/Julia-1.3.1/bin")
