@@ -4,6 +4,7 @@ LAGRC <- 42
 LAGRD <- 36
 LAGDC <- LAGRC - LAGRD
 deathRate = .05
+stableRate = 1/LAGRC
 if (!exists("verbose")) verbose <- 1
 myDateFormat <- "%Y-%m-%d"
 dataPath = './data'
@@ -1018,7 +1019,7 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
 
 graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
                     yvars  = c("active", "recovered", "deaths", "confirmed"), 
-                    fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, yline  = FALSE, slope = FALSE,
+                    fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE,
                     myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, 
                     returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, 
                     sorted  = TRUE, from = '2019-12-01', to  = Sys.Date()){
@@ -1098,15 +1099,15 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
         geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
                 method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", 
                                cex  = 1.2)) 
-    if ( yline | slope ) myplot <- myplot + geom_abline( intercept  = yline, slope = slope, na.rm  = TRUE) 
+    if ( intercept | slope ) myplot <- myplot + geom_abline( intercept  = 1*intercept, slope = 1*slope, na.rm  = TRUE) #bug here or somewhere: the line is at 1.? instead of at 0.24
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
-    if (nrgroups <= 6){
+    if (nrgroups <= 6) {
       myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
                                                "lawngreen", "tomato"), #darkorange
                                     guide = ifelse(putlegend, "legend", FALSE))
-    }else if (nrgroups<13) {
-      palette = ifelse (nrgroups <8, "Dark2", "Paired") #Spectral Set2 
+    }else if (nrgroups < 13) {
+      palette = ifelse(nrgroups < 8, "Dark2", "Paired") #Spectral Set2 
       myscale_color <- scale_color_brewer(palette = palette)
     } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
     myplot <- myplot + myscale_color 
@@ -1114,7 +1115,6 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   
   if (!isFALSE(facet)) {
     myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
-  if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"))
   myplot <- myplot + ylab(y_lab) +
     xlab(paste(xvar, ifelse(logx, "(log scale)", ""))) + 
     ggtitle(mytitle) + theme_light() +   
@@ -1123,7 +1123,9 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   breaks <- breaks_log(n = 5, base = 10) #rep(c( 1, 5), 21)*10^rep((-10:10), each = 2)
   minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
   if ( logy  !=  FALSE) myplot <- myplot + scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks, labels = label_number_si()) + annotation_logticks() 
-  if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
+  if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m")) else 
+    if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, 
+                                                    minor_breaks  = minor_breaks)
   myplot <- myplot + theme(
     axis.text  = element_text(color  = "blue", angle  = 45, 
                               hjust  = 1, vjust  = 0.5, size  = rel(.8)),   
@@ -1159,12 +1161,12 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
 #geom_point(shape = "\u2620", size  = 4) #skulls
 #+scale_color_manual(values = c('#999999', '#E69F00', '#56B4E9'))
  
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
+graphit_r <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date", 
                     yvars  = c("active", "recovered", "deaths", "confirmed"), 
-                    fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, yline  = FALSE, slope = FALSE,
+                    fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE,
                     myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, 
                     returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, 
-                    sorted  = TRUE, from = '2019-12-01', to  = Sys.Date()){
+                    sorted  = TRUE, labmeth = 'dl_polygon', from = '2019-12-01', to  = Sys.Date()){
   
   lpdf <- as.data.frame(lpti[lpti$Date >=  from & lpti$Date <=  to & lpti$confirmed >=  minVal, ])
   lastdate <- max(lpdf$Date)
@@ -1177,7 +1179,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   ID <- returnID
   if (verbose >= 7) {print(countries)}
   lpdf <- lpdf[lpdf[[ID]] %in% countries,] #PSCR
-  if (verbose >= 9) {print('graphit countrydata' );print(head(lpdf))}
+  if (verbose >= 9) {print('graphi countrydata' );print(head(lpdf))}
   y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
   if (str_length(y_lab) > 80) 
     y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
@@ -1185,18 +1187,18 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   mytitle <- savename % % y_lab % % "by" % % xvar % %  "for" % % minVal %#% "+"  % %  "confirmed"
   myFilename <- "C19" % % mytitle
   
-  if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  4) {print('graphit'  % %  mytitle  % % " No data")} ) }
+  if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  4) {print('graphi'  % %  mytitle  % % " No data")} ) }
   mytitle <- "C19" % % format(min(lpdf$Date), format  = "%Y-%m-%d")  % % '-' % %  
     format(lastdate, format  = "%Y-%m-%d")  % %  mytitle
   
   lpdf <- dataprep(lpdf, ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
                    logx  = logx, logy  = logy, sorted  = sorted)
-  if (verbose >= 5) {print('graphit columns left');print( names(lpdf))}
+  if (verbose >= 5) {print('graphi columns left');print( names(lpdf))}
   if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
-    return(if (verbose >= 4) print('graphit'  % %  paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more territories?")))
+    return(if (verbose >= 4) print('graphi'  % %  paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more territories?")))
   
-  lpdf <- lpdf  %>%  
-    melt(lpdf , id = c(ID, xvar), measure.vars = yvars, 
+  lpdf <- lpdf  %>%  #gather(variable, count, -!!ID, -!!xvar)
+    melt( id = c(ID, xvar), measure.vars = yvars, 
          variable.name = "variable", value.name = "count") %>% 
     mutate( mygroup = PSCR %, % variable, #!!ID? you would get zigzags if ID <> PSCR and you havent totalled. 
             variable = factor(variable, levels  = yvars)) %>% drop_na()
@@ -1238,22 +1240,38 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
       geom_line(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) +
       geom_point(size = size, aes_string(  shape = 'variable')) +
       if (!putlegend | facet  == FALSE) 
-        #geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
-        #        method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", 
-         #                      cex  = 1.2)) 
-        geom_label_repel(data = lpdf %>% group_by(PSCR, count) %>% filter(xvar == max(xvar)), 
-                         aes(label = mygroup), 
-                         label.size = 0.1, box.padding = 0.1, 
-                         label.padding = 0.2, size=3 )
-    if ( yline | slope ) myplot <- myplot + geom_abline( intercept  = yline, slope = slope, na.rm  = TRUE) 
+        switch(labmeth,
+              'none' = {},
+        'dl_polygon' = geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+          method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.polygons", cex  = 1.2)),
+        'dl_bumpup' = geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+          method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.bumpup", cex  = 1.2)),
+        'label_repel' = geom_label_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
+                              aes(label = mygroup), 
+                         label.size = 0.1, box.padding = 0.1, label.padding = 0.2, size = 3),
+        'text_repel' = geom_text_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
+                              aes(label = mygroup), box.padding = 0.1, size = 3)#,
+        #default = geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+         #    method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.polygons", cex  = 1.2))  
+        )
+    xexpand <- switch(labmeth,
+           'none' = 0,
+           'dl_polygon' = 0.25,
+           'dl_bumpup' = 0.25,
+           'label_repel' = 0.10,
+           'text_repel' = 0.10,
+           default = 0  
+    )
+   
+    if ( intercept | slope ) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE) 
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
-    if (nrgroups <= 6){
+    if (nrgroups <= 6) {
       myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black", "orange", 
                                                      "lawngreen", "tomato"), #darkorange
                                           guide = ifelse(putlegend, "legend", FALSE))
-    }else if (nrgroups<13) {
-      palette = ifelse (nrgroups <8, "Dark2", "Paired") #Spectral Set2 
+    }else if (nrgroups < 13) {
+      palette = ifelse(nrgroups < 8, "Dark2", "Paired") #Spectral Set2 
       myscale_color <- scale_color_brewer(palette = palette)
     } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
     myplot <- myplot + myscale_color 
@@ -1261,7 +1279,6 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   
   if (!isFALSE(facet)) {
     myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
-  if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"))
   myplot <- myplot + ylab(y_lab) +
     xlab(paste(xvar, ifelse(logx, "(log scale)", ""))) + 
     ggtitle(mytitle) + theme_light() +   
@@ -1270,7 +1287,15 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   breaks <- breaks_log(n = 5, base = 10) #rep(c( 1, 5), 21)*10^rep((-10:10), each = 2)
   minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
   if ( logy  !=  FALSE) myplot <- myplot + scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks, labels = label_number_si()) + annotation_logticks() 
-  if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks)
+  if (xvar  == "Date") myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"), 
+                                                       expand = c(xexpand, 0)) else
+    if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks, expand = c(xexpand, 0))
+  #scale_x_continuous(expand = c(0.15, 0)) +
+  ## Code to turn off clipping
+  #gt1 <- ggplotGrob(myplot)  
+  #gt1$layout$clip[gt1$layout$name == "panel"] <- "off"
+  #grid.draw(gt1)
+  #or with : coord_cartesian(clip="off")
   myplot <- myplot + theme(
     axis.text  = element_text(color  = "blue", angle  = 45, 
                               hjust  = 1, vjust  = 0.5, size  = rel(.8)),   
@@ -1301,6 +1326,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   }
   invisible(lpdf)
 }
+
 graphCodes <- function(){ 
  print('naming system:')
  print(list(nrvars = 1:6, 
@@ -1388,18 +1414,18 @@ graphDg_fyl <- function(lpdf = JHH, countries, logy  = TRUE, ...){
 graphDggnar_fiyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
  graphit(lpdf, countries, xvar = 'Date', 
          yvars = c('active_imputed_growthRate', 'confirmed_growthRate', "new_active_rate"), 
-         logy = logy, yline  = 0.025, facet = 'PSCR', ...)
+         logy = logy, intercept  = stableRate, facet = 'PSCR', ...)
 }
 
 graph1dnar_iyl <- function(lpdf  = JHH, countries, minVal = 10, logy = TRUE, ...){
   graphit(lpdf, c(countries), minVal, xvar = 'day', 
-          yvars = c('new_active_rate'), logy = logy, yline = 0.025, ...) 
+          yvars = c('new_active_rate'), logy = logy, intercept = stableRate, ...) 
 }
 
 graph2Dgnar_fiyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
  graphit(lpdf, countries, xvar = 'Date', 
          yvars = c("new_active_rate", 'active_imputed_growthRate'), 
-         logy = logy,  yline = 0.025, facet = 'PSCR', ...)
+         logy = logy,  intercept = stableRate, facet = 'PSCR', ...)
 }
 
 graph2crd_il <- function(lpdf = JHH, countries, ...){

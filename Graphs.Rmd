@@ -7,12 +7,13 @@ output: html_document
 Run loadData.R or output.Rmd first to load the latest Data and the definitions. 
 Please make sure myPlotPath is correct!
 
-```{r, include=FALSE}
+```{r init, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date) < Sys.Date() - 1) {source('loadData.R')  
    } else source('definitions.R')
+save.image(".RData") #D:/gits/Covid19/
 switch(get_os(), 
        windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
        linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
@@ -26,7 +27,7 @@ if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recu
 Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
 
 
-```{r , echo = FALSE} 
+```{r graphs walkthrough , echo = FALSE} 
 
 tim = Sys.time()
 walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
@@ -38,22 +39,23 @@ reportDiffTime('JHH graphs',tim,units = 'mins')
 ``` 
 
 Development one month at a time
-```{r eval=FALSE, include=FALSE}
-walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-01-01", to = '2020-01-31', myFolderDate = 'January', ordre = 'RG')
-walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-04-01", to = '2020-04-30', myFolderDate = 'April', ordre = 'RG')
-walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June', ordre = 'RG')
+```{r one month , eval=FALSE, include=FALSE}
+#walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-01-01", to = '2020-01-31', myFolderDate = 'January', ordre = 'RG')
+#walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-04-01", to = '2020-04-30', myFolderDate = 'April', ordre = 'RG')
+#walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-06-01", to = '2020-06-30', myFolderDate = 'June', ordre = 'RG')
+if ( mday(Sys.Date() ) <= 03) #uses lubridate
 walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, from = "2020-07-01", to = '2020-07-31', myFolderDate = 'July', ordre = 'RG')
 ```
 
 do all months up to today
-```{r eval=FALSE, include=FALSE}
+```{r all months, eval=FALSE, include=FALSE}
 verbose = 1
 makeHistoryGraphs(JHH, regions = JHHRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
 makeHistoryGraphs(ECDC, regions = ECDCRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 
 ```
 A more convoluted way: 
-```{r eval=FALSE, include=FALSE}
+```{r all months convoluted, eval=FALSE, include=FALSE}
 startDate = "2020-01-01"
 fromDates <- as.character(seq(as.Date(startDate), length = 12, by = "1 month"))
 toDates <- as.character(seq(as.Date(fromDates[2]), length = 12, by = "1 month") - 1)

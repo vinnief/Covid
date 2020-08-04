@@ -18,10 +18,10 @@ JHH <- JHH %>%  addDoublingDaysPerCountry(variable = 'confirmed') %>%
   addDoublingDaysPerCountry(variable = 'active_imputed') 
 reportDiffTime('adding the doubling days (twice) in JHH:',ti,'mins')
 
-ti = Sys.time()
-JHH <- JHH %>% addSimVars(minVal = 100) #%>% 
-JHH <- JHH %>%  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
-reportDiffTime('adding the simulated values in JHH:',ti,'mins')
+#ti = Sys.time()
+#JHH <- addSimVars(JHH, minVal = 100) %>% 
+#  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
+#reportDiffTime('adding the simulated values in JHH:',ti,'mins')
 JHHRegios <- makeRegioList(JHH)
 #writeWithCounters(JHH,name = "Covid19JHH") 
 
