@@ -123,6 +123,11 @@ There is a system in the naming:
 ```{r}
 graphCodes()
 ```
+```{r setup Python}
+
+Sys.which("python")
+use_python("path/to/python")
+```
 ```{python eval=FALSE, include=FALSE}
 2^100
 ```
