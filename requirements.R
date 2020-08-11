@@ -36,11 +36,10 @@ getpackages <- function(x){
   }
 }
 
-getpackages(c('rvest',"plyr","lubridate", "scales", "reshape2", "tidyverse",'profvis',
-              "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall")) 
+getpackages(c("lubridate",'rvest',"plyr","lubridate", "scales", "reshape2", "tidyverse",'profvis',
+              "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall", "reticulate")) 
   #"plm",#"scales","ggplot2",
 
-# note ggrepel also does labels next to lines. 
 
 #if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
 #for other formats of saving of plots 
