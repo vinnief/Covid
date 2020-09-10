@@ -12,8 +12,13 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+WIP branch: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip)
+ 
+ The notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=output.ipynb)
 
-## R Markdown__Covid19 Trendlines__
+ The RMD: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=output.Rmd)
+ 
+# __Covid19 Trendlines__ using R
 
 The presentation of the Covid19 situation in the news often consists of just three numbers for your own country: total confirmed, new confirmed, and deaths, 
 or a world map with bubbles, the size of which symbolizes the number of confirmed. 
@@ -29,7 +34,7 @@ The data is also in this repo.
 This is a descriptive analysis of the timeline and area graphs in R. 
 An attempt at simulating what would have happened in Excel is available, and I initially tried to do this with Julia, but had trouble getting plotting to work. It would be interesting to see how much faster Julia can do these things. 
 
-_Approach_: 
+##_Approach_: 
 the JHH panel data is in csv format, row=country, column= date,
 and we melt it into a long version, with on column per count vatiable, and PSCR + Date as row indices. The ECDC data is already in this form. 
 
@@ -38,14 +43,16 @@ The PSCR key is constructed out of pasting Province.State and Country.Region tog
 Data for the US, China, Australia and Canada is available at the JHHCC github per PS. I summed them up to get country data, then added Continent totals. 
 
 
-_Imputations_: A conservative estimate of recovery within 42 days was used, whereever recoveries were missing. 
+##_Imputations_: A conservative estimate of recovery within 42 days was used, whereever recoveries were missing. 
 This includes Canada states data, US States Data, Syria, Mozambique in the JHH dataset, and all of the 
 ECDC country data. The severity situation in a country depends on the actual active sick people, as 
 only those are contagious, and only a fraction (+/-10%?) of those will need treatment, or die (+/-5%?). 
 
-Note that the lag of 42 days was not warranted by this data: most countries report the majority of recoveries within 15-22 days. However, we want a very conservative (upper) estimate of active patients, and want to be sure to only consided those non-contagious people who had the disease as "recovered_imputed"
+##Lags
+The lag of 42 days was not warranted by this data: most countries report the majority of recoveries within 15-22 days. However, we want a very conservative (upper) estimate of active patients, and want to be sure to only consided those non-contagious people who had the disease as "recovered_imputed"
 
-Note also that counting processes in different countries vary wildly: comparing excess 
+##Counting
+Counting processes in different countries vary wildly: comparing excess 
 deaths with Covid deaths over the spring of 2020 yields e.g. that 
 
 Covid deaths are 53% of excess deaths in the Netherlands (undercounting!), 
@@ -58,7 +65,7 @@ https://www.economist.com/graphic-detail/2020/04/16/tracking-covid-19-excess-dea
 https://medium.economist.com/measuring-the-true-toll-of-the-pandemic-fa7e003b3ff4
 https://github.com/TheEconomist/covid-19-excess-deaths-tracker
 It follows that comparing between countries is not very trustable. 
-
+##definitions
 To load the definitions and see what graphs are defined, use 
 ```{r define}
 source('definitions.R')
@@ -86,7 +93,7 @@ graphCodes() # shows the naming system
 In order to make and save all current graphs to disk: 
 edit the save paths below to what you need, 
 then run the lines in output.Rmd or Graphs.R that you need. E.g.: 
-```{r message = FALSE}
+```{r message = FALSE, eval = FALSE}
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date)< Sys.Date()-1) source('loadData.R')
 
