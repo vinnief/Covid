@@ -1,4 +1,7 @@
 #Unittests #
+#
+#check horizontal intercept height. 
+graph1dnar_iyl(JHH, "Belgium")
 #check testing ISOcodes and PSCR
 setdiff(unique(testing$PSCR), unique(ECDC$PSCR))
 setdiff(unique(ECDC$PSCR), unique(testing$PSCR))

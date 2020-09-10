@@ -9,7 +9,7 @@ output: html_document
 Run loadData.R or output.Rmd first to load the latest Data and the definitions. 
 Please make sure myPlotPath is correct!
 
-```{r init, include=FALSE}
+```R name="init" tags=["remove_cell"]
 #knitrr::opts_chunk$set(echo = TRUE)
 
 if (!exists('JHH')) source('loadData.R') else 
@@ -31,7 +31,7 @@ writeWithCounters(JHH,name = "Covid19JHH")
 Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
 
 
-```{r graphs walkthrough, echo=FALSE}
+```R name="graphs walkthrough" tags=["remove_input"]
 print("results of" % % Sys.Date())
 verbose = 0
 tim = Sys.time()
@@ -45,7 +45,7 @@ reportDiffTime('JHH graphs',tim,units = 'mins')
 ```
 
 Development one month at a time
-```{r one month, include=FALSE, eval=FALSE}
+```R name="one month" tags=["remove_cell"] eval=false
 if ( mday(Sys.Date() ) <= 03) {#uses lubridate
   walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, 
               from = floor_date(Sys.Date() %m-% months(1), 'month'), 
@@ -56,14 +56,14 @@ if ( mday(Sys.Date() ) <= 03) {#uses lubridate
 ```
 
 Do all months up to today
-```{r all months, include=FALSE, eval=FALSE}
+```R name="all months" tags=["remove_cell"] eval=false
 verbose = 1
 makeHistoryGraphs(JHH, regions = JHHRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
 makeHistoryGraphs(ECDC, regions = ECDCRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 
 ```
 A more convoluted way, just for the record: 
-```{r all months convoluted, include=FALSE, eval=FALSE}
+```R name="all months convoluted" tags=["remove_cell"] eval=false
 startDate = "2020-01-01"
 fromDates <- as.character(seq(as.Date(startDate), length = 12, by = "1 month"))
 toDates <- as.character(seq(as.Date(fromDates[2]), length = 12, by = "1 month") - 1)
@@ -77,14 +77,14 @@ makeHistoryGraphs(JHH,JHHRegios, graphlist = myGraphNrs,
 ```
 This do once in a while, to do all the non-numbererd graphs. 
 
-```{r byDate once a week}
+```R name="byDate once a week"
 if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday")  
   walkThrough(JHH, JHHRegios[1:10], graphlist = myGraphListbyDate,
               myFolderDate = 'weekly')
 ```
 
 Simulate how the non-social distancing situation would have turned out: deaths, recovered, and confirmed   
-```{r sims, include=FALSE, eval=FALSE}
+```R name="sims" tags=["remove_cell"] eval=false
 graphDddp_fyl(JHH,regios$Vincent,savename  = "deaths missed") 
 walkThrough(JHH, regions = JHHRegios,graphlist = 'graphDccprr_fyl')
 
