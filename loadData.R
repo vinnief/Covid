@@ -37,7 +37,7 @@ ECDC  <- ECDC0 %>% correctMissingLastDay() %>%
   addDoublingDaysPerCountry(variable = 'confirmed') 
 reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
 
-tim = Sys.time()
+#tim = Sys.time()
 #ECDC <- ECDC %>%  
   #addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #, maxDate = Sys.Date() - 1
   # Because of missing Spain data, growth in Europe on last day is negative. hence sim does not work
