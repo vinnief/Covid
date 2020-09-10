@@ -1,0 +1,51 @@
+#####Making GIFS
+Animate .gif images in R / ImageMagick
+November 21, 2010
+By markheckmann
+
+
+Yesterday I surfed the web looking for 3D wireframe examples to explain linear models in class. I stumbled across this site where animated 3D wireframe plots are outputted by SAS.  Below I did something similar in R. This post shows the few steps of how to create an animated .gif file using R and ImageMagick. Here I assume that you have ImageMagick installed on your computer. As far as I know it is also possible to produce animated .gif files using R only, e.g. with write.gif() from the caTools package. But using ImageMagick is straighforward, gives you control over the conversion and .gif production and is the free standard program for conversion.
+
+First a simple countdown example. To be sure not to overwrite anything I will create a new folder and set the working directory to the new folder.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ example 1: simple animated countdown from 10 to "GO!".
+```{r}
+dir.create("examples")
+setwd("examples")
+png(filename = "example%02d.png", width = 200, height = 200)
+for (i in c(10:1, "G0!")) {
+plot.new()
+text(.5, .5, i, cex = 6)
+}
+dev.off()
+```
+ convert the .png files to one .gif file using ImageMagick. 
+ The system() function executes the command as if it was done
+ in the terminal. The -delay flag sets the time between showing
+ the frames, i.e. the speed of the animation.
+```{r}
+system("convert -delay 80 *.png example_1.gif")
+``` 
+this works only if you have image magick. 
+```{r echo=TRUE}
+myGraph <- 'graph3Dard_fia'
+myBy = '1 day'
+makeHistoryGraph(JHH, regios$Vincent, graph = myGraph, 
+            toDates = seq.Date(as.Date('2020-01-22'), Sys.Date(), by = myBy),
+            myFolderType = myBy)
+system("convert -delay 80 " % % myPlotPath %//% graph %//% '1' %//%"*.png "
+       % % graph %#%".gif")
+```
+you can also use a package: 
+```{r} 
+devtools::install_github("dgrtwo/gganimate")# and install image_magick. 
+# see http://www.ggtern.com/2017/07/23/version-2-2-1-released/
+# add  frame = Date  to aes of ggplot, then
+# gganimate(myplot, "filename.gif" )  # or mp4, html, swf. 
+# p3 <- ggplot(gapminder, aes(gdpPercap, lifeExp, frame = year)) +
+#geom_path(aes(cumulative = TRUE, group = country)) +
+#  scale_x_log10() +
+#  facet_wrap(~continent)
+```

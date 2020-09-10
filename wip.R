@@ -3,9 +3,51 @@ source('definitions.R')
 
 #traceback() # to trace the nested calls leading to an error. 
 #suppressWarnings() to suppresswarnings of the functioninside. does not stop the warning: "geom_path: Each group consists of only one observation. Do you need to adjust the group aesthetic?"
+
 options(warn = 2)
 verbose <- 7
 verbose <-  1
+
+#alternative version which does not work. because of metaprogramming issues with arrange. 
+sortIDlevels1 <- function(lpdf, varname = confirmed, ondate = ""){
+  varname <- enquo(varname)
+  if (ondate  == "") {ondate = max(lpdf$Date) } else 
+    if (nrow(lpdf[lpdf$Date  ==  ondate, ]  == 0)) {
+      stop("Cannot sort on values of a date which is not present in the Data")}
+  PSCRlevels <- lpdf  %>%  select(c(PSCR, Date, !!varname))  %>%  
+    filter(Date  == ondate)  %>%  
+    arrange(-eval(parse(text = substitute(!!varname))), PSCR, .by_group  = FALSE) 
+  arrange(desc({{varname}}), PSCR, .by_group  = FALSE) 
+  #arrange(-(!!varname), PSCR, .by_group  = FALSE) 
+  lpdf <- lpdf %>% ungroup %>%  mutate(PSCR = factor(lpdf$PSCR, levels = PSCRlevels$PSCR)) %>% 
+    group_by(PSCR)
+  lpdf$PSCR
+} #the desc eval parse substitute !! should have been desc !! according to the manuals. but desc does not respect unquo. 
+
+
+#from graphit: 
+#
+switch(labmeth,
+       'none' = {},
+       'dl_polygon' = {myplot = myplot + geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+                 method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.polygons", cex  = 1.2))
+       xexpand = 0.25} ,
+       'dl_bumpup' = {myplot = myplot + geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+                method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.bumpup", cex  = 1.2))
+       xexpand = 0.25} ,
+       'label_repel' = {myplot = myplot + geom_label_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
+       aes(label = mygroup), label.size = 0.1, box.padding = 0.1, label.padding = 0.2, size = 3)
+       xexpand = 0.35} ,
+       'text_repel' = {myplot = myplot + geom_text_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
+        aes(label = mygroup), box.padding = 0.1, size = 3)
+       xexpand = 0.4} ,
+       {myplot = myplot + 
+         geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),   #default
+                method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", cex  = 1.2)) 
+         xexpand = 0.35} 
+)
+
+
 
 
 #check addSimVars
@@ -60,13 +102,6 @@ names(testing)
 #}   } }
 
 
-devtools::install_github("dgrtwo/gganimate")# and install image_magick. 
-# see http://www.ggtern.com/2017/07/23/version-2-2-1-released/
-# add  frame = Date  to aes of ggplot, then
-# gganimate(myplot, "filename.gif" )  # or mp4, html, swf. 
-# p3 <- ggplot(gapminder, aes(gdpPercap, lifeExp, frame = year)) +
-#geom_path(aes(cumulative = TRUE, group = country)) +
-#  scale_x_log10() +
-#  facet_wrap(~continent)
+
 #12 ggplot extensions: ggcorplot, 
 #https://mode.com/blog/r-ggplot-extension-packages
