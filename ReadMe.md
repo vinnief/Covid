@@ -12,8 +12,13 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+WIP branch: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip)
+ 
+ The notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=output.ipynb)
 
-# R Markdown__Covid19 Trendlines__
+ The RMD: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=output.Rmd)
+ 
+# __Covid19 Trendlines__ using R
 
 The presentation of the Covid19 situation in the news often consists of just three numbers for your own country: total confirmed, new confirmed, and deaths, 
 or a world map with bubbles, the size of which symbolizes the number of confirmed. 
