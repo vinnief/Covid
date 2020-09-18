@@ -46,14 +46,16 @@ getPackages <- function(x){
     }
   })
 }
-suppressPackageStartupMessages({
+options(tidyverse.quiet = TRUE)
+#suppressPackageStartupMessages({
 getPackages(c("lubridate",'rvest',"plyr","lubridate", "scales", "reshape2", "tidyverse",'profvis',
               "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall", "reticulate")) 
   #"plm",#"scales","ggplot2",
-})
+#})
+options(dplyr.summarise.inform = FALSE)
 
-#if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
-#for other formats of saving of plots 
+# if (!require(devEMF)){ install.packages('devEMF')  require(devEMF)}
+# for other formats of saving of plots 
 
 mutate_cond <- function(.data, condition, ..., envir  = parent.frame()) {
   condition <- eval(substitute(condition), .data, envir)

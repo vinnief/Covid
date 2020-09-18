@@ -1,28 +1,22 @@
 ---
 title: "Graphs"
 author: "VF"
-date: "9 July 2020"
+date: "March-Sept 2020"
 output: html_document
 ---
 ##Graphs
 
-Run loadData.R or output.Rmd first to load the latest Data and the definitions. 
+If needed, run loadData.R first to load the latest Data and the definitions. 
 Please make sure myPlotPath is correct!
 
 ```{r init, include=FALSE}
-#knitrr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
 
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date) < Sys.Date() - 1) {source('loadData.R')  
    } else source('definitions.R')
 save.image(".RData") #D:/gits/Covid19/
-#switch(get_os(), 
-#       windows = {print("I run MS Windows.");
-#                  myPlotPath <- "G:/My Drive/Covid19_plots"},
-#       linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
-#       osx     = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"},
-#       ...     = {print('not recognized OS');myPlotPath <- "~/Covid19_plots"})
-
+tibble( maxECDCdate = max(ECDC$Date), maxJHHdate = max(JHH$Date))
 if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
 writeWithCounters(ECDC,name = "Covid19ECDC")
 writeWithCounters(JHH,name = "Covid19JHH") 
@@ -33,6 +27,7 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 
 ```{r graphs walkthrough, echo=FALSE}
 print("results of" % % Sys.Date())
+if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
 verbose = 0
 tim = Sys.time()
 walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
@@ -101,4 +96,4 @@ When you click the **Knit** button a document will be generated that includes bo
 
 Note that the `{r, echo = FALSE}` parameter can be added to the code chunk to prevent printing of the R code that generated the plot. And Include = false prevents automatic execution of the block.
 
-Second, note that for git, the ipynb files containing output are much heavier than the Rmd files which contain the inputs only, according to Jupytext faq (https://jupytext.readthedocs.io/en/latest/faq.html). I commit both just to be sure at this moment. 
+Second, note that for git, the ipynb files containing output are much heavier than the Rmd files which contain the inputs only, according to Jupytext faq (https://jupytext.readthedocs.io/en/latest/faq.html). I commit both just to be sure at this moment, for Binder. However, i clear output of most graph making cells. Here this file in [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=graphs.ipynb)

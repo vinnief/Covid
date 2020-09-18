@@ -329,7 +329,7 @@ readLocalData <- function(nameUS = "JHH_US.csv", namenonUS = "JHH_non_US.csv"){
 
 #lpdf = JHH
 
-sortIDlevels <- function(lpdf, varname  = "confirmed", ID  = "PSCR", ondate){
+sortIDlevels <- function(lpdf, varname  = "active_imputed", ID  = "PSCR", ondate){
  if (missing(ondate)) { 
   theDateData <- lpdf[, c(varname, ID, 'Date')]  %>%  group_by(PSCR)  %>%  
    filter(Date  ==  max(Date))  %>%  ungroup
@@ -348,9 +348,9 @@ sortIDlevels <- function(lpdf, varname  = "confirmed", ID  = "PSCR", ondate){
 }
 
 
-sortbyvar <- function(lpti, varname = 'confirmed', ID = 'PSCR', ondate = ""){
+sortbyvar <- function(lpti, varname = 'active_imputed', ID = 'PSCR', ondate = ""){
 lpti[[ID]] <- lpti %>%  sortIDlevels(varname = varname, ID = ID, ondate = ondate) 
-lpti <- lpti[order(lpti[[ID]], lpti[[varname]]), ] #bUG? WHY SORT AGAIN BY same var? 
+lpti <- lpti[order(lpti[[ID]], lpti[[varname]]), ]  
 }
 
 makeJHH <- function(name = "JHH", force = FALSE) {
@@ -491,8 +491,8 @@ addRegions <- function(lpdf = JHH, varname = "Region", Regiolist = "") {
 makeDynRegions <- function(lpti = JHH, gridsize = 5*6, piecename = 'World', ratio = 5) {
  lpti <- lpti %>%  group_by(PSCR)  %>%  
   filter( Date  == max(Date)) %>%  ungroup  %>% 
-  select( PSCR, confirmed) %>%  
-  arrange(desc(confirmed)) 
+  select( PSCR, confirmed, active_imputed) %>%  
+  arrange(desc(active_imputed)) 
  nr = 1
  mylist = vector(mode  = "list", length  = 0)
  while (nrow(lpti)>gridsize) {
@@ -1350,9 +1350,14 @@ graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...) {
 
 walkThrough <- function(lpdf = JHH, regions, graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl'), 
                         saveit = TRUE, ordre = 'RG', ...){
+  print(length(regions) % % "regions and" % % length(graphlist) % % "graphs")
+  print("at 10 seconds per graph/region, this would last" % % (length(regions)* length(graphlist)/6) % % "minutes") 
+  #[1] "results of 2020-09-18"
+  #[1] "ECDC graphs 15.83 mins"
+  #[1] "JHH graphs 32.1 mins"
   if (typeof(regions)  == "character") { regions = list(regions) }
   if (ordre == 'RG') {
-      walk(graphlist, function(myGraph){
+    walk(graphlist, function(myGraph){
       if (verbose >= 4) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myGraph)}
       walk(regions, function(myRegion)
           graphOnRegion(lpdf = lpdf, myRegion, myGraph, saveit = saveit, ...) )
@@ -1371,10 +1376,6 @@ makeDate <- function(chardate = "", format  = myDateFormat){
  tryCatch(as.Date(chardate, format = format), 
       error = function(e){print(paste("Either enter a date or a string (please use the following Date format for the string:", myDateFormat ))})
 }
-
-#curGraph <- function(myFolderDate  = 'current', ...){
-#  walkThrough( myFolderDate  = myFolderDate , ...)
-#}
 
 makeHistoryGraphs <- function(lpdf, regions, graphlist = myGraphNrs, 
                               fromDates, toDates, ...) {

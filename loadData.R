@@ -1,7 +1,7 @@
 #Loads latest data, first JHH then ECDC then testing
 
 source("definitions.R")# make sure we have our definitions. 
-
+print("loading the data from the web and transforming into useful data format. Please wait a few minutes. ")
 ti <-  Sys.time()
 JHH <- makeJHH(force = TRUE) 
 reportDiffTime('loading and melting JHH:',ti,'secs')
@@ -22,6 +22,7 @@ reportDiffTime('adding the doubling days (twice) in JHH:',ti,'mins')
 #JHH <- addSimVars(JHH, minVal = 100) %>% 
 #  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
 #reportDiffTime('adding the simulated values in JHH:',ti,'mins')
+
 JHHRegios <- makeRegioList(JHH)
 #writeWithCounters(JHH,name = "Covid19JHH") 
 
@@ -43,6 +44,7 @@ reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',
   # Because of missing Spain data, growth in Europe on last day is negative. hence sim does not work
 #ECDC <- ECDC %>% addSimVars(minVal = 100)  #gives errors. cayman islands follows conveyance_Japan
 #reportDiffTime('adding the simulated values in ECDC:',tim,'secs')
+
 ECDCRegios <- makeDynRegions( ECDC, piecename = 'ECDC World')
 #writeWithCounters(ECDC,name = "Covid19ECDC")
 

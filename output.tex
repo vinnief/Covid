@@ -370,194 +370,36 @@
     
 
     
-    
+    \hypertarget{daily-and-monthly-output}{%
+\section{Daily and Monthly Output}\label{daily-and-monthly-output}}
+
+author: ``Vincent Feltkamp''
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{1}{\boxspacing}
+\prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{}knitr::opts\PYZus{}chunk\PYZdl{}set(echo = TRUE)}
-\PY{n+nf}{R.Version}\PY{p}{(}\PY{p}{)}
+\PY{n}{knitr}\PY{p}{:}\PY{p}{:}\PY{n}{opts\PYZus{}chunk}\PY{err}{\PYZdl{}}\PY{n+nb}{set}\PY{p}{(}\PY{n}{echo} \PY{o}{=} \PY{n}{TRUE}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
-    \begin{description}
-\item[\$platform] 'x86\_64-w64-mingw32'
-\item[\$arch] 'x86\_64'
-\item[\$os] 'mingw32'
-\item[\$system] 'x86\_64, mingw32'
-\item[\$status] ''
-\item[\$major] '4'
-\item[\$minor] '0.2'
-\item[\$year] '2020'
-\item[\$month] '06'
-\item[\$day] '22'
-\item[\$`svn rev`] '78730'
-\item[\$language] 'R'
-\item[\$version.string] 'R version 4.0.2 (2020-06-22)'
-\item[\$nickname] 'Taking Off Again'
-\end{description}
-
-
-    
     Resulting graphs and cleaned and prepared data can be found at
 https://drive.google.com/drive/folders/1Yo0IW4awCIvWMP6jYVKpn3kLgEolse0e?usp=sharing
 for publication
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{3}{\boxspacing}
+\prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{rm}\PY{p}{(}\PY{n}{list} \PY{o}{=} \PY{n+nf}{setdiff}\PY{p}{(}\PY{n+nf}{ls}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{ECDC0\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{JHH0\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{JHH\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{ECDC\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{JHHRegios\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{ECDCRegios\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{testing\PYZsq{}}\PY{p}{)}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{options}\PY{p}{(}\PY{n}{warn} \PY{o}{=} \PY{l+m}{0}\PY{p}{)}
-\PY{n+nf}{if }\PY{p}{(}\PY{o}{!}\PY{n+nf}{exists}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{JHH\PYZsq{}}\PY{p}{)}\PY{p}{)} \PY{n+nf}{source}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{loadData.R\PYZsq{}}\PY{p}{)} \PY{n}{else} 
-  \PY{n+nf}{if }\PY{p}{(}\PY{n+nf}{max}\PY{p}{(}\PY{n}{JHH}\PY{o}{\PYZdl{}}\PY{n}{Date}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n+nf}{Sys.Date}\PY{p}{(}\PY{p}{)} \PY{o}{\PYZhy{}} \PY{l+m}{1}\PY{p}{)} \PY{n+nf}{source}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{loadData.R\PYZsq{}}\PY{p}{)}  \PY{n}{else} \PY{n+nf}{source}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{definitions.R\PYZsq{}}\PY{p}{)}
+\PY{n}{rm}\PY{p}{(}\PY{n+nb}{list} \PY{o}{=} \PY{n}{setdiff}\PY{p}{(}\PY{n}{ls}\PY{p}{(}\PY{p}{)}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ECDC0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{JHH0}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{JHH}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ECDC}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{JHHRegios}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ECDCRegios}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{testing}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+\PY{n}{options}\PY{p}{(}\PY{n}{warn} \PY{o}{=} \PY{l+m+mi}{0}\PY{p}{)}
+\PY{k}{if} \PY{p}{(}\PY{o}{!}exists\PY{o}{(}\PY{l+s+s1}{\PYZsq{}JHH\PYZsq{}}\PY{o}{)}\PY{o}{)} source\PY{o}{(}\PY{l+s+s1}{\PYZsq{}loadData.R\PYZsq{}}\PY{o}{)} \PY{k}{else} 
+  \PY{k}{if} \PY{p}{(}\PY{n+nb}{max}\PY{p}{(}\PY{n}{JHH}\PY{err}{\PYZdl{}}\PY{n}{Date}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{Sys}\PY{o}{.}\PY{n}{Date}\PY{p}{(}\PY{p}{)} \PY{o}{\PYZhy{}} \PY{l+m+mi}{1}\PY{p}{)} \PY{n}{source}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{loadData.R}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}  \PY{k}{else} \PY{n}{source}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{definitions.R}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
-    \begin{Verbatim}[commandchars=\\\{\}]
-Error: package or namespace load failed for 'tidyverse' in loadNamespace(i,
-c(lib.loc, .libPaths()), versionCheck = vI[[i]]):
- namespace 'rlang' 0.4.5 is already loaded, but >= 0.4.6 is required
-
-Installing package into 'D:/documents/R/win-library/4.0'
-(as 'lib' is unspecified)
-
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-package 'tidyverse' successfully unpacked and MD5 sums checked
-
-The downloaded binary packages are in
-        C:\textbackslash{}Users\textbackslash{}feltkamp\textbackslash{}AppData\textbackslash{}Local\textbackslash{}Temp\textbackslash{}RtmpIZ8FLS\textbackslash{}downloaded\_packages
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-Error: package or namespace load failed for 'tidyverse' in loadNamespace(i,
-c(lib.loc, .libPaths()), versionCheck = vI[[i]]):
- namespace 'rlang' 0.4.5 is already loaded, but >= 0.4.6 is required
-
-Error: package or namespace load failed for 'JuliaCall' in loadNamespace(j <-
-i[[1L]], c(lib.loc, .libPaths()), versionCheck = vI[[j]]):
- namespace 'xfun' 0.12 is being loaded, but >= 0.15 is required
-
-Installing package into 'D:/documents/R/win-library/4.0'
-(as 'lib' is unspecified)
-
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-package 'JuliaCall' successfully unpacked and MD5 sums checked
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-Warning message:
-"cannot remove prior installation of package 'JuliaCall'"
-Warning message in file.copy(savedcopy, lib, recursive = TRUE):
-"problem copying D:\textbackslash{}documents\textbackslash{}R\textbackslash{}win-
-library\textbackslash{}4.0\textbackslash{}00LOCK\textbackslash{}JuliaCall\textbackslash{}libs\textbackslash{}x64\textbackslash{}JuliaCall.dll to D:\textbackslash{}documents\textbackslash{}R\textbackslash{}win-
-library\textbackslash{}4.0\textbackslash{}JuliaCall\textbackslash{}libs\textbackslash{}x64\textbackslash{}JuliaCall.dll: Permission denied"
-Warning message:
-"restored 'JuliaCall'"
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-
-The downloaded binary packages are in
-        C:\textbackslash{}Users\textbackslash{}feltkamp\textbackslash{}AppData\textbackslash{}Local\textbackslash{}Temp\textbackslash{}RtmpIZ8FLS\textbackslash{}downloaded\_packages
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-Error: package or namespace load failed for 'JuliaCall' in loadNamespace(j <-
-i[[1L]], c(lib.loc, .libPaths()), versionCheck = vI[[j]]):
- namespace 'xfun' 0.12 is being loaded, but >= 0.15 is required
-
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-
-        Error: package or namespace load failed for 'JuliaCall' in loadNamespace(j <- i[[1L]], c(lib.loc, .libPaths()), versionCheck = vI[[j]]):
-     namespace 'xfun' 0.12 is being loaded, but >= 0.15 is required
-    Traceback:
-    
-
-        1. source("definitions.R")
-
-        2. withVisible(eval(ei, envir))
-
-        3. eval(ei, envir)
-
-        4. eval(ei, envir)
-
-        5. source("requirements.R")
-
-        6. withVisible(eval(ei, envir))
-
-        7. eval(ei, envir)
-
-        8. eval(ei, envir)
-
-        9. library(JuliaCall)
-
-        10. tryCatch(\{
-      .     attr(package, "LibPath") <- which.lib.loc
-      .     ns <- loadNamespace(package, lib.loc)
-      .     env <- attachNamespace(ns, pos = pos, deps, exclude, include.only)
-      . \}, error = function(e) \{
-      .     P <- if (!is.null(cc <- conditionCall(e))) 
-      .         paste(" in", deparse(cc)[1L])
-      .     else ""
-      .     msg <- gettextf("package or namespace load failed for \%s\%s:\textbackslash{}n \%s", 
-      .         sQuote(package), P, conditionMessage(e))
-      .     if (logical.return) 
-      .         message(paste("Error:", msg), domain = NA)
-      .     else stop(msg, call. = FALSE, domain = NA)
-      . \})
-
-        11. tryCatchList(expr, classes, parentenv, handlers)
-
-        12. tryCatchOne(expr, names, parentenv, handlers[[1L]])
-
-        13. value[[3L]](cond)
-
-        14. stop(msg, call. = FALSE, domain = NA)
-
-    \end{Verbatim}
-
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{5}{\boxspacing}
+\prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{update.packages}\PY{p}{(}\PY{p}{)}
-\end{Verbatim}
-\end{tcolorbox}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-Warning message:
-"package 'nlme' in library 'C:/Program Files/R/R-4.0.2/library' will not be
-updated"
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-Update? (Yes/no/cancel)  no
-Update? (Yes/no/cancel)  no
-Update? (Yes/no/cancel)  cancel
-    \end{Verbatim}
-
-    \begin{Verbatim}[commandchars=\\\{\}]
-backports :
- Version 1.1.5 installed in D:/documents/R/win-library/4.0
- Version 1.1.9 available at https://cran.r-project.org
-dplyr :
- Version 0.8.5 installed in D:/documents/R/win-library/4.0
- Version 1.0.2 available at https://cran.r-project.org
-fs :
- Version 1.3.2 installed in D:/documents/R/win-library/4.0
- Version 1.5.0 available at https://cran.r-project.org
-cancelled by user
-    \end{Verbatim}
-
-    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{3}{\boxspacing}
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{save.image}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{.RData\PYZdq{}}\PY{p}{)} \PY{c+c1}{\PYZsh{}D:/gits/Covid19/}
+\PY{n}{save}\PY{o}{.}\PY{n}{image}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{.RData}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)} \PY{c+c1}{\PYZsh{}D:/gits/Covid19/}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -567,24 +409,24 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{o}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{Date\PYZsq{}}\PY{p}{,} 
-        \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{net\PYZus{}active\PYZus{}imputed\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}recovered\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}deaths\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZsq{}}\PY{p}{)}\PY{p}{,}
-        \PY{n}{facet} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{PSCR\PYZdq{}}\PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,}\PY{n}{from} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{2020\PYZhy{}06\PYZhy{}01\PYZdq{}}\PY{p}{)}
+\PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{err}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Date}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} 
+        \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{net\PYZus{}active\PYZus{}imputed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}recovered}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}deaths}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{n}{facet} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{PSCR}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,}\PY{k+kn}{from} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{2020\PYZhy{}06\PYZhy{}01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{source}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{graphit.R\PYZdq{}}\PY{p}{)}
-\PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{o}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{day\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{k+kc}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,} \PY{n}{from} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{2020\PYZhy{}07\PYZhy{}01\PYZdq{}}\PY{p}{,}
-          \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{repel\PYZus{}label\PYZsq{}}\PY{p}{,} \PY{n}{putlegend} \PY{o}{=} \PY{k+kc}{FALSE}\PY{p}{)}
-\PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{o}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{day\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{k+kc}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,} \PY{n}{from} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{2020\PYZhy{}07\PYZhy{}01\PYZdq{}}\PY{p}{,}
-          \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{repel\PYZus{}text\PYZsq{}}\PY{p}{)}
-\PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{o}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{day\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{k+kc}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,} \PY{n}{from} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{2020\PYZhy{}07\PYZhy{}01\PYZdq{}}\PY{p}{,}
-          \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{dl\PYZus{}polygon\PYZsq{}}\PY{p}{)}
-\PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{o}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{day\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{k+kc}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,} \PY{n}{from} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{2020\PYZhy{}07\PYZhy{}01\PYZdq{}}\PY{p}{,}
-          \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{dl\PYZus{}bumpup\PYZsq{}}\PY{p}{,} \PY{n}{putlegend} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{)}
+\PY{n}{source}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{graphit.R}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{err}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{n}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,} \PY{k+kn}{from} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{2020\PYZhy{}07\PYZhy{}01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+          \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{repel\PYZus{}label}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{putlegend} \PY{o}{=} \PY{n}{FALSE}\PY{p}{)}
+\PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{err}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{n}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,} \PY{k+kn}{from} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{2020\PYZhy{}07\PYZhy{}01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+          \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{repel\PYZus{}text}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{err}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{n}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,} \PY{k+kn}{from} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{2020\PYZhy{}07\PYZhy{}01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+          \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dl\PYZus{}polygon}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{regios}\PY{err}{\PYZdl{}}\PY{n}{Vincent}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{logx} \PY{o}{=}  \PY{n}{TRUE} \PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,} \PY{k+kn}{from} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{2020\PYZhy{}07\PYZhy{}01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}
+          \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed\PYZus{}p\PYZus{}M}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{labmeth} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{dl\PYZus{}bumpup}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{putlegend} \PY{o}{=} \PY{n}{TRUE}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -596,9 +438,9 @@ selected territories, based on JHH data:
 \PY{c+c1}{\PYZsh{}show some data table output}
 
 \PY{c+c1}{\PYZsh{}JHH[JHH\PYZdl{}Date == max(JHH\PYZdl{}Date),\PYZsq{}Date\PYZsq{}][1,1]}
-\PY{n}{JHH} \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}} \PY{n+nf}{filter}\PY{p}{(}\PY{n}{Date} \PY{o}{==} \PY{n+nf}{max}\PY{p}{(}\PY{n}{Date}\PY{p}{)}\PY{p}{)} \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}} \PY{n+nf}{filter}\PY{p}{(}\PY{o}{!}\PY{n+nf}{is.nan}\PY{p}{(}\PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{)}\PY{p}{)} \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}}
-  \PY{n+nf}{select}\PY{p}{(}\PY{n}{PSCR}\PY{p}{,}\PY{n}{confirmed}\PY{p}{,} \PY{n}{active\PYZus{}imputed}\PY{p}{,} \PY{n}{deaths}\PY{p}{,} \PY{n}{new\PYZus{}confirmed}\PY{p}{,} \PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{,} \PY{n}{active\PYZus{}imputed\PYZus{}growthRate}\PY{p}{,} 
-         \PY{n}{active\PYZus{}imputed\PYZus{}p\PYZus{}M}\PY{p}{)} \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}} \PY{n+nf}{arrange}\PY{p}{(}\PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{)} \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}} \PY{n+nf}{tail}\PY{p}{(}\PY{l+m}{10}\PY{p}{)}
+\PY{n}{JHH} \PY{o}{\PYZpc{}}\PY{o}{\PYZgt{}}\PY{o}{\PYZpc{}} \PY{n+nb}{filter}\PY{p}{(}\PY{n}{Date} \PY{o}{==} \PY{n+nb}{max}\PY{p}{(}\PY{n}{Date}\PY{p}{)}\PY{p}{)} \PY{o}{\PYZpc{}}\PY{o}{\PYZgt{}}\PY{o}{\PYZpc{}} \PY{n+nb}{filter}\PY{p}{(}\PY{o}{!}is.nan\PY{o}{(}new\PYZus{}active\PYZus{}rate\PY{o}{)}\PY{o}{)} \PYZpc{}\PYZgt{}\PYZpc{}
+  \PY{n}{select}\PY{p}{(}\PY{n}{PSCR}\PY{p}{,}\PY{n}{confirmed}\PY{p}{,} \PY{n}{active\PYZus{}imputed}\PY{p}{,} \PY{n}{deaths}\PY{p}{,} \PY{n}{new\PYZus{}confirmed}\PY{p}{,} \PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{,} \PY{n}{active\PYZus{}imputed\PYZus{}growthRate}\PY{p}{,} 
+         \PY{n}{active\PYZus{}imputed\PYZus{}p\PYZus{}M}\PY{p}{)} \PY{o}{\PYZpc{}}\PY{o}{\PYZgt{}}\PY{o}{\PYZpc{}} \PY{n}{arrange}\PY{p}{(}\PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{)} \PY{o}{\PYZpc{}}\PY{o}{\PYZgt{}}\PY{o}{\PYZpc{}} \PY{n}{tail}\PY{p}{(}\PY{l+m+mi}{10}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -607,12 +449,12 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{JHH}\PY{p}{[}\PY{n}{JHH}\PY{o}{\PYZdl{}}\PY{n}{Date} \PY{o}{==} \PY{n+nf}{max}\PY{p}{(}\PY{n}{JHH}\PY{o}{\PYZdl{}}\PY{n}{Date}\PY{p}{)} \PY{o}{\PYZam{}} \PY{n}{JHH}\PY{o}{\PYZdl{}}\PY{n}{PSCR} \PY{o}{\PYZpc{}in\PYZpc{}} 
-      \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{EU\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{World\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZdq{}}\PY{l+s}{Kazakhstan\PYZdq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Spain\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Europe\PYZsq{}}\PY{p}{,}
-        \PY{l+s}{\PYZsq{}}\PY{l+s}{Germany\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{France\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Africa\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Russia\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Brazil\PYZsq{}}\PY{p}{)}\PY{p}{,}
-    \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{PSCR\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{active\PYZus{}imputed\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{active\PYZus{}imputed\PYZus{}p\PYZus{}M\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}deaths\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}confirmed\PYZsq{}}\PY{p}{,}
-      \PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}active\PYZus{}rate\PYZsq{}}\PY{p}{,} \PY{l+s}{\PYZsq{}}\PY{l+s}{active\PYZus{}imputed\PYZus{}growthRate\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{confirmed\PYZsq{}}\PY{p}{)} \PY{p}{]}  \PY{o}{\PYZpc{}\PYZgt{}\PYZpc{}}
-  \PY{n+nf}{arrange}\PY{p}{(}\PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{)}
+\PY{n}{JHH}\PY{p}{[}\PY{n}{JHH}\PY{err}{\PYZdl{}}\PY{n}{Date} \PY{o}{==} \PY{n+nb}{max}\PY{p}{(}\PY{n}{JHH}\PY{err}{\PYZdl{}}\PY{n}{Date}\PY{p}{)} \PY{o}{\PYZam{}} \PY{n}{JHH}\PY{err}{\PYZdl{}}\PY{n}{PSCR} \PY{o}{\PYZpc{}}\PY{k}{in}\PYZpc{} 
+      \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{EU}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{World}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Kazakhstan}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Spain}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Europe}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+        \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Germany}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{France}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Africa}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Russia}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Brazil}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+    \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{PSCR}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}imputed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}imputed\PYZus{}p\PYZus{}M}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}deaths}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}confirmed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+      \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}active\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{active\PYZus{}imputed\PYZus{}growthRate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{confirmed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} \PY{p}{]}  \PY{o}{\PYZpc{}}\PY{o}{\PYZgt{}}\PY{o}{\PYZpc{}}
+  \PY{n}{arrange}\PY{p}{(}\PY{n}{new\PYZus{}active\PYZus{}rate}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -621,8 +463,8 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{,}
-        \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{theyme\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m}{1}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{theyme}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -631,8 +473,8 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{,}
-        \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{theyme\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}
+        \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{theyme}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -641,8 +483,8 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{,} 
-        \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{theyme\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} 
+        \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{theyme}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -651,8 +493,8 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graph3Dard\PYZus{}fia}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{graph3Dard\PYZus{}fia}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -661,8 +503,8 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{,}\PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{Ithem\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Kazakhstan\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Belgium\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Netherlands\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Sweden\PYZsq{}}\PY{p}{)}\PY{p}{,}\PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{Ithem\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}\PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Ithem}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Kazakhstan}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Belgium}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Netherlands}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Sweden}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,}\PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{ECDC}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Ithem}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -671,10 +513,10 @@ selected territories, based on JHH data:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graph3Dard\PYZus{}fia}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Germany\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{France\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{United Kingdom\PYZsq{}}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Germany\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{France\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{United Kingdom\PYZsq{}}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Germany\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{France\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{United Kingdom\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{theyme\PYZdq{}}\PY{p}{,} \PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{Germany\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{France\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{United Kingdom\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZdq{}}\PY{l+s}{Ithem\PYZdq{}}\PY{p}{,} \PY{n}{lastDays} \PY{o}{=} \PY{l+m}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{graph3Dard\PYZus{}fia}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Germany}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{France}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{United Kingdom}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Germany}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{France}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{United Kingdom}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Germany}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{France}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{United Kingdom}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{theyme}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Germany}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{France}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{United Kingdom}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Ithem}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{lastDays} \PY{o}{=} \PY{l+m+mi}{7}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -686,11 +528,11 @@ territories. For New York state, Indonesia, Peru, India:
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{New York,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{California,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Florida,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Texas,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Peru\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZdq{}}\PY{l+s}{Arizona,US\PYZdq{}}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{New York,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{California,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Florida,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Texas,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Peru\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZdq{}}\PY{l+s}{Arizona,US\PYZdq{}}\PY{p}{)}\PY{p}{,}
-        \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{Ithem\PYZsq{}}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{map\PYZus{}dfc}\PY{p}{(}\PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{New York,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{California,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Florida,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Texas,US\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZsq{}}\PY{l+s}{Peru\PYZsq{}}\PY{p}{,}\PY{l+s}{\PYZdq{}}\PY{l+s}{Arizona,US\PYZdq{}}\PY{p}{)}\PY{p}{,}
-        \PY{n+nf}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n+nf}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{theyme\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{graph3Dard\PYZus{}fina}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{New York,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{California,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Florida,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Texas,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Peru}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Arizona,US}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{New York,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{California,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Florida,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Texas,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Peru}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Arizona,US}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Ithem}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
+\PY{n}{map\PYZus{}dfc}\PY{p}{(}\PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{New York,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{California,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Florida,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Texas,US}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Peru}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Arizona,US}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{,}
+        \PY{n}{function}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{n}{overtakeDays\PYZus{}df}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{x}\PY{p}{,}\PY{n}{who} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{theyme}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -700,18 +542,18 @@ graph out to a new window and enlarge to see more detail)
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graph6Dardcra\PYZus{}finyl}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{o}{\PYZdl{}}\PY{n}{`JHH World1`}\PY{p}{)}
+\PY{n}{graph6Dardcra\PYZus{}finyl}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{err}{\PYZdl{}}\PY{err}{`}\PY{n}{JHH} \PY{n}{World1}\PY{err}{`}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graph2crd\PYZus{}il}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{JHHRegios}\PY{o}{\PYZdl{}}\PY{n}{`JHH Europe3`}\PY{p}{)}
-\PY{n+nf}{graph2crd\PYZus{}il}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{JHHRegios}\PY{o}{\PYZdl{}}\PY{n}{`JHH Europe2`}\PY{p}{)}
-\PY{n+nf}{graph1dnar\PYZus{}iyl}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{o}{\PYZdl{}}\PY{n}{`JHH Europe2`}\PY{p}{)}
- \PY{n+nf}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{o}{\PYZdl{}}\PY{n}{`JHH Europe2`}\PY{p}{,} \PY{n}{minVal}\PY{o}{=}\PY{l+m}{1}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s}{\PYZsq{}}\PY{l+s}{day\PYZsq{}}\PY{p}{,} 
-          \PY{n}{yvars} \PY{o}{=} \PY{n+nf}{c}\PY{p}{(}\PY{l+s}{\PYZsq{}}\PY{l+s}{new\PYZus{}active\PYZus{}rate\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{k+kc}{TRUE}\PY{p}{,} \PY{n}{intercept} \PY{o}{=} \PY{n}{stableRate}\PY{p}{)}
+\PY{n}{graph2crd\PYZus{}il}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{JHHRegios}\PY{err}{\PYZdl{}}\PY{err}{`}\PY{n}{JHH} \PY{n}{Europe3}\PY{err}{`}\PY{p}{)}
+\PY{n}{graph2crd\PYZus{}il}\PY{p}{(}\PY{n}{JHH}\PY{p}{,}\PY{n}{JHHRegios}\PY{err}{\PYZdl{}}\PY{err}{`}\PY{n}{JHH} \PY{n}{Europe2}\PY{err}{`}\PY{p}{)}
+\PY{n}{graph1dnar\PYZus{}iyl}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{err}{\PYZdl{}}\PY{err}{`}\PY{n}{JHH} \PY{n}{Europe2}\PY{err}{`}\PY{p}{)}
+ \PY{n}{graphit}\PY{p}{(}\PY{n}{JHH}\PY{p}{,} \PY{n}{JHHRegios}\PY{err}{\PYZdl{}}\PY{err}{`}\PY{n}{JHH} \PY{n}{Europe2}\PY{err}{`}\PY{p}{,} \PY{n}{minVal}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{,} \PY{n}{xvar} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{day}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} 
+          \PY{n}{yvars} \PY{o}{=} \PY{n}{c}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{new\PYZus{}active\PYZus{}rate}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{p}{,} \PY{n}{logy} \PY{o}{=} \PY{n}{TRUE}\PY{p}{,} \PY{n}{intercept} \PY{o}{=} \PY{n}{stableRate}\PY{p}{)} 
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -727,8 +569,8 @@ Below a lost of Graphs defined.
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{setdiff}\PY{p}{(}\PY{n}{myGraphList}\PY{p}{,} \PY{n+nf}{c}\PY{p}{(}\PY{n}{myGraphListbyDate}\PY{p}{,} \PY{n}{myGraphListbyDay}\PY{p}{,} \PY{n}{myGraphNrs}\PY{p}{)}\PY{p}{)}
-\PY{n+nf}{c}\PY{p}{(} \PY{n}{myGraphListbyDate}\PY{p}{,} \PY{n}{myGraphListbyDay}\PY{p}{,} \PY{n}{myGraphNrs}\PY{p}{)}
+\PY{n}{setdiff}\PY{p}{(}\PY{n}{myGraphList}\PY{p}{,} \PY{n}{c}\PY{p}{(}\PY{n}{myGraphListbyDate}\PY{p}{,} \PY{n}{myGraphListbyDay}\PY{p}{,} \PY{n}{myGraphNrs}\PY{p}{)}\PY{p}{)}
+\PY{n}{c}\PY{p}{(} \PY{n}{myGraphListbyDate}\PY{p}{,} \PY{n}{myGraphListbyDay}\PY{p}{,} \PY{n}{myGraphNrs}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -737,23 +579,23 @@ Below a lost of Graphs defined.
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{graphCodes}\PY{p}{(}\PY{p}{)}
+\PY{n}{graphCodes}\PY{p}{(}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{n+nf}{Sys.which}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{python\PYZdq{}}\PY{p}{)}
-\PY{n+nf}{use\PYZus{}python}\PY{p}{(}\PY{l+s}{\PYZdq{}}\PY{l+s}{path/to/python\PYZdq{}}\PY{p}{)}
+\PY{n}{Sys}\PY{o}{.}\PY{n}{which}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{python}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\PY{n}{use\PYZus{}python}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{path/to/python}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
 \prompt{In}{incolor}{ }{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{o}{\PYZpc{}\PYZpc{}}\PY{n}{python}
-\PY{l+m}{2}\PY{o}{\PYZca{}}\PY{l+m}{100}
+\PY{o}{\PYZpc{}\PYZpc{}python}
+\PY{l+m+mi}{2}\PY{o}{\PYZca{}}\PY{l+m+mi}{100}
 \end{Verbatim}
 \end{tcolorbox}
 
