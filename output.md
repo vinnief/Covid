@@ -1,5 +1,7 @@
 # Daily and Monthly Output
 author: "Vincent Feltkamp"
+output: html_document
+
 
 ```R name="setup" tags=["remove_cell"]
 #knitr::opts_chunk$set(echo = TRUE)
@@ -14,26 +16,26 @@ for publication
 options(warn = 0)
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date) < Sys.Date() - 1) source('loadData.R')  else source('definitions.R')
+save.image(".RData") #D:/gits/Covid19/ #save immediately so that another RMD or Jupyter notebook does not need to redownload. 
 tibble(maxECDCdate = max(ECDC$Date), maxJHHdate = max(JHH$Date))# % % "is the last Date for ECDC data, and " % % "is max date for JHH data"
 ```
-```R
-#check the silencing of tidyverses overly verbose output. Source('definitions.R')
-source('definitions.R')
-tibble( maxECDCdate = max(ECDC$Date), maxJHHdate = max(JHH$Date))
-```
-
-```R name="save Rdata"
-save.image(".RData") #D:/gits/Covid19/
-```
-If you want to write the data to disk, make sure to define the correct datapath so that R can write to it. By default it is a subfolder of the scripts folder. Note that the data will also be written to a subfolder of the plots folder. 
-
+Do it separately for ECDC and JHH
 ```R
 dataPath <- './data'
 if (!dir.exists(dataPath)) dir.create(dataPath, recursive = TRUE)
-writeWithCounters(ECDC,name = "Covid19ECDC")
-writeWithCounters(JHH,name = "Covid19JHH") 
+if (!exists('ECDC') | (max(ECDC$Date) < Sys.Date() ) ){
+  source('loadData.R')  
+  ECDC <- loadECDC()  
+  writeWithCounters(ECDC,name = "Covid19ECDC")
+  } else source('definitions.R') #make sure we have latest definitions. 
+if (!exists('JHH') | (max(JHH$Date) < Sys.Date() - 1)) {
+  source('loadData.R')  
+  JHH <- loadJHH()
+  writeWithCounters(JHH,name = "Covid19JHH") 
+  }else source('definitions.R') #make sure we have latest definitions. 
+  save.image(".RData") #D:/gits/Covid19/ #save immediately so that another RMD or Jupyter notebook does not need to redownload. 
+tibble(maxECDCdate = max(ECDC$Date), maxJHHdate = max(JHH$Date))# % % "is the last Date for ECDC data, and " % % "is max date for JHH data"
 ```
-
 ```R
 options( repr.plot.width = 6,repr.plot.res = 300)# repr.plot.height = 3)#, repr.plot.res = 200)
 ```
@@ -109,6 +111,10 @@ map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDay
 map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),function(x) overtakeDays_df(ECDC,x,who = 'Ithem',lastDays = 7))
 ```
 Lets see who is going to overtake the UK, France, or GErmany soon: 
+```R
+options( repr.plot.width = 5, repr.plot.height = 3, repr.plot.res = 200)# repr.plot.height = 3)#, repr.plot.res = 200)
+```
+
 ```R name="UK France Germany"
 graph3Dard_fia(JHH, c('Germany','France','United Kingdom'))
 graph3Dard_fina(JHH, c('Germany','France','United Kingdom'))
