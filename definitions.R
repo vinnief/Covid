@@ -27,10 +27,16 @@ get_os <- function(){
 }
 
 switch(get_os(), 
-       windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
-       linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
-       osx     = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"},
-       ...     = {print('not recognized OS');myPlotPath <- "~/Covid19_plots"})
+       windows = {message <- "I run MS Windows"; myPlotPath <- "G:/My Drive/Covid19_plots"},
+       linux   = {message <- "I run Linux"; myPlotPath <- "~/Covid19_plots"},
+       osx     = {message <- "I run OSX" ; myPlotPath <- "~/Covid19_plots"},
+       {message <- 'OS not recognized' ; myPlotPath <- "~/Covid19_plots"})
+switch(.Platform$GUI, 
+       RTerm = {message <- message % % "and Jupyter Notebook/Lab."; myPlotPath <- "G:/My Drive/Covid19_plots"},
+       Rgui   = {message <- message % % "and just RGui."; myPlotPath <- "~/Covid19_plots"},
+       RStudio     = {message <- message % % "and RStudio." ; myPlotPath <- "~/Covid19_plots"},
+       {message <- message % % "and the GUI is" % % .Platform$GUI ; myPlotPath <- "~/Covid19_plots"})
+if (verbose >= 2) print(message)
 .Platform$OS.type
 Sys.info()[['sysname']]
 R.version$os # mingw32 for win!
@@ -357,7 +363,7 @@ makeJHH <- function(name = "JHH", force = FALSE) {
  nameUS <- paste( paste(name, "US", sep = "_"),      "csv", sep = ".")
  namenonUS <- paste( paste(name, "non", "US", sep = "_"),  "csv", sep = ".")
  namedays <- paste(name, "_days.csv", sep = "")
- if (force | (difftime(Sys.time(), file.info(namedays)[, "mtime"], units  = "hours") > 6)) {
+ if (force || (difftime(Sys.time(), file.info(namedays)[, "mtime"], units  = "hours") > 6)) {
   lpdf <- updateJHHFromWeb(nameUS, namenonUS)
   if (verbose >= 1) print("updating JHH from Github")
  } else {
@@ -488,22 +494,24 @@ addRegions <- function(lpdf = JHH, varname = "Region", Regiolist = "") {
  lpdf
 }
 
-makeDynRegions <- function(lpti = JHH, gridsize = 5*6, piecename = 'World', ratio = 5) {
+makeDynRegions <- function(lpti = JHH, byVar = "active_imputed", gridsize = 5*6, piecename = 'World', ratio = 5) {
  lpti <- lpti %>%  group_by(PSCR)  %>%  
-  filter( Date  == max(Date)) %>%  ungroup  %>% 
-  select( PSCR, confirmed, active_imputed) %>%  
-  arrange(desc(active_imputed)) 
+  filter( Date  == max(Date)) %>%  ungroup  #%>% 
+  #select( PSCR, confirmed, active_imputed) %>%  
+  #arrange(desc(active_imputed)) 
+  #   arrange(desc(!!enquo(byVar)) ) !! does not work. {{}} neither.
+  lpti <- lpti[order(-lpti[[byVar]]), , drop = FALSE]
  nr = 1
  mylist = vector(mode  = "list", length  = 0)
- while (nrow(lpti)>gridsize) {
-  minneeded <- lpti$confirmed[1]/ratio
-  piece <- c(piecename %#% nr, as.character(head(lpti[lpti$confirmed >= minneeded, ]$PSCR , gridsize) ))
+ while (nrow(lpti) > gridsize) {
+   if (verbose >= 2) print(piecename %#% nr % % lpti$PSCR[1:3])
+  minneeded <- lpti[[byVar]][1]/ratio
+  piece <- c(piecename %#% nr, as.character(head(lpti[lpti[[byVar]] >= minneeded, ]$PSCR , gridsize) ))
   mylist[[piece[1]]] <- piece
-  nextone = length(piece)-1
+  nextone = length(piece) - 1
   if (nextone <= 1) nextone = 2
-  lpti <- lpti %>%  filter(row_number() >= nextone) #gridsize+1 | confirmed< minneeded)
-  #nrow(lpti)
-  nr <- nr+1
+  lpti <- lpti %>%  filter(row_number() >= nextone) 
+  nr <- nr + 1
   }
  piece <- c(piecename %#% nr, as.character(lpti[1:nrow(lpti), ]$PSCR))
  mylist[[piece[1]]] = piece
@@ -555,7 +563,7 @@ addPopulation <- function(lpdf) {
   popUS[lpdf[grep(",US", lpdf$PSCR), ]$Province.State, "population"]
  popunknown <- unique(lpdf[is.na(lpdf$population), ]$PSCR)
 
- if (verbose >= 2 | length(popunknown) > 0) print("population unknown:"  % %  
+ if (verbose >= 2 || length(popunknown) > 0) print("population unknown:"  % %  
 
       ifelse(length(popunknown)  ==  0, 0, paste(popunknown, collapse = "; ")))
  lpdf
@@ -577,7 +585,7 @@ imputeRecovered <- function(lpdf = ECDCdata, lagrc = LAGRC, lagrd = LAGRD, # was
           na.rm = FALSE)
            ) 
  rowstobecorrected = correct & ( lpdf$recovered < lpdf$recovered_imputed )
- rowstodo <- is.na(lpdf$recovered)|dothese| rowstobecorrected
+ rowstodo <- is.na(lpdf$recovered) | dothese | rowstobecorrected
  #  %>%  drop() #no need: is vector already
  if (verbose >= 5)print("imputing recovered for:" % % 
             length(unique(lpdf[rowstodo, ][["PSCR"]]))
@@ -876,68 +884,62 @@ addRegionTotals <- function(lpdf = JHH, totRegions,
   lpdf
 }
 
+loadJHH <- function() {
+  ti <-  Sys.time()
+  JHH <- makeJHH(force = TRUE) 
+  reportDiffTime('loading and melting JHH:',ti,'secs')
+  JHH0 <- JHH
+  regios <<- c(list(World = c('World', unique(JHH[['PSCR']]))), provincializeJHH(), regios) 
+  ti <-  Sys.time()
+  JHH <- JHH0 %>%
+    addPopulation() %>% addCountryTotals() %>% addRegionTotals() %>%
+    addRegions( Regiolist = regios) %>% arrange(PSCR,Date) %>%
+    imputeRecovered() %>% extravars()#
+  if (verbose >= 1) reportDiffTime('adding population, totals, imputations, and daily vars in JHH:',ti,'secs')
+  ti = Sys.time()
+  JHH <- JHH %>%  addDoublingDaysPerCountry(variable = 'confirmed') %>% 
+    addDoublingDaysPerCountry(variable = 'active_imputed') 
+  if (verbose >= 1) reportDiffTime('adding the doubling days (twice) in JHH:',ti,'mins')
+  
+  #ti = Sys.time()
+  #JHH <- addSimVars(JHH, minVal = 100) %>% 
+  #  addSimVars(minDate = Sys.Date() - 10, ext = "_endsim")
+  #reportDiffTime('adding the simulated values in JHH:',ti,'mins')
+  
+  JHHRegios <<- makeRegioList(JHH)
+  #writeWithCounters(JHH,name = "Covid19JHH")
+  JHH
+} 
 
-
-days2overtake <- function(lpti = JHH ,
-  #countries = c('Belgium', 'China', 'Russia', 'Netherlands', 'Colombia', 'Iran'), 
-  varname = 'confirmed', newvarname = 'new_confirmed'){
- #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
-
-  lastdata <- lpti#[lpti$PSCR %in% countries,]  %>%     filter(Date  == max(Date))
-                                                                                         
-  lastdata <- (lastdata[order( -lastdata[[varname]]), ])
-  variable <- lastdata[[varname]] 
-  names(variable) <- lastdata$PSCR
-  newvar <-  lastdata[[newvarname]]
-  names(newvar) <- lastdata$PSCR
-  mconf <- outer(variable, variable, `-`)
-  mnew <- -(outer(newvar, newvar, `-`))
-  round(mconf/mnew, 1)
+#same with ECDC
+loadECDC <- function() {
+  tim = Sys.time()
+  ECDC0 <- makeECDC()
+  reportDiffTime('load ECDC:',tim,'mins')
+  tim = Sys.time()
+  ECDC  <- ECDC0 %>% correctMissingLastDay() %>% 
+    addTotals3 %>% imputeRecovered %>%  extravars %>%
+    mutate(Country.Region = PSCR) %>%
+    addDoublingDaysPerCountry(variable = 'active_imputed') %>%
+    addDoublingDaysPerCountry(variable = 'confirmed') 
+  if (verbose >= 1) reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
+  
+  #tim = Sys.time()
+  #ECDC <- ECDC %>%  
+  #addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") #%>% #, maxDate = Sys.Date() - 1
+  # Because of missing Spain data, growth in Europe on last day is negative. hence sim does not work
+  #ECDC <- ECDC %>% addSimVars(minVal = 100)  #gives errors. cayman islands follows conveyance_Japan
+  #if (verbose >= 1) reportDiffTime('adding the simulated values in ECDC:',tim,'secs')
+  ECDCRegios <<- makeDynRegions( ECDC, piecename = 'ECDC World')
+  ECDC
 }
-
-overtakeDays_v <- function(lpti, country, who = 'theyme', varname = 'confirmed', nr = 10, lastDays=3){
- if (varname %in% c('active', 'active_imputed', 'active_p_m', 
-           'active_imputed_p_M')) 
-  prefix <- 'net_'
- else if (varname %in% 
-      c('confirmed', 'confirmed_p_M', 
-       'recovered', 'recovered_p_M', 'deaths', 'deaths_p_M', 
-       'recovered_imputed', 'recovered_imputed_p_M')) 
-  prefix <- 'new_'
-  newvarname <- prefix %#% varname
-  lastdata <- lpti[, c('PSCR','Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
-    filter(Date >= max(Date) - lastDays + 1)  %>% 
-    mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))  %>%   
-    #mutate_at( .vars = 4, .funs = ma)  %>% 
-    filter(Date  == max(Date))
- mydata <- subset(lastdata, PSCR  ==  country)
- if (who  ==  'theyme') {
-  countries <- lastdata[lastdata[[varname]] <=  mydata[[varname]] &
-              lastdata[[newvarname]] >=  mydata[[newvarname]], 'PSCR']
-  colName <- 'overtakes'  % %  country  } 
- else if (who  ==  'Ithem') {
-  countries <- lastdata[lastdata[[varname]] >=  mydata[[varname]] &
-              lastdata[[newvarname]] <=  mydata[[newvarname]], 'PSCR']
-  colName <- country  % %  'overtakes'  }
- else stop('who can only be theyme or Ithem')
- oc <- days2overtake(lastdata[lastdata$PSCR %in% countries$PSCR,], varname, newvarname)[, country]
- if (is.null(names(oc))) names(oc)  = c(colName, rep('?', length(oc) - 1)) 
- #else {} #names(oc)[1] <- colName
- oc <-   oc[order(oc, na.last  = FALSE)][1:nr]
- names(oc)[1] <- colName
- oc
+loadTesting <- function() {
+  testing <- readTesting()
+  write.csv(testing,myPlotPath %//% "data" %//% 'testing.csv' )
+  testing
 }
-overtakeDays_df <- function(...){
- vec <- overtakeDays_v(...)
- if (is.null(names(vec))) names(vec)  = rep('?', length(vec)) #return (vec)
- #else 
- tib <- tibble(country = names(vec), Days = vec)
- names(tib)[1] <- names(vec)[1]
- names(tib)[2] <- 'days'
- tib[2:nrow(tib), ]
-}
-
-
+# end of data input cleaning and preparation. 
+# from here, prepare data for the csv-writing or graphing 
 addcounterfrommin <- function(lpdf = JHH, minv = 0, varname = "confirmed", ID = "PSCR", counter = "day"){
  lpdf[, counter] <- as.numeric(NA)
  lpdf <- lpdf %>%  filter(!is.na(!!varname))  #[!is.na(lpdf[, varname]), ] #should not have any! effect for "confirmed" 
@@ -950,6 +952,7 @@ addcounterfrommin <- function(lpdf = JHH, minv = 0, varname = "confirmed", ID = 
       )
   lpdf
 }
+
 addcounterfrommin_New <- function(lpdf = JHH, minv = 0, varname = "confirmed", ID = "PSCR", counter = "day"){
   lpdf[, counter] <- as.numeric(NA)
   lpdf <- lpdf %>%  filter(!is.na(!!varname))  #[!is.na(lpdf[, varname]), ] #should not have any! effect for "confirmed" 
@@ -977,6 +980,67 @@ writeWithCounters <- function(lpdf = JHH, varname = "confirmed", ID = "PSCR", na
   write_csv(lpdf, path = myPlotPath %//% "data" %//% filename, na = "")
   if (verbose >= 1) print(paste("Written the current data with counters to disk as", filename, "for use in Tableau or Excel"))
 }
+
+#some output tables. 
+days2overtake <- function(lpti = JHH ,
+                          #countries = c('Belgium', 'China', 'Russia', 'Netherlands', 'Colombia', 'Iran'), 
+                          varname = 'confirmed', newvarname = 'new_confirmed'){
+  #'listed by decreasing nr of confirmed, and smallest is equals to largest in so many days / so many days ago')
+  
+  lastdata <- lpti#[lpti$PSCR %in% countries,]  %>%     filter(Date  == max(Date))
+  
+  lastdata <- (lastdata[order( -lastdata[[varname]]), ])
+  variable <- lastdata[[varname]] 
+  names(variable) <- lastdata$PSCR
+  newvar <-  lastdata[[newvarname]]
+  names(newvar) <- lastdata$PSCR
+  mconf <- outer(variable, variable, `-`)
+  mnew <- -(outer(newvar, newvar, `-`))
+  round(mconf/mnew, 1)
+}
+
+overtakeDays_v <- function(lpti, country, who = 'theyme', varname = 'confirmed', nr = 10, lastDays=3){
+  if (varname %in% c('active', 'active_imputed', 'active_p_m', 
+                     'active_imputed_p_M')) 
+    prefix <- 'net_'
+  else if (varname %in% 
+           c('confirmed', 'confirmed_p_M', 
+             'recovered', 'recovered_p_M', 'deaths', 'deaths_p_M', 
+             'recovered_imputed', 'recovered_imputed_p_M')) 
+    prefix <- 'new_'
+  newvarname <- prefix %#% varname
+  lastdata <- lpti[, c('PSCR','Date', varname, newvarname)]  %>%  group_by(PSCR)  %>%  
+    filter(Date >= max(Date) - lastDays + 1)  %>% 
+    mutate(!!newvarname := ma( .data[[newvarname]],lastDays,sides = 1))  %>%   
+    #mutate_at( .vars = 4, .funs = ma)  %>% 
+    filter(Date  == max(Date))
+  mydata <- subset(lastdata, PSCR  ==  country)
+  if (who  ==  'theyme') {
+    countries <- lastdata[lastdata[[varname]] <=  mydata[[varname]] &
+                            lastdata[[newvarname]] >=  mydata[[newvarname]], 'PSCR']
+    colName <- 'overtakes'  % %  country  } 
+  else if (who  ==  'Ithem') {
+    countries <- lastdata[lastdata[[varname]] >=  mydata[[varname]] &
+                            lastdata[[newvarname]] <=  mydata[[newvarname]], 'PSCR']
+    colName <- country  % %  'overtakes'  }
+  else stop('who can only be theyme or Ithem')
+  oc <- days2overtake(lastdata[lastdata$PSCR %in% countries$PSCR,], varname, newvarname)[, country]
+  if (is.null(names(oc))) names(oc)  = c(colName, rep('?', length(oc) - 1)) 
+  #else {} #names(oc)[1] <- colName
+  oc <-   oc[order(oc, na.last  = FALSE)][1:nr]
+  names(oc)[1] <- colName
+  oc
+}
+overtakeDays_df <- function(...){
+  vec <- overtakeDays_v(...)
+  if (is.null(names(vec))) names(vec)  = rep('?', length(vec)) #return (vec)
+  #else 
+  tib <- tibble(country = names(vec), Days = vec)
+  names(tib)[1] <- names(vec)[1]
+  names(tib)[2] <- 'days'
+  tib[2:nrow(tib), ]
+}
+
 
 dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR", 
            xvar = "day", yvars = c("confirmed", "recovered"), 
@@ -1039,7 +1103,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   lpdf <- dataprep(lpdf, ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
                    logx  = logx, logy  = logy, sorted  = sorted)
   if (verbose >= 7) {print('graphi columns left');print( names(lpdf))}
-  if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
+  if (nrow(lpdf)  == 0 || all(is.na(lpdf[, xvar])) || all(is.na(lpdf[, yvars])))
     return(if (verbose >= 6) print('graphi'  % %  paste(mytitle, "Too little data to graph. Maybe lower the mininum value, take more territories?")))
   
   lpdf <- lpdf  %>%  
@@ -1074,8 +1138,8 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
   if (area) {
     posalpha <- ifelse(position  == 'identity', 0.4, 1)
     myplot <- myplot + geom_area(aes_string(
-      color = ifelse(nrIDs  == 1 | facet  == ID, 'variable' , 'mygroup'), 
-      fill = ifelse(nrIDs  == 1 | facet  == ID,  'variable' , 'mygroup')), 
+      color = ifelse(nrIDs  == 1 || facet  == ID, 'variable' , 'mygroup'), 
+      fill = ifelse(nrIDs  == 1 || facet  == ID,  'variable' , 'mygroup')), 
       position  = position, alpha = posalpha)
     myscale_fill <- scale_fill_manual(values  = c("red", "green", "black", "darkorange", "lawngreen"))
     if (nrgroups <= 2) myscale_fill <- scale_fill_manual(values  = c("lawngreen", "cyan"))
@@ -1085,11 +1149,11 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "Date",
     myplot <- myplot + #line plot
       geom_line(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) +
       geom_point(size = size, aes_string(  shape = 'variable')) +
-      if (!putlegend | facet  == FALSE) 
+      if (!putlegend || facet  == FALSE) 
         geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),    
                 method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", 
                                cex  = 1.2)) 
-    if ( intercept | slope ) myplot <- myplot + geom_abline( intercept  = 1*intercept, slope = 1*slope, na.rm  = TRUE) #bug here or somewhere: the line is at 1.? instead of at 0.24
+    if ( intercept || slope ) myplot <- myplot + geom_abline( intercept  = 1*intercept, slope = 1*slope, na.rm  = TRUE) #bug here or somewhere: the line is at 1.? instead of at 0.24
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
     if (nrgroups <= 6) {
@@ -1446,11 +1510,12 @@ ccf.vf <- function(var1 = c(1, 2), var2 = c(2, 2), lag.max  = 30, saveit  = FALS
  myplot
  }
 
-findMaxCCF <- function(var1 = "new_recovered", var2  = "new_confirmed", myPSCR  = "Hubei, China", 
-            lpdf  = JHH, N  = 5){
- if (myPSCR  !=  "") lpdf <- lpdf[lpdf$PSCR  ==  myPSCR, ]
- lpdf <- lpdf[lpdf$Date > "2020-01-22", c("Date", var1, var2)]
- if (all(is.na(lpdf[, var1])) | all(is.na(lpdf[, var2]))) 
+findMaxCCF <- function(var1 = "new_recovered", var2  = "new_confirmed", myPSCR  = "Hubei,China", 
+            lpti  = JHH, N  = 5){
+ if (myPSCR  !=  "") lpdf <- lpti[lpti$PSCR  ==  myPSCR, ]
+ lpdf <- lpdf[lpdf$Date > "2020-01-22", c("Date", var1, var2)]  #dubious way of excluding potential missing daily growth. 
+    #ECDC starts before but has no recovery variable, so we could only use it for DC lags.
+ if (all(is.na(lpdf[, var1])) || all(is.na(lpdf[, var2]))) 
   return(data.frame( cor  = NA, lag  = NA)) #
  d <- ccf.vf(lpdf[, var1], lpdf[, var2], lag.max = 30, plotit = FALSE)
  if (verbose >= 2) print(myPSCR)
@@ -1471,5 +1536,5 @@ findMaxCCFs <- function(var1 = "new_recovered", var2 = "new_confirmed", myPSCR =
   a[!is.na(a$lag), ]
 }
 
-#end. Now run loadData.R
-
+#end. Now run loadECDC() and loadJHH() and loadTesting() 
+# which is done in Output.Rmd/ipynb and Graphs.Rmd/ipynb

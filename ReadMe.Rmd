@@ -13,10 +13,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# R Markdown__Covid19 Trendlines__
+# R graphs of __Covid19 Trendlines__
 
-The presentation of the Covid19 situation in the news often consists of just three numbers for your own country: total confirmed, new confirmed, and deaths, 
-or a world map with bubbles, the size of which symbolizes the number of confirmed. 
+The presentation of the Covid19 situation in the news often consists of just three numbers for your own country: total confirmed, new confirmed, and deaths, or a world map with bubbles, the size of which symbolizes the number of confirmed. 
 
 This does not tell much about the general trends nor the severity of the situation. 
 Here an attempt at making trendlines for all countries in the world, plus some states and territories that make their info available and which is collected by either ECDC.europa.eu or the John Hopkins Hospital and shared by their 
@@ -69,47 +68,32 @@ source('definitions.R')
 ```
 
 to load the data: (s bit slow as it needs to prepare after loading)
+```{r}
 ``` {r }
-if (!exists('JHH')) source('loadData.R') else 
-  if (max(JHH$Date)< Sys.Date()-1) source('loadData.R') else
-    source('definitions.R')
- #do this as little as needed. at least once, before the chunks below!
+source('loadData.R') #do this as little as needed. but at least once every day, before the chunks below!
+```
 ```
 To do one page with (a)ctive, (r)ecovered, (d)eaths, 
 (f)acet per PSCR, using (i)mputed recoveries, (a)rea graphs, 
 not saving to disk but showing on screen:
+```{r}
 ``` {r}
-graphOnRegion(lpdf=JHH, myRegion = JHHRegios$`JHH World1`, myGraph='graph3Dard_fia', saveit = FALSE) 
+graphOnRegion(lpdf = JHH, myRegion = JHHRegios$`JHH World2`, myGraph='graph3Dard_fia', saveit = FALSE) 
 ``` 
-or equivalently 
-``` {r }
-graph3Dard_fia(JHH, countries = JHHRegios$ `JHH World2`)
 ```
-see other graphs you can make with:
+which could actually calls 
+```{r}
+``` {r }
+graph3Dard_fia(JHH, countries = JHHRegios$`JHH World2`)
+```
+```
+See other graphs you can make with:
 ```{r}
 myGraphList #will give you all graphs defined
 graphCodes() # shows the naming system
 ```
 In order to make and save all current graphs to disk: 
 edit the save paths below to what you need, 
-then run the lines in output.Rmd or Graphs.R that you need. E.g.: 
-```{r save graphs, eval=FALSE, message=FALSE, include=FALSE}
+then run the lines in Graphs.R that you need. E.g.: 
 
-knitr::opts_chunk$set(echo = TRUE)
-
-if (!exists('JHH')) source('loadData.R') else 
-  if (max(JHH$Date)< Sys.Date()-1) source('loadData.R') else
-    if (!exists('graphit')) source('definitions.R')
-
-switch(get_os(), 
-       windows = {print("I run MS Windows.");myPlotPath <- "G:/My Drive/Covid19_plots"},
-       linux   = {print("I'm a penguin."); myPlotPath <- "~/Covid19_plots"},
-       osx     = {print("I'm a Mac.");myPlotPath <- "~/Covid19_plots"},
-       ...     = {print('not recognized OS');myPlotPath <- "~/Covid19_plots"})
-
-if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
-
-walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG') 
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
-```
 Note: a bit of patience: it takes one hour to make all graphs on all territories (both ECDC and JHH) on my HP Elitebook laptop.

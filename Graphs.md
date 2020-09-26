@@ -1,17 +1,13 @@
 ---
 title: "Graphs"
 author: "VF"
-date: "9 July 2020"
+date: "March-Sept 2020"
 output: html_document
 ---
-##Graphs
+# Graphs
 
-If needed, run loadData.R first to load the latest Data and the definitions. 
-Please make sure myPlotPath is correct!
-
-```R name="init" tags=["remove_cell"]
+```R name="deprecated" tags=["remove_cell"]
 knitr::opts_chunk$set(echo = TRUE)
-
 if (!exists('JHH')) source('loadData.R') else 
   if (max(JHH$Date) < Sys.Date() - 1) {source('loadData.R')  
    } else source('definitions.R')
@@ -21,7 +17,16 @@ if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recu
 writeWithCounters(ECDC,name = "Covid19ECDC")
 writeWithCounters(JHH,name = "Covid19JHH") 
 ```
+ ## Load the data
+```R name="init"
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+```R name="init"
+source("loadData.R")
+```
+
+## From 2020-01-01 until now
 Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
 
 
@@ -30,16 +35,17 @@ print("results of" % % Sys.Date())
 if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
 verbose = 0
 tim = Sys.time()
-walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
+walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
 reportDiffTime('ECDC graphs',tim, units = 'mins')
-
-tim = Sys.time()
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'GR')
-reportDiffTime('JHH graphs',tim,units = 'mins')
-
 ```
 
-Development one month at a time
+```R
+tim = Sys.time()
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+reportDiffTime('JHH graphs',tim,units = 'mins')
+```
+
+## Covid19 Development one month at a time
 ```R name="one month" tags=["remove_cell"] eval=false
 if ( mday(Sys.Date() ) <= 03) {#uses lubridate
   walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, 
@@ -50,7 +56,7 @@ if ( mday(Sys.Date() ) <= 03) {#uses lubridate
   }
 ```
 
-Do all months up to today
+## Do all months up to today
 ```R name="all months" tags=["remove_cell"] eval=false
 verbose = 1
 makeHistoryGraphs(JHH, regions = JHHRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
@@ -78,15 +84,18 @@ if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday")
               myFolderDate = 'weekly')
 ```
 
+## Simulations 
+
 Simulate how the non-social distancing situation would have turned out: deaths, recovered, and confirmed   
 ```R name="sims" tags=["remove_cell"] eval=false
 graphDddp_fyl(JHH,regios$Vincent,savename  = "deaths missed") 
 walkThrough(JHH, regions = JHHRegios,graphlist = 'graphDccprr_fyl')
 
 walkThrough(ECDC, ECDCRegios,ext = '_sim', graphlist = c('graphDccprr_fiyl','graphDddp_fyl')) 
+```
+Simulate how the current state would turn out if no policy nor behavior change
+```R
 walkThrough(ECDC , ECDCRegios,ext = '_endsim',graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl')) 
-
-
 ```
 ## R Markdown and Jupyter Notebook: sync with Jupytext. 
 
