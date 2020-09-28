@@ -10,8 +10,11 @@ options(warn = 2)
 ```{r less verbose}
 verbose <-  1
 ```
+```{r}
+checkTotals3(ECDC0, 'Europe' , ID = 'Region')
+```
 
-# alternative version which does not work. because of metaprogramming issues with arrange. 
+# alternative sortIDlevels version which does not work. because of metaprogramming issues with arrange. 
 ```{r}
 sortIDlevels.dplyr <- function(lpdf, varname = confirmed, ondate = ""){
   varname <- enquo(varname)

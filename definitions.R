@@ -847,7 +847,23 @@ addTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
   
  lpti
 }
-
+checkTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
+  if (missing(totregions)) totregions <- unique(lpti[[ID]])
+  lpti1 <- lpti  %>% filter(!(!!ID %in% totregions)) 
+  #just to be sure, that if i do it twice i dont get double counts. We will get double entries tho! 
+  #this might show up in the graphs or not depending on sorting. 
+  varnames  = c("confirmed",  "deaths", "population") 
+  #Africa totals recovered and active seem to mirror imputed values. 
+  if (!('Lat' %in% names(lpti))) lpti1$Lat <- NA
+  if (!('Long' %in% names(lpti))) lpti1$Long <- NA
+  if (!all(sort(names(lpti)) == sort(names( lpti  %>%  total("", varnames = varnames, newrow = "World")) )))
+    {print(sort(names( lpti  %>%  total("", varnames = varnames, newrow = "World"))))
+    print("while " )
+    print(sort(names(lpti)))
+  }
+  else TRUE  
+}
+  names(total(ECDC0, 'Europe' , ID = 'Region', varnames = c('confirmed','deaths'), newrow = 'Europe'))
 addCountryTotals <- function(lpdf = JHH, varnames = c("confirmed","recovered", "deaths","population")){
   existingTotals <- c("China","Australia","Canada",'US')
   #just to be sure, that if i do it twice i dont get double counts. 
