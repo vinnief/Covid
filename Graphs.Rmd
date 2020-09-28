@@ -8,21 +8,10 @@ output: html_document
 
 ```{r deprecated, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-if (!exists('JHH')) source('loadData.R') else 
-  if (max(JHH$Date) < Sys.Date() - 1) {source('loadData.R')  
-   } else source('definitions.R')
-save.image(".RData") #D:/gits/Covid19/
-tibble( maxECDCdate = max(ECDC$Date), maxJHHdate = max(JHH$Date))
-if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
-writeWithCounters(ECDC,name = "Covid19ECDC")
-writeWithCounters(JHH,name = "Covid19JHH") 
-```
- ## Load the data
-```{r init}
-knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
-```{r init}
+```{r }
 source("loadData.R")
 ```
 
