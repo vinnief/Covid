@@ -6,12 +6,12 @@ output: html_document
 ---
 # Graphs
 
-```{r deprecated, include=FALSE}
+```{r init}
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-```{r }
+```{r load the data}
 source("loadData.R")
 ```
 
@@ -23,15 +23,17 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 print("results of" % % Sys.Date())
 if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
 verbose = 0
+if (exists("timE")) print("last time this took" % % timE)
 tim = Sys.time()
-walkThrough(lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
-reportDiffTime('ECDC graphs',tim, units = 'mins')
+walkThrough(lpdf = ECDC, myFolderDate  = 'current', ordre = 'RG') #, regions = ECDCRegios, graphlist = myGraphNrs
+timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
 ```
 
 ```{r}
+if (exists("timJ")) print("last time this took" % % timJ)
 tim = Sys.time()
 walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
-reportDiffTime('JHH graphs',tim,units = 'mins')
+timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
 ```
 
 ## Covid19 Development during last momth only.

@@ -1288,11 +1288,19 @@ graph6Dardcra_fiMnyl <- function(lpdf = JHH, countries,
              'net_active_p_M'), ...)
 }
 
-graph1Dc_finl <- function(lpdf = JHH, countries, ...){
+graph1Da_finl <- function(lpdf = JHH, countries, ...){
+  graphit(lpdf, countries, xvar = 'Date', 
+          yvars = c("net_active_imputed"), facet = 'PSCR', putlegend = TRUE, ...)
+}
+graph1Da_fil <- function(lpdf = JHH, countries, logy = FALSE, ...){
+  graphit(lpdf, countries, xvar = 'Date', yvars = c("active_imputed"),  facet = 'PSCR', ...)
+}
+
+graphDc_fnl <- function(lpdf = JHH, countries, ...){
  graphit(lpdf, countries, xvar = 'Date', 
          yvars = c("new_confirmed"), facet = 'PSCR', putlegend = TRUE, ...)
 }
-graph1Dc_fil <- function(lpdf = JHH, countries, logy = FALSE, ...){
+graphDc_fl <- function(lpdf = JHH, countries, logy = FALSE, ...){
  graphit(lpdf, countries, xvar = 'Date', yvars = c("confirmed"),  facet = 'PSCR', ...)
 }
 
@@ -1408,8 +1416,10 @@ graphs <- function(lpdf  = JHH, countries  = "World", graphlist  = myGraphNrs, .
  }
 }
 reportDiffTime <- function(message, startTime, units = 'auto', precision  = 2){
- print(message % % round( difftime( Sys.time(), startTime, units = units), precision) 
+ dt <- round( difftime( Sys.time(), startTime, units = units), precision)
+ print(message % % dt 
        % %  ifelse(units == 'auto','units',units))
+ dt
 }
 
 timer <- function(mycall, message  = 'duration', verbosity  = 1, ...){
@@ -1429,25 +1439,30 @@ graphOnRegion <- function(lpdf, myRegion, myGraph, saveit = TRUE, ...) {
 
 }
 
-walkThrough <- function(lpdf = JHH, regions, graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl'), 
+walkThrough <- function(lpdf = ECDC, regions= ECDCRegios, graphlist=myGraphNrs , 
                         saveit = TRUE, ordre = 'RG', ...){
-  print(length(regions) % % "regions and" % % length(graphlist) % % "graphs")
-  print("at 10 seconds per graph/region, this would last" % % (length(regions)* length(graphlist)/6) % % "minutes") 
-  #[1] "results of 2020-09-18"
-  #[1] "ECDC graphs 15.83 mins"
-  #[1] "JHH graphs 32.1 mins"
-  if (typeof(regions)  == "character") { regions = list(regions) }
+  misreg <- missing(regions)
+  if (!misreg)  {
+    print(length(regions) % % "regions and" % % length(graphlist) % % "graphs." % %
+    "at 5 seconds per graph/region, this would last" % % (length(regions)* length(graphlist)/12) % % "minutes") 
+    # "results of 2020-09-18"   # "ECDC graphs 15.83 mins"    # "JHH graphs 32.1 mins"
+    if (typeof(regions)  == "character") { regions = list(regions) }
+  } 
   if (ordre == 'RG') {
     walk(graphlist, function(myGraph){
+      if (misreg) {
+        switch(EXPR = 1 + grepl("n", myGraph, fixed=TRUE),
+               {regions <- makeDynRegions(lpdf, byVar = "active_imputed")},
+               {regions <- makeDynRegions(lpdf, byVar = "net_active_imputed")}
+              )
+        }
       if (verbose >= 4) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myGraph)}
-      walk(regions, function(myRegion)
-          graphOnRegion(lpdf = lpdf, myRegion, myGraph, saveit = saveit, ...) )
+      walk(regions, function(myRegion)  graphOnRegion(lpdf = lpdf, myRegion, myGraph, saveit = saveit, ...) )
       if (verbose >= 5) {reportDiffTime(myGraph, tig)}
     })} else {
     walk(regions, function(myRegion){
       if (verbose >= 4) {tig = Sys.time(); print(format(Sys.time(), "%H:%M:%S " ) % % myRegion[1])}
-      walk(graphlist, function(myGraph)
-        graphOnRegion(lpdf  = lpdf, myRegion, myGraph, saveit = saveit, ...) )
+      walk(graphlist, function(myGraph) graphOnRegion(lpdf  = lpdf, myRegion, myGraph, saveit = saveit, ...) )
       if (verbose >= 5) {reportDiffTime(myRegion[1], tig)}
     })}
 }
