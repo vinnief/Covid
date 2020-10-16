@@ -9,11 +9,13 @@
 `%//%` <- function(a,b) {paste(a,b,sep = "/")}
 # note %/% is remainder of division modulo!!!
 
-ma <- function(x, n = 7, na.rm = TRUE, ...) { #... = sides=2
+ma <- function(x, n = 7, na.rm = TRUE, sides = 1, digits = 1) { # can be  sides = 2
   n = min(length(x),n)
-  cx <- stats::filter(x, rep(1 / n, n), method = "convolution", ...)
-  if ( na.rm) cx <-        ifelse(is.na(cx),x,cx) 
-  cx}
+  cx <- round(stats::filter(x, rep(1 / n, n), method = "convolution", sides = sides),
+              digits) #default is sides = 2 and thats wrong mostly. so we invert the default. 
+  if (na.rm) cx <-   ifelse(is.na(cx),x,cx) # is there a way to have partial moving averages for the first n-1? 
+  cx
+}
 
 
 mac <- function(x,minval=5, ...){
@@ -38,7 +40,7 @@ getPackages <- function(x){
 getPackages <- function(x){
   lapply(x,function(i){
     #  require returns TRUE invisibly if it was able to load package
-    if ( !require( i , character.only = TRUE, quietly = TRUE ) ) {
+    if ( !require( i , character.only = TRUE, quietly = !verbose ) ) {
       #  If package was not able to be loaded then re-install
       install.packages( i , dependencies = TRUE )
       #  Load package after installing

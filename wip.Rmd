@@ -1,13 +1,152 @@
-```{r}
+```{r, echo= FALSE, }
 verbose <- 7
 source('definitions.R')
 ```
+```{r}
+source("loadData.R")
+```
+```{r test graphdanny} 
+graphdanny(JHH , c("Texas,US", "France", "Germany"), smoothn  = 7)
+graphaa_inl(JHH , c("Texas,US", "France", "Germany"), smoothn  = 7)
+```
+```{r}
+verbose = 2
+graphdanny(JHH, JHHRegios$`JHH World2`, smoothn = 7) #to be deprecated
+graphaa_inl(ECDC, ECDCRegios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend == FALSE)
+graphaa_inl(ECDC, ECDCRegios$`ECDC World2`, smoothn = 7,labmeth = "dl_last.points", putlegend == FALSE)
+
+```
+```{r}
+graphdanny(JHH,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
+graphaa_inl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",putlegend = FALSE)
+```
+```{r}
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.polygons", putlegend = FALSE)
+graphaa_inl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points", putlegend = FALSE)
+```
+```{r}
+graph1aa_finl(JHH, c("Spain", "France"), smoothn  = 7, labmeth = "dl_top.qp", putlegend = FALSE)
+
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",  putlegend = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.points",  logy = TRUE, putlegend = FALSE)
+
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_label", putlegend = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_text",
+              putlegend = FALSE)
+
+```
+
+
+```{r}
+myGraphNrs
+```
 ```{r test walkthrough}
-profvis(
-walkThrough(lpdf = ECDC, graphlist = "graph1Da_fil",  myFolderDate  = 'current', ordre = 'RG')
-)#, 
+Graphlist = c( "graph1Da_finl",        "graph1dnar_iyl",       "graph1dr_iyl" )
+Graphlist = c("graph1Drr_il", "graph2aa_inl", "graph2crd_il", "graph2dac_iyl" )
+Graphlist = c("graph3Dard_fia", "graph3Dard_fina", "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl")
+Graphlist = c("graph6Dardcra_finyl",  "graph6Dardcra_fiyl")
+myGraphNrs = "graph1aa_finl"
+verbose = 6
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graphaa_inl", myFolderDate  = 'current',  ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fina',
+             myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fia',
+                          myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph1aa_inl", myFolderDate  = 'current',  ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph6Dardcra_finl", myFolderDate  = 'current',  ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fiMnl',
+             myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fil',
+                          myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = 'graph6Dardcra_fiMl',
+             myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs,
+             myFolderDate  = 'current', ordre = 'RG')
+
+walkThrough( lpdf = JHH, regions = JHHRegios[14:17], graphlist = myGraphNrs, 
+             myFolderDate  = 'current', ordre = 'RG')
+graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"), smoothn = 1)
+graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"))
+
+graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"))
+graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"), smoothn = 1)
+ 
 ```
 traceback() # to trace the nested calls leading to an error. 
+
+```{r}
+JHH[JHH$Country.Region %in% c("Netherlands","Belgium") & JHH$theDate>= "2020-10-24",] %>% 
+  group_by(PSCR) %>% 
+  nest %>% 
+  mutate( data = map(data, function(d) smoothem.tib(d,vars = "net_active_imputed", n = 6))) %>% 
+  unnest(data)
+```
+```{r}
+
+graph1aa_finl(JHH, countries = c("Netherlands","Belgium"))
+graph1aa_finl(JHH, countries = c("Belgium"), smoothn = 7)
+#graph1aa_finl(JHH,c("Netherlands"),ID="Country.Region")
+graph1aa_finl(JHH,c("Aruba,Netherlands","Curacao,Netherlands","Sint Maarten,Netherlands"),ID="PSCR")
+graphdanny(JHH , c("France", "Germany"))
+graphdanny(JHH , c( "Germany"), smoothn  = 7)
+
+graphOnRegion(lpdf = JHH, JHHRegios$MSM, "graph1aa_finl", saveit = TRUE)
+```
+
+```{r}
+print(graph2aa_inl(JHH,c( "Netherlands"))%>% tail )
+graph1Da_fil(ECDC, "Belgium", saveit = TRUE)
+```
+```{r}
+source("graphit.R")
+source("graphdanny.R")
+verbose = 2
+graphdanny(JHH, "France", labmeth = "repel_label")
+graphdanny(JHH, "France", smoothn = 7,labmeth = "repel_label")
+graphdanny(JHH , c("France","Spain", "Italy", "Germany"), smoothn  = FALSE,labmeth = "repel_label")
+graphdanny(JHH , c("Spain", "Italy"), smoothn  = 7,)
+graph6Dardcra_finyl(JHH, "Belgium", smoothn = 7)
+graph3Dard_fina(JHH, "Belgium", smoothn = 7)
+
+```
+
+```{r test labels}
+regios$Vincent <- list("Vincent", "Belgium","France","Germany","Netherlands")
+#unchanged: 
+source("definitions.R")
+graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), putlegend = FALSE)
+source("graphit.R") 
+graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), putlegend = FALSE)
+graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'dl_points', putlegend = FALSE)
+
+graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'dl_last.points', putlegend = TRUE)
+```
+
+
+```{r smoothed}
+graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'),  smoothn= 7, labmeth = 'dl_last.points', putlegend = TRUE)
+
+graphit(JHH, regios$Vincent, xvar = 'day', logx =  FALSE , logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'repel_label', putlegend = FALSE)
+graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'repel_text')
+graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'dl_polygon')
+graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
+          yvars = c('new_confirmed'), labmeth = 'dl_bumpup', putlegend = TRUE)
+JHH%>% select(new_confirmed, theDate) %>% filter( PSCR %in% regios$Vincent) %>% filter(theDate == max(theDate))
+```
+
+```{r}
+
+
+```
 
 ```{r very verbose and warnings become errors}
 options(warn = 2)
@@ -15,6 +154,28 @@ options(warn = 2)
 ```{r less verbose}
 verbose <-  1
 ```
+
+```{r}
+checkTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
+  if (missing(totregions)) totregions <- unique(lpti[[ID]])
+  lpti1 <- lpti  %>% filter(!(!!ID %in% totregions)) 
+  #just to be sure, that if i do it twice i dont get double counts. We will get double entries tho! 
+  #this might show up in the graphs or not depending on sorting. 
+  varnames  = c("confirmed",  "deaths", "population") 
+  #Africa totals recovered and active seem to mirror imputed values. 
+  if (!('Lat' %in% names(lpti))) lpti1$Lat <- NA
+  if (!('Long' %in% names(lpti))) lpti1$Long <- NA
+  if (!all(sort(names(lpti)) == sort(names( lpti  %>%  total("", varnames = varnames, newrow = "World")) )))
+    {print(sort(names( lpti  %>%  total("", varnames = varnames, newrow = "World"))))
+    print("while " )
+    print(sort(names(lpti)))
+  }
+  else TRUE  
+}
+  names(total(ECDC0, 'Europe' , ID = 'Region', varnames = c('confirmed','deaths'), newrow = 'Europe'))
+
+```
+
 ```{r}
 checkTotals3(ECDC0, 'Europe' , ID = 'Region')
 ```
@@ -23,11 +184,11 @@ checkTotals3(ECDC0, 'Europe' , ID = 'Region')
 ```{r}
 sortIDlevels.dplyr <- function(lpdf, varname = confirmed, ondate = ""){
   varname <- enquo(varname)
-  if (ondate  == "") {ondate = max(lpdf$Date) } else 
-    if (nrow(lpdf[lpdf$Date  ==  ondate, ]  == 0)) {
+  if (ondate  == "") {ondate = max(lpdf$theDate) } else 
+    if (nrow(lpdf[lpdf$theDate  ==  ondate, ]  == 0)) {
       stop("Cannot sort on values of a date which is not present in the Data")}
-  PSCRlevels <- lpdf  %>%  select(c(PSCR, Date, !!varname))  %>%  
-    filter(Date  == ondate)  %>%  
+  PSCRlevels <- lpdf  %>%  select(c(PSCR, theDate, !!varname))  %>%  
+    filter(theDate  == ondate)  %>%  
     arrange(-eval(parse(text = substitute(!!varname))), PSCR, .by_group  = FALSE) 
   arrange(desc({{varname}}), PSCR, .by_group  = FALSE) 
   #arrange(-(!!varname), PSCR, .by_group  = FALSE) 
@@ -36,7 +197,18 @@ sortIDlevels.dplyr <- function(lpdf, varname = confirmed, ondate = ""){
   lpdf$PSCR
 } #the desc eval parse substitute !! should have been desc !! according to the manuals. but desc does not respect unquo. 
 ```
-# from graphit function, the following extract:
+```{r}
+JHH %>% filter(PSCR == "Belgium") %>% ysmooth("ma", c("new_confirmed", "net_active")) %>% #names #select(c(new_confirmed, net_active)) 
+  tail
+
+JHH %>% filter(PSCR == "Belgium")  %>%  #select(c(new_confirmed, net_active)) %>% 
+  tail
+     
+```
+
+
+
+
 ```{r}
 switch(labmeth,
        'none' = {},
@@ -68,17 +240,17 @@ minVal <- 100; minDate = '2019-12-31'; maxDate = Sys.Date()
 
  for (country in countries <- unique(lpti$PSCR)) {
    
-   if (any(is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))) { 
+   if (any(is.na(lpti[lpti$PSCR == country ,c('confirmed','theDate')]))) { 
      print(country % % 'nrows' % % nrRows % % newnrRows) 
-     print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))))}
+     print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','theDate')]))))}
  }
 
 ```
 
 ```{r}
 country <- 'Cayman_Islands' 
-print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','Date')]))))
-lpti[lpti$PSCR == country & lpti$confirmed >= minVal & lpti$Date >= minDate & lpti$Date <=  maxDate,] %>% view
+print(which((is.na(lpti[lpti$PSCR == country ,c('confirmed','theDate')]))))
+lpti[lpti$PSCR == country & lpti$confirmed >= minVal & lpti$theDate >= minDate & lpti$theDate <=  maxDate,] %>% view
 ```
 
 ```{r}
@@ -116,15 +288,15 @@ E10 <- ECDC %>% addSimVars(minDate = Sys.Date() - 10, ext = "_endsim") # europe 
 
 # integrate testing into ECDC & JHH
 ```{r}
-a <- merge(ECDC, testing, by.x = c('ISOcode','Date'), by.y = c('ISOcode','Date'), all.x = TRUE,
+a <- merge(ECDC, testing, by.x = c('ISOcode','theDate'), by.y = c('ISOcode','theDate'), all.x = TRUE,
            sort = FALSE)
 names(testing)
 ```
 # from loaddata: trial to make the loading only happen if it gives new data
 ```{r}
-while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$Date)<Sys.Date()-1 ) {
+while((Sys.time()>Sys.Date()% % "22:00:00")| max(JHH$theDate) < Sys.Date()-1 ) {
    source("loaddata.R")
-   if (max(JHH$Date)< Sys.Date()-1)     {
+   if (max(JHH$theDate)< Sys.Date() - 1)     {
     print( "failed to get yesterday's values ") 
    for (i in 1:12){
     print(Sys.time())

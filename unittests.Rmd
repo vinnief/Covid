@@ -6,15 +6,21 @@ JHH[JHH$Country.Region =="France",] %>% smoothem.lpti(varNames = starts_with("ne
 JHH[JHH$Country.Region =="France",] %>% smoothem.lpti(varNames = starts_with("nonsense"), n=4)%>% .[c(40,60,100,281:285),]
 JHH[JHH$Country.Region =="France",] %>% smoothem.lpti(varNames = "nonsense", n=4)%>% .[c(40,60,100,281:285),] #fails!
 
+graph1aa_finl(JHH, ID= "Country.Region",  c("Belgium","Netherlands","Sweden"), smoothn  = 7, putlegend = FALSE)
+graph1aa_finl(JHH, ID= "Country.Region",  c("Belgium","Netherlands","Sweden"), smoothn  = 1, putlegend = FALSE)
+graph1aa_finl(JHH,  c("Sweden"), smoothn  = 7, putlegend = FALSE)
+
 graph1Da_finl(JHH, JHHRegios$`JHH World2`,  smoothn = 1)
 graph1Da_finl(JHH, JHHRegios$`JHH World2`,  smoothn = 7)
 graph1aa_finl(JHH, JHHRegios$`JHH World2`,  smoothn = 7)
-graph1aa_finl(JHH, c("Texas,US","Arizona,US","New York,US"),  smoothn = 7)
+graph1aa_finl(JHH, JHHRegios$`JHH North America3` ,  smoothn = 7)
+graph1aa_finl(JHH, JHHRegios$`JHH North America4` ,  smoothn = 7)
 
 graph6Dardcra_finyl(JHH, "Belgium")
 graph6Dardcra_finyl(JHH, "Belgium", smoothn = 7)
 graph3Dard_fina(JHH, "Belgium")
 graph3Dard_fina(JHH, "Belgium", smoothn = 7)
+
 ```
 
 ```{r check horizontal intercept height }

@@ -1,13 +1,11 @@
-# ## graphit future version. 
-# from graphit function in graphit.R, the following extracts:
+#Danny Dorling Graph
 
-
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", 
-                    yvars  = c("active", "recovered", "deaths", "confirmed"), 
+graphdanny <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "net_active_imputed", 
+                    yvars  = c("active_imputed"), 
                     fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE,
-                    myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, 
+                    myFolderDate  = 'random', myFolderType  = "Danny", savename  = "", putlegend = TRUE, 
                     size = 2, returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, 
-                    sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', 
+                    sorted  = FALSE, smoothvars = xvar, smoothn = FALSE, labmeth = 'dl_points', 
                     from = '2019-12-01', to  = Sys.Date()){
   
   lpdf <- as.data.frame(lpti[lpti$theDate >=  from & lpti$theDate <=  to & lpti$confirmed >=  minVal, ])
@@ -22,7 +20,6 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   if (verbose >= 8) {print(countries)}
   lpdf <- lpdf[lpdf[[ID]] %in% countries,] 
   if (verbose >= 9) {print('graphi countrydata' );print(head(lpdf))}
-  
   y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
   if (str_length(y_lab) > 70) 
     y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
@@ -32,19 +29,18 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   myFilename <- "C19" % % mytitle
   
   if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  6) {print('graphi'  % %  mytitle  % % " No data")} ) }
-  mytitle <- "C19" % % format(min(lpdf$theDate), format  = "%Y%m%d")  %#% '-' %#%  
-    format(lastdate, format  = "%Y%m%d")  % %  mytitle
+  mytitle <- "C19" % % format(min(lpdf$theDate), format  = "%Y-%m-%d")  %#% '-' %#%  
+    format(lastdate, format  = "%Y-%m-%d")  % %  mytitle
   lpdf <- lpdf %>% 
            dataprep( ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
-                   logx  = logx, logy  = logy, sorted  = sorted,  
-                   smoothvars= smoothvars, smoothn = smoothn)
+                   logx  = logx, logy  = logy, sorted  = sorted, smoothvars= smoothvars, smoothn = smoothn)
   if (verbose >= 7) {print('graphi columns left');print( names(lpdf))}
   if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
     return(if (verbose >= 2) print('graphi'  % %  
                                      mytitle % % "Too little data to graph. Maybe lower the mininum value, take more territories?"))
   
   lpdf <- lpdf  %>%  #gather(variable, count, -!!ID, -!!xvar)
-    melt( id = c(ID, xvar, 'month',"monthday"), measure.vars = yvars, 
+    melt( id = c(ID, xvar), measure.vars = yvars, 
           variable.name = "variable", value.name = "count") %>% 
     mutate( mygroup = PSCR %, % variable, 
             variable = factor(variable, levels  = yvars)) %>% drop_na()
@@ -68,64 +64,42 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   nrIDs <- length(unique(lpdf[, ID]))
   myplot <- ggplot(lpdf, 
                    aes_string(y = "count", x = xvar, group = 'mygroup', 
-                              color = #ifelse(nrIDs  == 1,  ifelse(nrgroups == 1, 'theDate', 'variable') , 
-                                      #       ifelse(facet  == ID, ifelse(nrgroups == 1, 'theDate', 'variable'), ID))
-                              ifelse(nrgroups ==1, 'month', ifelse(nrIDs >1 & facet !=ID, ID, 'variable'))
+                              color = ifelse(nrIDs  == 1,  'variable' , 
+                                             ifelse(facet  == ID, 'variable', ID))
                    ), na.action = na.omit)
   xexpand = 0
-  if (area) {
-    posalpha <- ifelse(position  == 'identity', 0.4, 1)
-    myplot <- myplot + geom_area(aes_string(
-      color = ifelse(nrIDs  == 1 | facet  == ID,  'variable' , 'mygroup'), 
-      fill = ifelse(nrIDs  == 1 | facet  == ID,   'variable' , 'mygroup')), 
-      position  = position, alpha = posalpha)
-    
-    VFpalette  <- if (nrgroups <= 2)  c("lawngreen", "cyan")  
-                  else c("red", "green", "black", "darkorange", "lawngreen")
-    
-    myplot <- myplot + scale_fill_manual(values  = VFpalette) + 
-                      scale_color_manual(values  = VFpalette)
-  } else {
-    myplot <- myplot + #line plot
-      geom_path(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) + #was line
+  myplot <- myplot + #line plot
+      geom_path(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) + 
       geom_point(size = size, aes_string(  shape = 'variable')) 
-    if (!putlegend | facet == FALSE) 
-      {#browser()
-      #myplot = myplot +        geom_text(data = subset(lpdf, monthday == 1), aes_string(label = 'month', color = 'mygroup', x = xvar, y = 'count'), hjust = -1)
-      labmeth = strsplit(labmeth,"_")[[1]]
-      switch(labmeth[1],
+    if (!putlegend | facet  == FALSE) {
+    labmeth = strsplit(labmeth,"_")
+    switch(labmeth[1],
            'none' = {},
            'dl' = {myplot = myplot +
-                      geom_dl(aes_string(x = xvar, y = "count", label = if(nrgroups ==1) ID else 'mygroup'), #bug  label = if(nrgroups ==1) tail(xvar,1) else 'mygroup' 
-                              method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), 
-                                             labmeth[2], cex  = 1.2))
+                      geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
+                              method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last." %#% 
+                                               labmeth[2], cex  = 1.2))
                   xexpand = 0.25} ,
            'repel' = {data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),]
                       myplot = myplot + ifelse(labmeth[2] == "label" , 
-                             geom_label_repel(data, aes_string(x= xvar, y= "count", label = "mygroup"), 
+                             geom_label_repel(data, aes(label = mygroup), 
                                               label.size = 0.1, box.padding = 0.1, 
                                               label.padding = 0.2, size = 3),
-                             geom_text_repel(data, aes_string(x= xvar, y= "count", label = "mygroup"), box.padding = 0.1, size = 3))
+                             geom_text_repel(data, aes(label = mygroup), box.padding = 0.1, size = 3))
                       xexpand = 0.4} ,
            {myplot = myplot + 
              geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),   #default
-                     method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "top.points", cex  = 1.2)) 
+                     method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", cex  = 1.2)) 
             xexpand = 0.65} 
-      )} else browser()
+    )}
     
-    if ( intercept != FALSE & slope == FALSE ) myplot <- myplot + geom_hline( yintercept  = intercept, na.rm  = TRUE)  
-    if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
-    if ((intercept | slope) != FALSE & (verbose >= 2)) print(intercept % % slope % % "intercept and slope")
+  if ( intercept != FALSE & slope == FALSE ) myplot <- myplot + geom_hline( yintercept  = intercept, na.rm  = TRUE)  
+  if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
+  if ((intercept | slope) != FALSE & (verbose >= 2)) print(intercept % % slope % % "intercept and slope")
     
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
-    
-    #scale_fill_gradient(low="green",high="darkgreen")   
-    #https://stackoverflow.com/questions/50183484/how-do-i-change-the-fill-color-for-a-computed-variable-in-geom-bar/50194250#50194250
-    if (nrgroups ==1) {
-      myscale_color <- scale_color_gradient( low = "black", high = "red", 
-                                          guide =  "legend") #colorbar would be for continuous colors
-    }else if (nrgroups <= 6) {
+    if (nrgroups <= 6) {
       myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black",
                                                      "orange", "lawngreen", "tomato"), 
                                           guide = ifelse(putlegend, "legend", FALSE))
@@ -134,13 +108,12 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
       myscale_color <- scale_color_brewer(palette = palette)
     } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
     myplot <- myplot + myscale_color 
-  } 
- if (verbose >= 6) browser()
+
   if (!isFALSE(facet)) {
     myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), strip.position = "bottom")}
   
   myplot <- myplot + ylab(y_lab) +
-    xlab(paste(x_lab, ifelse(logx, "(log scale)", ""))) + 
+    xlab( x_lab % % ifelse(logx, "(log scale)","")) + 
     ggtitle(mytitle) + theme_light() +   
     guides(col  = guide_legend(nrow = 30, ncol  = min(2, (nrgroups - 1) %/% 30 + 1))) 
   
@@ -151,7 +124,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"), expand = c(xexpand, 0)) 
   else
     if (logx) myplot <- myplot + scale_x_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks, expand = c(xexpand, 0))
-  # with ifelse it crashes, as it needs to replicate an environment. 
+
   ## Code to turn off clipping of the labels outside the plot area. 
   #gt1 <- ggplotGrob(myplot)  
   #gt1$layout$clip[gt1$layout$name == "panel"] <- "off"
@@ -166,19 +139,18 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   if (savename !=  "") {
     if (facet  == FALSE) savename <-  paste(savename, "all-in-one")
     if (area) savename <- paste(savename, "area plot")
-    myFolderType <- myFolderDate %//% 
-      ifelse(myFolderType  == "",  sort(initials(yvars)) % % 'by' % % x_lab,  myFolderType) %#% 
-      ifelse (area,   " area plot","") %#%
-      ifelse(logy, ' log scale',"") %#%
-      ifelse(facet  == FALSE,  " all-in-one", "")
+    if (myFolderType  == "") { myFolderType <- myFolderDate %//% sort(initials(yvars)) % % 'by' % % xvar}
+    else myFolderType <- myFolderDate %//% myFolderType
+    if (area) myFolderType <- myFolderType  % %  "area plot"
+    if (logy) myFolderType <- myFolderType  % % 'log scale'
+    if (facet  == FALSE) myFolderType <-  paste(myFolderType, "all-in-one")
     if (verbose >=  4) print("graphi making plot"  % %  myFolderType %#% "/" %#% mytitle)
     myplot <- myplot + theme(text = element_text(size  = 20), 
                              axis.text  = element_text(color  = "blue", size  = rel(.8)) )
-    myPath <- myPlotPath %#% ifelse(myFolderType  !=  "", ""%//% myFolderType , "")
+    if (myFolderType  !=  "") myPath <- myPlotPath %//% myFolderType else myPath <- myPlotPath
     if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
     on.exit(while (!is.null(dev.list())) dev.off() )
-    if (verbose >=4) print("path length: " % % str_length(myPath %//% myFilename %#% ".png"))
-    if (verbose >= 5) print("myPath" %: % myPath %//% myFilename %#% ".png" % % length(myPath %//% myFilename %#% ".png"))
+    if (verbose >= 2)print(myPath %//% myFilename %#% ".png" % % length(myPath %//% myFilename %#% ".png"))
     png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
     print(myplot)
     dev.off()

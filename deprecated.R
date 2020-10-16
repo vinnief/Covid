@@ -45,8 +45,7 @@ lpdf<- lpdf%>% group_by(PSCR)%>%
 #                           dplyr::lag(lpdf[rowstodo,"deaths"],lagrd)
 #lpdf
 }
-t
-otals2 <- function(lpdf, rows = "", # before used only for county to state totalling. deprecated 
+totals2 <- function(lpdf, rows = "", # before used only for county to state totalling. deprecated 
                     ID = "Country.Region", varnames = c("confirmed", "deaths") ){
   if (rows[1]  == "") rows = unique(lpdf[, ID])
   if (verbose > 5) print(paste("Making totals2 for ", paste(rows, collapse = ", "), "in", ID))
@@ -285,6 +284,14 @@ graphit_nocheck_for_single_point <- function(lpti, countries, minVal = 1, ID  = 
   }
   invisible(lpdf)
 }# 
+
+graphs <- function(lpdf  = JHH, countries  = "World", graphlist  = myGraphNrs, ...) {
+  #deprecated not used. 
+  for (myGraph in graphlist) {
+    if (verbose >=  3) print( 'graph:'  % %  myGraph)
+    do.call(myGraph, args  = list(lpdf, countries, savename, ...))
+  }
+}
 
 writeRegioGraph<- function(lpdf=JHH,regions,
                            graphlist=c('graphDccp_fyl','graphDccprr_fyl','graphDddp_fyl'), 
