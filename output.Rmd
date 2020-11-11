@@ -11,7 +11,7 @@ https://drive.google.com/drive/folders/1Yo0IW4awCIvWMP6jYVKpn3kLgEolse0e?usp=sha
 
 
 ## load the data
-```{r initialize, echo = FALSE}
+```{r initialize, echo=FALSE}
 verbose = 2
 source("loadData.R")
 ```
@@ -24,11 +24,20 @@ options( repr.plot.width = 5,repr.plot.res = 200)# repr.plot.height = 3)#, repr.
 ```
 ## a Danny Dorling plot: val by Delta val, for active_imputed. It shows vertical zig zags
 ```{r}
-graph1aa_finl(JHH, c("Italy","Belgium","Netherlands","Germany","Poland","Ukraine", "Russia","Spain","Portugal"), size =1 ,smoothn  = 7, putlegend = FALSE, savename = " Spain to Portugal 20201102")
+graph1aa_finl(JHH, c("Italy","Belgium","Netherlands","Germany","Poland","Ukraine", "Russia","Spain","Portugal"), size =1 ,smoothn  = 7, putlegend = FALSE, savename = " Spain to Portugal"% % (Sys.Date() - 1))
 graph1aa_finl(JHH, regios$Vincent, size =1 ,smoothn  = 7, putlegend = FALSE)
 graph1aa_finl(JHH, regios$MSM, size =1 ,smoothn  = 7, putlegend = FALSE)
-
 graph1aa_finl(JHH, c("Kazakhstan","Sweden", "Norway", "Austria", "Iceland","Ireland",'Israel', "Iran"), smoothn  = 7, putlegend = FALSE)
+```
+## new deaths vs new cases
+```{r new deaths versus new cases}
+graph1aa_finl(JHH, regios$Vincent, size =1, xvar= "new_confirmed", yvars = "new_deaths", smoothn  = 7, smoothvars = c("new_deaths", "new_confirmed"))
+graph1aa_finl(JHH, c("Belgium", "Netherlands"), size =2, xvar= "new_confirmed", yvars = "new_deaths", smoothvars = c("new_deaths", "new_confirmed"),  smoothn  = 7, scales = "fixed", savename = "Belgium Nederlands", logy = T, logx = T)
+graph1aa_finl(JHH, regios$MSM, size =1, xvar= "new_confirmed", yvars = "new_deaths", smoothvars = c("new_deaths", "new_confirmed"), smoothn  = 7, scales = "free", savename = "MSM", logy= T, logx = T)
+
+graph1aa_finl(JHH, JHHRegios$`JHH Europe1`, size =1, xvar= "new_confirmed", yvars = "new_deaths", smoothn  = 7, smoothvars = c("new_deaths", "new_confirmed"), scales = "fixed", savename = "Europe1", logy = T, logx = T, slope = .03)
+graph1aa_finl(JHH, JHHRegios$`JHH World1`, size = 1, xvar= "new_confirmed", yvars = "new_deaths", smoothn  = 7, smoothvars = c("new_deaths", "new_confirmed"), scales = "fixed", savename = "World1", logy = T, logx = T)
+
 ```
 ## Graph active_imputed, recovered, deaths, and confirmed for some selected territories, 
 based on JHH data:
@@ -125,7 +134,7 @@ graph2crd_il(JHH,JHHRegios$`JHH Europe3`)
 graph2crd_il(JHH,JHHRegios$`JHH Europe2`)
 graph1dnar_iyl(JHH, JHHRegios$`JHH Europe2`)
 graphit(JHH, JHHRegios$`JHH Europe2`, minVal=1, xvar = 'day', 
-          yvars = c('new_active_rate'), logy = TRUE, intercept = stableRate) 
+          yvars = c('new_active_rate'), logy = TRUE, smoothn = 7, intercept = stableRate) 
 graphit(JHH %>% smoothem(smoothn = 7, vars = c("new_active_rate")), JHHRegios$`JHH Europe2`, minVal=1, xvar = 'day', 
           yvars = c('new_active_rate'), logy = TRUE, intercept = stableRate) 
 

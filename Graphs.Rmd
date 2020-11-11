@@ -13,7 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)  # only do this in Rstudio
 
 ```{r load the data}
 verbose <- 1
+#suppressPackageStartupMessages(
 source("loadData.R")
+#)
 ```
 
 ## From 2020-01-01 until now
@@ -21,8 +23,8 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 
 
 ```{r graphs walkthrough, echo=FALSE}
-verbose <- 4
-print("results of" % % Sys.Date())
+#verbose <- 4
+if (verbose >= 1) message("results of" % % Sys.Date())
 if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
 
 if (exists("timE")) print("last time this took" % % timE)
@@ -34,7 +36,8 @@ timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
 ```{r}
 if (exists("timJ")) print("last time this took" % % timJ)
 tim = Sys.time()
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs,#[8:15],
+             myFolderDate  = 'current', ordre = 'RG')
 timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
 ```
 
@@ -106,3 +109,4 @@ When you click the **Knit** button a document will be generated that includes bo
 Note that the `{r, echo = FALSE}` parameter can be added to the code chunk to prevent printing of the R code that generated the plot. And Include = false prevents automatic execution of the block.
 
 Second, note that for git, the ipynb and Rmd files containing output are much heavier than the R files which contain the inputs only, according to Jupytext faq (https://jupytext.readthedocs.io/en/latest/faq.html). I commit R and Rmd just to be sure at this moment, and if we want to use Binder we would need to version the IpyNB version. This is only useful for working versions, i.e. the master branch. Here is the latest working master version: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/vinnief/Covid/wip?filepath=graphs.ipynb)
+

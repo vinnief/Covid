@@ -27,17 +27,16 @@ mac <- function(x,minval=5, ...){
 #pacman p_load automates this and the following also: 
 #automate the syntax... Thanks Simon https://stackoverflow.com/users/1478381/simon-ohanlon
 getPackages <- function(x){
-  for (i in x ) {
-    #  require returns TRUE invisibly if it was able to load package
-    if ( !require( i , character.only = TRUE, quietly = TRUE ) ) {
-      #  If package was not able to be loaded then re-install
-      install.packages( i , dependencies = TRUE )
-      #  Load package after installing
-      require( i , character.only = TRUE )
-    }
-  }
-}
-getPackages <- function(x){
+  theLog = file("packageloading.log", open = "wt")
+  sink(theLog, type = "message")# , append = T)
+  on.exit({
+    message(class(theLog) ," is the Class of theLog.",# At this moment i should close the message sink. but that gives an error. 
+            "\nSink.number = ",
+            sink.number( type = "message"))
+    sink( type = "message"); 
+    if (isOpen(theLog)) close(theLog)
+    } 
+    )
   lapply(x,function(i){
     #  require returns TRUE invisibly if it was able to load package
     if ( !require( i , character.only = TRUE, quietly = !verbose ) ) {

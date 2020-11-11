@@ -4,26 +4,33 @@ source('definitions.R')
 ```
 ```{r}
 source("loadData.R")
+#kable(JHHUSStates)
 ```
 ```{r test graphdanny} 
-graphdanny(JHH , c("Texas,US", "France", "Germany"), smoothn  = 7)
-graphaa_inl(JHH , c("Texas,US", "France", "Germany"), smoothn  = 7)
+graphdanny(JHH %>% smoothem("net_active_imputed", n= 7), c("Texas,US", "France", "Germany"))
+graph1aa_finl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE)
+graph1aa_fiMnl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE)
+graph1aa_fiMnl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE, xvar = "new_confirmed",yvar = "confirmed")
 ```
 ```{r}
 verbose = 2
-graphdanny(JHH, JHHRegios$`JHH World2`, smoothn = 7) #to be deprecated
-graphaa_inl(ECDC, ECDCRegios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend == FALSE)
-graphaa_inl(ECDC, ECDCRegios$`ECDC World2`, smoothn = 7,labmeth = "dl_last.points", putlegend == FALSE)
+graph1aa_finl(ECDC , "Germany")
+graphdanny(JHH, JHHRegios$`JHH World2`) #to be deprecated
+graph1aa_finl(ECDC, ECDCRegios$`ECDC World2`,labmeth = "dl_last.points", putlegend = FALSE)
+graph1aa_finl(ECDC, ECDCRegios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
+graph1aa_finl(JHH, JHHRegios$`JHH World2`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
 
 ```
 ```{r}
-graphdanny(JHH,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
-graphaa_inl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE)
+graphdanny(ECDC,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE, facet = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE)
+
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",putlegend = FALSE)
 ```
 ```{r}
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.polygons", putlegend = FALSE)
-graphaa_inl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points", putlegend = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points", putlegend = FALSE, facet = FALSE)
 ```
 ```{r}
 graph1aa_finl(JHH, c("Spain", "France"), smoothn  = 7, labmeth = "dl_top.qp", putlegend = FALSE)
@@ -31,10 +38,14 @@ graph1aa_finl(JHH, c("Spain", "France"), smoothn  = 7, labmeth = "dl_top.qp", pu
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",  putlegend = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.points",  logy = TRUE, putlegend = FALSE)
 
+graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"))
+
+graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"))
+graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"), smoothn = 1)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_label", putlegend = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_text",
               putlegend = FALSE)
-
+ 
 ```
 
 
@@ -42,36 +53,22 @@ graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = 
 myGraphNrs
 ```
 ```{r test walkthrough}
-Graphlist = c( "graph1Da_finl",        "graph1dnar_iyl",       "graph1dr_iyl" )
-Graphlist = c("graph1Drr_il", "graph2aa_inl", "graph2crd_il", "graph2dac_iyl" )
-Graphlist = c("graph3Dard_fia", "graph3Dard_fina", "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl")
-Graphlist = c("graph6Dardcra_finyl",  "graph6Dardcra_fiyl")
+Graphlist1 = c( "graph1Da_finl",        "graph1dnar_iyl",       "graph1dr_iyl" )
+Graphlist2 = c("graph1Drr_il", "graph2aa_inl", "graph2crd_il", "graph2dac_iyl" )
+Graphlist3 = c("graph3Dard_fia", "graph3Dard_fina", "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl")
+Graphlist4 = c("graph6Dardcra_finyl",  "graph6Dardcra_fiyl")
 myGraphNrs = "graph1aa_finl"
 verbose = 6
 walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graphaa_inl", myFolderDate  = 'current',  ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fina',
-             myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fia',
-                          myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fina', myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fia', myFolderDate  = 'current', ordre = 'RG')
 walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph1aa_inl", myFolderDate  = 'current',  ordre = 'RG')
 walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph6Dardcra_finl", myFolderDate  = 'current',  ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fiMnl',
-             myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fil',
-                          myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = 'graph6Dardcra_fiMl',
-             myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs,
-             myFolderDate  = 'current', ordre = 'RG')
-
-walkThrough( lpdf = JHH, regions = JHHRegios[14:17], graphlist = myGraphNrs, 
-             myFolderDate  = 'current', ordre = 'RG')
-graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"), smoothn = 1)
-graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"))
-
-graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"))
-graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"), smoothn = 1)
- 
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fiMnl', myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fil', myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = 'graph6Dardcra_fiMyl', myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = JHH, regions = JHHRegios[14:17], graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
 ```
 traceback() # to trace the nested calls leading to an error. 
 
@@ -177,7 +174,7 @@ checkTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
 ```
 
 ```{r}
-checkTotals3(ECDC0, 'Europe' , ID = 'Region')
+checkTotals3(ECDC0 %>% rename(theDate = Date), 'Europe' , ID = 'Region')
 ```
 
 # alternative sortIDlevels version which does not work. because of metaprogramming issues with arrange. 
@@ -207,29 +204,6 @@ JHH %>% filter(PSCR == "Belgium")  %>%  #select(c(new_confirmed, net_active)) %>
 ```
 
 
-
-
-```{r}
-switch(labmeth,
-       'none' = {},
-       'dl_polygon' = {myplot = myplot + geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
-                 method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.polygons", cex  = 1.2))
-       xexpand = 0.25} ,
-       'dl_bumpup' = {myplot = myplot + geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),
-                method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.bumpup", cex  = 1.2))
-       xexpand = 0.25} ,
-       'label_repel' = {myplot = myplot + geom_label_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
-       aes(label = mygroup), label.size = 0.1, box.padding = 0.1, label.padding = 0.2, size = 3)
-       xexpand = 0.35} ,
-       'text_repel' = {myplot = myplot + geom_text_repel(data = lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),], 
-        aes(label = mygroup), box.padding = 0.1, size = 3)
-       xexpand = 0.4} ,
-       {myplot = myplot + 
-         geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),   #default
-                method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "last.points", cex  = 1.2)) 
-         xexpand = 0.35} 
-)
-```
 
 
 
