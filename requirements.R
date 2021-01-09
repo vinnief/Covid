@@ -8,6 +8,7 @@
 `%: %` <- function(x,y) {paste(x,y,sep = ": ")}
 `%//%` <- function(a,b) {paste(a,b,sep = "/")}
 # note %/% is remainder of division modulo!!!
+options(encoding = "UTF-8")
 
 ma <- function(x, n = 7, na.rm = TRUE, sides = 1, digits = 1) { # can be  sides = 2
   n = min(length(x),n)
@@ -27,10 +28,11 @@ mac <- function(x,minval=5, ...){
 #pacman p_load automates this and the following also: 
 #automate the syntax... Thanks Simon https://stackoverflow.com/users/1478381/simon-ohanlon
 getPackages <- function(x){
-  theLog = file("packageloading.log", open = "wt")
+  logFileName = "packageloading.log"
+  theLog = file(logFileName, open = "wt")
   sink(theLog, type = "message")# , append = T)
   on.exit({
-    message(class(theLog) ," is the Class of theLog.",# At this moment i should close the message sink. but that gives an error. 
+    message(class(theLog) ," is the Class of the Log ", logFileName,# At this moment i should close the message sink. but that gives an error. 
             "\nSink.number = ",
             sink.number( type = "message"))
     sink( type = "message"); 

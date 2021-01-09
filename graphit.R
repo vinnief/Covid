@@ -1,8 +1,8 @@
 # ## graphit future version. 
 # from graphit function in graphit.R, the following extracts:
+source("graphDanny.R")
 
-
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"), fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 2, returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "free", from = '2019-12-01', to  = Sys.Date()){
+graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"), fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
   
   lpdf <- as.data.frame(lpti[lpti$theDate >=  from & lpti$theDate <=  to & lpti$confirmed >=  minVal, ])
   lastdate <- max(lpdf$theDate)
@@ -26,8 +26,10 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   myFilename <- "C19" % % mytitle
   
   if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  6) {message('graphi'  % %  mytitle  % % " No data")} ) }
-  mytitle <- "C19" % % format(min(lpdf$theDate), format  = "%Y%m%d")  %#% '-' %#%  
+  mytitle <- "C19" % % format(min(ungroup(lpdf)$theDate), format  = "%Y%m%d")  %#% '-' %#%  
     format(lastdate, format  = "%Y%m%d")  % %  mytitle
+  #return(mytitle)
+  
   lpdf <- lpdf %>% 
            dataprep( ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
                    logx  = logx, logy  = logy, sorted  = sorted,  
@@ -36,13 +38,13 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
     return(if (verbose >= 2) message('graphi'  % %  
                                      mytitle % % "Too little data to graph. Maybe lower the mininum value, take more territories?"))
-  if (verbose>=8) {message( "before melt") ; browser()}
+  if (verbose>=10) {message( "before melt") ; browser()}
   lpdf <- lpdf  %>%  #gather(variable, count, -!!ID, -!!xvar)
     melt( id = c(ID, xvar, "year",'month',"monthday"), measure.vars = yvars, 
           variable.name = "variable", value.name = "count") %>% 
     mutate( mygroup = PSCR %, % variable, 
             variable = factor(variable, levels  = yvars)) #%>% 
-  if (verbose>=8) {message( "after melt, before drop_na") ; browser()}
+  if (verbose>=9) {message( "after melt, before drop_na") ; browser()}
   lpdf <- lpdf %>% drop_na()
   if (facet  == 'variable') lpdf$mygroup <- lpdf[[ID]] 
   else if(facet  == ID) lpdf$mygroup <- lpdf$variable
@@ -64,9 +66,12 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   nrIDs <- length(unique(lpdf[, ID]))
   myplot <- ggplot(lpdf, 
                    aes_string(y = "count", x = xvar, group = 'mygroup', 
-                              color = #ifelse(nrIDs  == 1,  ifelse(nrgroups == 1, 'theDate', 'variable') , 
-                                      #       ifelse(facet  == ID, ifelse(nrgroups == 1, 'theDate', 'variable'), ID))
-                              ifelse(nrgroups ==1, 'month', ifelse(nrIDs >1 & facet !=ID, ID, 'variable'))
+                              color = #ifelse(nrIDs  == 1 | facet  == ID,  
+                                          #   ifelse(nrgroups == 1, 'theDate', 'variable') , 
+                                      #        ID))
+                              ifelse(nrgroups == 1, 
+                                     'month', 
+                                     ifelse(nrIDs >1 & facet !=ID, ID, 'variable'))
                    ), na.action = na.omit)
   xexpand = 0
   if (area) {
@@ -95,32 +100,33 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
                       geom_dl(aes_string(x = xvar, y = "count", label = if(nrgroups ==1) ID else 'mygroup'), #bug  label = if(nrgroups ==1) tail(xvar,1) else 'mygroup' 
                               method  = list(dl.trans(x  = x + 0.1 , y = y + 0.1), 
                                              labmeth[2], cex  = 1.2))
-                  xexpand = 0.25} ,
+                  xexpand = ifelse(labmeth[2] == "last", 1, 0.4)} ,
            'repel' = {data = #lpdf[lpdf[[xvar]] == max(lpdf[[xvar]]),]
                               lpdf[lpdf$day ==1,]
                       myplot = myplot + ifelse(labmeth[2] == "label" , 
                              geom_label_repel(data, aes_string(x= xvar, y= "count", label = "mygroup"), 
                                               label.size = 0.1, box.padding = 0.1, 
                                               label.padding = 0.2, size = 3),
-                             geom_text_repel(data, aes_string(x= xvar, y= "count", label = "mygroup"), box.padding = 0.1, size = 3))
+                             geom_text_repel(data, aes_string(x= xvar, y= "count", label = "mygroup"), 
+                                             box.padding = 0.1, size = 3))
                       xexpand = 0.4} ,
            {myplot = myplot + 
              geom_dl(aes_string(x = xvar, y = "count",  label = 'mygroup'),   #default
                      method = list(dl.trans(x  = x + 0.1 , y = y + 0.1), "top.points", cex  = 1.2)) 
-            xexpand = 0.65} 
+            xexpand = 0.0} 
       )} #else browser()
     
     if ( intercept != FALSE & slope == FALSE ) myplot <- myplot + geom_hline( yintercept  = intercept, na.rm  = TRUE)  
     if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
-    if ((intercept | slope) != FALSE & (verbose >= 2)) message(intercept % % slope % % "intercept and slope")
+    if ((intercept | slope) != FALSE & (verbose >= 2)) message("graphi " ,intercept % % slope % % "intercept and slope")
     
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
     
     #scale_fill_gradient(low="green",high="darkgreen")   
     #https://stackoverflow.com/questions/50183484/how-do-i-change-the-fill-color-for-a-computed-variable-in-geom-bar/50194250#50194250
-    if (nrgroups ==1) {
-      myscale_color <- scale_color_gradient( low = "black", high = "red", 
+    if (nrgroups == 1) {
+      myscale_color <- scale_color_gradient( low = "blue", high = "red", 
                                           guide =  "legend") #colorbar would be for continuous colors
     }else if (nrgroups <= 6) {
       myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black",
@@ -176,13 +182,13 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     myPath <- myPlotPath %#% ifelse(myFolderType  !=  "", ""%//% myFolderType , "")
     if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
     on.exit(while (!is.null(dev.list())) dev.off() )
-    if (verbose >=4) message("file path length: " % % str_length(myPath %//% myFilename %#% ".png"))
-    if (verbose >= 5) message("myPath" %: % myPath %//% myFilename %#% ".png" % % length(myPath %//% myFilename %#% ".png"))
+    if (verbose >=2) message("file path length: " % % str_length(myPath %//% myFilename %#% ".png"))
+    if (verbose >= 3) message("myPath" %: % myPath %//% myFilename %#% ".png" % % length(myPath %//% myFilename %#% ".png"))
     png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
     print(myplot)
     dev.off()
   }else {
-    print(myplot + theme(title  = element_text(size  = 11)))
+    print(myplot + theme(title  = element_text(size  = 9)))
   }
   invisible(lpdf)
 }

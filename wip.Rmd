@@ -1,47 +1,72 @@
+```{r log}
+theLog <- file( "wip.log", open = "wt")
+sink(theLog, type = "message")
+```
 ```{r, echo= FALSE, }
-verbose <- 7
+
 source('definitions.R')
 ```
 ```{r}
 source("loadData.R")
 #kable(JHHUSStates)
 ```
+### during browse in graphit:
+check why graph5ardcra_fyil crashes on JHH.Regios[[12]]
+```{r }
+
+lpdf %>% group_by(mygroup, PSCR) %>% summarize(howmany =  n())%>% View
+verbose <- 7 
+walkThrough( lpdf = JHH, regions = JHH.Regios, graphlist = "graph6Dardcra_fiyl", 
+             myFolderDate  = 'current', logy = T, ordre = 'RG') #crashes on recovered passengers in World12 with T, works with False. 20201209
+```
+## a Danny Dorling plot: val by Delta val, for active_imputed. It shows vertical zig zags
+```{r}
+graph1cd_finl(JHH, JHH.Regios$`JHH Europe2`, size =1, scales = "fixed", logy = T, logx = T, slope = deathRate) # savename = "Europe2",
+graph1cd_finl(JHH, JHH.Regios$`JHH Europe1`, size =1, scales = "fixed", slope = deathRate)
+graph1cd_finl(JHH, JHH.Regios$`JHH World1`, size = 1, scales = "fixed" , slope = deathRate)#, savename = "World1")
+lifecycle::last_warnings()
+# there is an error in a subset where the index is a df instead of a vertor.
+```
+
+
 ```{r test graphdanny} 
-graphdanny(JHH %>% smoothem("net_active_imputed", n= 7), c("Texas,US", "France", "Germany"))
-graph1aa_finl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE)
-graph1aa_fiMnl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE)
-graph1aa_fiMnl(JHH , c("Texas,US", "France", "Germany", "Belgium", "Netherlands", "Italy", "Spain"), facet =FALSE, xvar = "new_confirmed",yvar = "confirmed")
+graphDanny(JHH %>% smoothem("net_active_imputed", n= 7), c("Texas,US", "France", "Germany"))
+
 ```
 ```{r}
 verbose = 2
 graph1aa_finl(ECDC , "Germany")
-graphdanny(JHH, JHHRegios$`JHH World2`) #to be deprecated
-graph1aa_finl(ECDC, ECDCRegios$`ECDC World2`,labmeth = "dl_last.points", putlegend = FALSE)
-graph1aa_finl(ECDC, ECDCRegios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
-graph1aa_finl(JHH, JHHRegios$`JHH World2`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
+graphDanny(JHH, JHH.Regios$`JHH World2`) #to be deprecated
+graph1aa_finl(ECDC, ECDC.Regios$`ECDC World2`,labmeth = "dl_top.points")
+graph1aa_finl(ECDC, ECDC.Regios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
+graph1aa_finl(JHH, JHH.Regios$`JHH World2`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
 
 ```
 ```{r}
-graphdanny(ECDC,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
+graphDanny(ECDC,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE, facet = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE)
-
-graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",putlegend = FALSE)
-```
-```{r}
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.polygons", putlegend = FALSE)
-graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points", putlegend = FALSE, facet = FALSE)
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",putlegend = FALSE)
+graph1aa_finl(JHH, c("Italy","Belgium","Netherlands","Germany","Poland","Ukraine", "Russia","Spain","Portugal"),  savename = " Spain to Portugal")
+graph1aa_finl(JHH, c("Italy","Belgium","Netherlands","Germany","Poland","Ukraine", "Russia","Spain","Portugal"),  scales = "fixed")
+graph1aa_finl(JHH, c(regios$Vincent, "USA", "Europe"),  savename = "VF")
+graph1aa_finl(JHH, regios$MSM,   savename = "MSM Countries")
+graph1cd_finl(JHH, c(regios$Vincent, "USA", "Europe"),  savename = "VF")
 ```
 ```{r}
-graph1aa_finl(JHH, c("Spain", "France"), smoothn  = 7, labmeth = "dl_top.qp", putlegend = FALSE)
 
-graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.qp",  putlegend = FALSE)
-graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_top.points",  logy = TRUE, putlegend = FALSE)
 
-graph1aa_finl(ECDC,c("Belgium","Netherlands",  "Sweden", "Kazakhstan"))
+```
+```{r}
+graph1cd_finl(Belgium, "Brussels" )
+graph1aa_finl(Belgium,"Brussels")# Belgium.Regios[1])
 
-graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"))
-graph1aa_finl(JHH,c("Belgium","Netherlands", "Sweden", "Kazakhstan"), smoothn = 1)
+
+graph1aa_finl(JHH, c("Spain", "France"), labmeth = "dl_top.qp")
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), labmeth = "dl_top.qp")
+graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), labmeth = "dl_top.points",  logy = TRUE)
+
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_label", putlegend = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = "repel_text",
               putlegend = FALSE)
@@ -50,27 +75,27 @@ graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = 
 
 
 ```{r}
+sink()
 myGraphNrs
 ```
-```{r test walkthrough}
+```{r test walkthrough on ECDC}
 Graphlist1 = c( "graph1Da_finl",        "graph1dnar_iyl",       "graph1dr_iyl" )
 Graphlist2 = c("graph1Drr_il", "graph2aa_inl", "graph2crd_il", "graph2dac_iyl" )
 Graphlist3 = c("graph3Dard_fia", "graph3Dard_fina", "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl")
 Graphlist4 = c("graph6Dardcra_finyl",  "graph6Dardcra_fiyl")
 myGraphNrs = "graph1aa_finl"
 verbose = 6
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graphaa_inl", myFolderDate  = 'current',  ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fina', myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph3Dard_fia', myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph1aa_inl", myFolderDate  = 'current',  ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = "graph6Dardcra_finl", myFolderDate  = 'current',  ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fiMnl', myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = 'graph6Dardcra_fil', myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = 'graph6Dardcra_fiMyl', myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDCRegios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = JHH, regions = JHHRegios[14:17], graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+
+walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = c('graph6Dardcra_fiyl', 'graph6Dardcra_finyl', "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl","graph1cd_finl" ,"graph3Dard_fia","graph3Dard_fina", "graph1aa_finl", "graph1aa_fiMnl"), myFolderDate  = 'current', ordre = 'RG')
+walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = c("graph1Da_fil"   ,"graph1Da_finl",  "graph1Dc_fnl",   "graph1dnar_iyl", "graph1dr_iyl" ), myFolderDate  = 'current', ordre = 'RG')
 ```
-traceback() # to trace the nested calls leading to an error. 
+```{r}
+sink(type = "output")
+setdiff(myGraphNrs, c('graph6Dardcra_fiyl', 'graph6Dardcra_finyl', "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl","graph1cd_finl" ,"graph3Dard_fia","graph3Dard_fina", "graph1aa_finl", "graph1aa_fiMnl"))
+```
+# to trace the nested calls leading to an error, use: 
+traceback()
 
 ```{r}
 JHH[JHH$Country.Region %in% c("Netherlands","Belgium") & JHH$theDate>= "2020-10-24",] %>% 
@@ -82,7 +107,7 @@ JHH[JHH$Country.Region %in% c("Netherlands","Belgium") & JHH$theDate>= "2020-10-
 ```{r}
 
 graph1aa_finl(JHH, countries = c("Netherlands","Belgium"))
-graph1aa_finl(JHH, countries = c("Belgium"), smoothn = 7)
+graph1aa_fiMnl(JHH, countries = c("Netherlands","Belgium"))
 #graph1aa_finl(JHH,c("Netherlands"),ID="Country.Region")
 graph1aa_finl(JHH,c("Aruba,Netherlands","Curacao,Netherlands","Sint Maarten,Netherlands"),ID="PSCR")
 graphdanny(JHH , c("France", "Germany"))

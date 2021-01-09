@@ -1,7 +1,7 @@
 ---
-title: "Graphs"
+title: "Graphs2"
 author: "VF"
-date: "March-Sept 2020"
+date: "March-Dec 2020"
 output: html_document
 ---
 # Graphs
@@ -11,42 +11,46 @@ knitr::opts_chunk$set(echo = TRUE)  # only do this in Rstudio
 
 ```
 
-```{r load the data}
+```{r load the data, include=FALSE, echo=FALSE}
 verbose <- 1
-#suppressPackageStartupMessages(
+theLog <- file( "Graphs.log", open = "wt")
+sink(theLog, type = c("output"))
 source("loadData.R")
-#)
+sink()
 ```
 
 ## From 2020-01-01 until now
 Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
 
 
-```{r graphs walkthrough, echo=FALSE}
+```{r graphs walkthrough, include=FALSE, echo=FALSE}
 #verbose <- 4
 if (verbose >= 1) message("results of" % % Sys.Date())
-if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
-
-if (exists("timE")) print("last time this took" % % timE)
-tim = Sys.time()
-walkThrough(lpdf = ECDC, myFolderDate  = 'current', ordre = 'RG') #, regions = ECDCRegios, graphlist = myGraphNrs
-timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
+#if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
+if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Thursday") { 
+  #do this only on thursdays after 12noon when ECDC published. 
+  if (exists("timE")) print("last time this took" % % timE)
+  tim = Sys.time()
+  walkThrough(lpdf = ECDC,regions = ECDC.Regios, graphlist = myGraphNrs,  myFolderDate  = 'current', ordre = 'RG') 
+  timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
+}
 ```
 
-```{r}
+```{r echo=FALSE}
 if (exists("timJ")) print("last time this took" % % timJ)
 tim = Sys.time()
-walkThrough( lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs,#[8:15],
+walkThrough( lpdf = JHH, regions = JHH.Regios, graphlist = myGraphNrs, 
              myFolderDate  = 'current', ordre = 'RG')
 timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
 ```
 
 ## Covid19 Development during last month only.
 ```{r one month, include=FALSE, eval=FALSE}
+
 lastmonth <- (Sys.Date() %m-% months(1))
 yearmo <- year(lastmonth)%-%sprintf("%02d", month(lastmonth))
 if (!dir.exists(myPlotPath%//%yearmo)) {#uses lubridate
-  walkThrough(lpdf = JHH, regions = JHHRegios, graphlist = myGraphNrs, 
+  walkThrough(lpdf = JHH, regions = JHH.Regios, graphlist = myGraphNrs, 
               from = floor_date(lastmonth, 'month'), 
               to = ceiling_date(lastmonth, 'month')-1, 
               myFolderDate = yearmo, 
@@ -62,8 +66,8 @@ if (!dir.exists(myPlotPath%//%yearmo)) {#uses lubridate
 ## Do all months up to today
 ```{r all months, include=FALSE, eval=FALSE}
 verbose = 1
-makeHistoryGraphs(JHH, regions = JHHRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
-makeHistoryGraphs(ECDC, regions = ECDCRegios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
+makeHistoryGraphs(JHH, regions = JHH.Regios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
+makeHistoryGraphs(ECDC, regions = ECDC.Regios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 
 ```
 #### A more convoluted way, just for the record: 
@@ -72,10 +76,10 @@ startDate = "2020-01-01"
 fromDates <- as.character(seq(as.Date(startDate), length = 12, by = "1 month"))
 toDates <- as.character(seq(as.Date(fromDates[2]), length = 12, by = "1 month") - 1)
 
-makeHistoryGraphs(ECDC,ECDCRegios, graphlist = myGraphNrs, 
+makeHistoryGraphs(ECDC,ECDC.Regios, graphlist = myGraphNrs, 
                   fromDates = fromDates, toDates = toDates)
 
-makeHistoryGraphs(JHH,JHHRegios, graphlist = myGraphNrs, 
+makeHistoryGraphs(JHH,JHH.Regios, graphlist = myGraphNrs, 
                   fromDates = fromDates, toDates = toDates)
 
 ```
@@ -83,7 +87,7 @@ makeHistoryGraphs(JHH,JHHRegios, graphlist = myGraphNrs,
 
 ```{r byDate once a week}
 if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday")  
-  walkThrough(JHH, JHHRegios[1:10], graphlist = myGraphListbyDate,
+  walkThrough(JHH, JHH.Regios[1:10], graphlist = myGraphListbyDate,
               myFolderDate = 'weekly')
 ```
 
@@ -92,13 +96,13 @@ if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Friday")
 Simulate how the non-social distancing situation would have turned out: deaths, recovered, and confirmed   
 ```{r sims, include=FALSE, eval=FALSE}
 graphDddp_fyl(JHH,regios$Vincent,savename  = "deaths missed") 
-walkThrough(JHH, regions = JHHRegios,graphlist = 'graphDccprr_fyl')
+walkThrough(JHH, regions = JHH.Regios,graphlist = 'graphDccprr_fyl')
 
-walkThrough(ECDC, ECDCRegios,ext = '_sim', graphlist = c('graphDccprr_fiyl','graphDddp_fyl')) 
+walkThrough(ECDC, ECDC.Regios,ext = '_sim', graphlist = c('graphDccprr_fiyl','graphDddp_fyl')) 
 ```
 Simulate how the current state would turn out if no policy nor behavior change
 ```{r}
-walkThrough(ECDC , ECDCRegios,ext = '_endsim',graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl')) 
+walkThrough(ECDC , ECDC.Regios,ext = '_endsim',graphlist = c('graphDccprr_fiyl', 'graphDddp_fyl')) 
 ```
 ## R Markdown and Jupyter Notebook: sync with Jupytext. 
 

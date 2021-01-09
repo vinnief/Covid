@@ -1,6 +1,6 @@
 #Danny Dorling Graph
 
-graphdanny <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "net_active_imputed", 
+graphDanny <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "net_active_imputed", 
                     yvars  = c("active_imputed"), 
                     fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE,
                     myFolderDate  = 'random', myFolderType  = "Danny", savename  = "", putlegend = TRUE, 
