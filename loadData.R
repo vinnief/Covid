@@ -8,10 +8,10 @@ if (verbose >= 1) message(Sys.time() % % "loading the data from the web and tran
 
 #load ECDC if the data is stale
 if (!exists('ECDC') || (max(ECDC$theDate) < Sys.Date() ) ) {
-  ECDC <- loadECDC()  
+  ECDC <- loadECDC(1)  
   writeWithCounters(ECDC, name = "Covid19ECDC")
 }
-if (verbose >= 2) message("ECDC data loaded, latest date:" % % max(ECDC$theDate))
+if (verbose >= 1) message("ECDC data loaded, latest date:" % % max(ECDC$theDate))
 
 #load JHH if data is stale
 if (!exists('JHH') || (max(JHH$theDate) < Sys.Date() - 1)) {
@@ -19,9 +19,9 @@ if (!exists('JHH') || (max(JHH$theDate) < Sys.Date() - 1)) {
   writeWithCounters(JHH,name = "Covid19JHH") 
   writeWithCounters(JHHUSStates, "Covid19JHHUSCounties")
 }
-if (verbose >= 2) message("JHH data loaded, latest date:" % % max(JHH$theDate))
+if (verbose >= 1) message("JHH data loaded, latest date:" % % max(JHH$theDate))
 
-#load belgian data per municipality
+#load Belgian data per municipality
 #Belgium <- readBelgium() %>% imputeRecovered() %>% extravars()
 #writeWithCounters(Belgium, "Belgium", na=)
 #

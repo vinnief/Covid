@@ -10,6 +10,12 @@ source('definitions.R')
 source("loadData.R")
 #kable(JHHUSStates)
 ```
+```{r}
+Belg <- ECDC[ECDC$Country.Region=="Belgium",] 
+View(Belg)
+
+
+```
 ### during browse in graphit:
 check why graph5ardcra_fyil crashes on JHH.Regios[[12]]
 ```{r }

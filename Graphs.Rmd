@@ -31,7 +31,7 @@ if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Thursday") {
   #do this only on thursdays after 12noon when ECDC published. 
   if (exists("timE")) print("last time this took" % % timE)
   tim = Sys.time()
-  walkThrough(lpdf = ECDC,regions = ECDC.Regios, graphlist = myGraphNrs,  myFolderDate  = 'current', ordre = 'RG') 
+  walkThrough(lpdf = ECDC,regions = ECDC.Regios, graphlist = myGraphNrs,  smoothn=1, myFolderDate  = 'current', ordre = 'RG') 
   timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
 }
 ```

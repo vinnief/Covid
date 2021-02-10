@@ -5,7 +5,7 @@ source("requirements.R")
 #)
 #Global assumptions
 LAGRC <- 42
-LAGRD <- 36
+LAGRD <- 35
 LAGDC <- LAGRC - LAGRD
 deathRate = .05
 stableRate = 1/LAGRC
@@ -123,8 +123,11 @@ wide2LongJHH <- function(wpdf, coltype = "date", values.name = "count", US = FAL
  lpdf <- reshape2::melt(wpdf, id = ID, 
             variable.name = coltype, value.name = values.name) 
  #lpdf <- wpdf  %>%  pivot_longer(????)
- lpdf$theDate <- as.Date(paste(lpdf[, coltype], "20", sep = ""), format = "X%m.%d.%Y") #add century, get rid of X
- lpdf$date <- NULL
+ lpdf$theDate <- as.Date(lpdf[, coltype], format = "X%m.%d.%y")# %>% # %y 2 digits %Y 4d year
+                 # format(, "20%y-%m-%d") %>%  #add century, get rid of X
+                #  as.Date()   # convert to date again. 
+ if (verbose >=2) message("Last JHH date:"& last(lpdf$theDate) )
+ #lpdf$date <- NULL
  return(lpdf)
 } 
 
@@ -562,7 +565,7 @@ readECDCweekly <- function(){
   lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na  = "" ,
                    col_types = cols(
                      dateRep = col_character(),
-                     year_week = col_double(),
+                     year_week = col_character(),
                      cases_weekly = col_double(),
                      deaths_weekly = col_double(),
                      countriesAndTerritories = col_character(),
@@ -570,12 +573,12 @@ readECDCweekly <- function(){
                      countryterritoryCode = col_character(),
                      popData2019 = col_double(),
                      continentExp = col_character(),
-                     notification_rate_per_100000_population_14_days = col_double()
+                     "notification_rate_per_100000_population_14-days" = col_double()
                    ))  %>%  #fileEncoding  = "UTF-8-BOM" doesn use bom in readr tidyverse. 
     mutate(theDate  = as.Date(dateRep, format = "%d/%m/%Y")) %>%
     rename( PSCR = countriesAndTerritories, 
             ISOcode  = countryterritoryCode, 
-            confirmed_today = cases_weekly, 
+            confirmed_today = cases, 
             deaths_today = deaths_weekly, population  = popData2019, 
             Region = continentExp)        %>% 
     select( -geoId,
@@ -602,12 +605,14 @@ correctMissingLastDay <- function(lpti = ECDC0){
                           lpti %>% filter(theDate == maxDate) %>% pull(PSCR) )
   for (myPSCR in missingPSCR) {
     countryData <- filter(lpti, PSCR == myPSCR )
-    lastDate <- max(countryData$theDate)
-    missingRows <- countryData %>% filter( theDate == lastDate)
-    lastDate <- as.Date(lastDate, format = '%Y-%m-%d')
-    missingRows <- missingRows[rep(1, as.Date(maxDate, format = '%Y-%m-%d') - lastDate) ,]
-    missingRows <- missingRows %>% mutate(theDate = as.Date(lastDate + row_number(),  origin = '1970-01-01'))
-      if (verbose >= 5) {message("missingRows top 20");message(missingRows%>% head(20))}
+    countryLastDate <- max(countryData$theDate)
+    missingRows <- countryData %>% filter( theDate == countryLastDate)
+    countryLastDate <- as.Date(countryLastDate, format = '%y-%m-%d')
+    neededExtraDates<- unique(lpti[lpti$theDate > countryLastDate, "theDate"]) #as.Date(maxDate, format = '%Y-%m-%d') - lastDate %y instead of %Y?
+    missingRows <- missingRows[rep(1, nrow(neededExtraDates)) ,]
+    missingRows <- missingRows %>% mutate(theDate = neededExtraDates$theDate,
+                                          year_week= year(theDate) %_% week(theDate)) #as.Date(CountryLastDate + row_number(),  origin = '1970-01-01'))
+      if (verbose >= 5) {message("missingRows ");View(missingRows)}
       lpti <- rbind(lpti,missingRows)
     }
   lpti
@@ -698,7 +703,7 @@ provincializeJHH <- function(lpdf = JHH){
 makeRegioList <- function(lpti = JHH, piecename = "JHH"){
  c(  
   lpti  %>%  makeDynRegions(piecename = piecename % % 'World'), 
-  lpti  %>%  filter(PSCR %in% regios$Europe )  %>%  
+  lpti  %>%  filter(PSCR %in% c("EU",regios$Europe) )  %>%  
    makeDynRegions(gridsize = 20, piecename = piecename % % 'Europe'), 
   lpti  %>%  filter(PSCR %in% c(regios$AsiaP))  %>%  makeDynRegions(piecename = piecename % % 'Asia'), 
   lpti  %>%  filter(PSCR %in% regios$NorthAmericaS)  %>%  makeDynRegions(piecename = piecename  % %  'North America'), 
@@ -728,7 +733,7 @@ addPopulation <- function(lpdf) {
 }
 
 
-imputeRecovered <- function(lpdf = ECDCdata, lagrc = LAGRC, lagrd = LAGRD, # was 22, 16
+imputeRecovered <- function(lpdf = ECDC, lagrc = LAGRC, lagrd = LAGRD, 
               dothese = FALSE, correct = FALSE){
  varname = "recovered"
  if (!('recovered' %in% names(lpdf))) lpdf$recovered <- as.numeric(NA)
@@ -745,13 +750,14 @@ imputeRecovered <- function(lpdf = ECDCdata, lagrc = LAGRC, lagrd = LAGRD, # was
  rowstobecorrected = correct & ( lpdf$recovered < lpdf$recovered_imputed )
  rowstodo <- is.na(lpdf$recovered) | dothese | rowstobecorrected
  #  %>%  drop() #no need: is vector already
- if (verbose >= 5)message("imputing recovered for:" % % 
+ if (verbose >= 5) message("imputing recovered for:" % % 
             length(unique(lpdf[rowstodo, ][["PSCR"]]))
              % %  'Regions.')
  if (verbose >= 7) {message('imputing territories:' );message(paste(unique(lpdf[rowstodo, ][["PSCR"]]), collapse = "; "))}
  if (sum(rowstodo)  == 0) return(lpdf)
  lpdf <- lpdf %>%  group_by(PSCR)  %>% 
-  mutate_cond(rowstodo, imputed = TRUE )# %>%    mutate_cond(rowstodo, recovered = recovered_imputed)
+  mutate_cond(rowstodo, imputed = TRUE )
+    # %>%    mutate_cond(rowstodo, recovered = recovered_imputed)
 }
 
 frac <- function(n, d){ifelse(d !=  0, n/d, NA)}
@@ -900,7 +906,7 @@ R02doublingDays <- function(R0 = 1){
 doublingDays2R0 <- function(doublingDays = 3) {2^(LAGRC/doublingDays) - 1}
 
 
-estimateDoublingDaysOneCountry <- function(lpti, variable = 'confirmed', nrDays = 9, minDate = "2019-12-31", maxDate = '2020-12-31'){
+estimateDoublingDaysOneCountry <- function(lpti, variable = 'confirmed', nrDays = 9, minDate = "2019-12-31", maxDate = '2021-12-31'){
  getGR <- function(rowNr){
   lptiSel <- lpti[(rowNr - nrDays + 1):rowNr, ] #potential Bug: assumes data sorted by increasing date! is it? should be!
   if (sum(!is.na(lptiSel[[variable]])) >= 3 ) {
@@ -992,7 +998,7 @@ graph_DemoDoubling <- function(lpti = ECDC, doublingDays = 3, nrRows = -1){
 }
 
 
-addTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
+addTotals3 <- function(lpti = ECDC, totregions , ID = 'Region'){
  if (missing(totregions)) totregions <- c(unique(lpti[[ID]]))
  if (!('Lat' %in% names(lpti))) lpti$Lat <- NA  
  if (!('Long' %in% names(lpti))) lpti$Long <- NA
@@ -1015,7 +1021,7 @@ addTotals3 <- function(lpti = ECDC0, totregions , ID = 'Region'){
                   total(regio , ID = 'PSCR', varnames = varnames, newrow = regio))
   
  lpti
-}
+} #bug. check ECDC2 and then integrate into LPTI if it is correct. the current world totals are no good in lpti. 
 
 addCountryTotals <- function(lpdf = JHH, varnames = c("confirmed","recovered", "deaths","population")){
   existingTotals <- c("China","Australia","Canada",'US')
@@ -1064,10 +1070,6 @@ loadJHH <- function() {
     addRegions( Regiolist = regios) %>% arrange(PSCR,theDate) %>%
     imputeRecovered() %>% extravars()#
   if (verbose >= 1) reportDiffTime('adding population, totals, imputations, and daily vars in JHH:',ti,'secs')
-  ti = Sys.time()
-  JHH <- JHH %>%  addDoublingDaysPerCountry(variable = 'confirmed') %>% 
-    addDoublingDaysPerCountry(variable = 'active_imputed') 
-  if (verbose >= 1) reportDiffTime('adding the doubling days (twice) in JHH:',ti,'mins')
   
   #ti = Sys.time()
   #JHH <- addSimVars(JHH, minVal = 100) %>% 
@@ -1075,7 +1077,7 @@ loadJHH <- function() {
   #reportDiffTime('adding the simulated values in JHH:',ti,'mins')
   
   JHH.Regios <<- makeRegioList(JHH)
-  #writeWithCounters(JHH,name = "Covid19JHH")
+  writeWithCounters(JHH,name = "Covid19JHH")
   JHH
 } 
 
@@ -1087,9 +1089,10 @@ loadECDCdaily <- function() {
   tim = Sys.time()
   ECDC  <- ECDC0 %>% correctMissingLastDay() %>% 
     addTotals3 %>% imputeRecovered %>%  extravars %>%
-    mutate(Country.Region = PSCR) %>%
-    addDoublingDaysPerCountry(variable = 'active_imputed') %>%
-    addDoublingDaysPerCountry(variable = 'confirmed') 
+    mutate(Country.Region = PSCR) 
+  #%>%
+   # addDoublingDaysPerCountry(variable = 'active_imputed') %>%
+    #addDoublingDaysPerCountry(variable = 'confirmed') 
   if (verbose >= 1) reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
   
   #tim = Sys.time()
@@ -1101,16 +1104,22 @@ loadECDCdaily <- function() {
   ECDC.Regios <<- makeDynRegions( ECDC, piecename = 'ECDC World')
   ECDC
 }
-loadECDC <- function() {
+loadECDC <- function(NrDays=7) {
   tim = Sys.time()
-  ECDC0 <- readECDCweekly()
+  if (NrDays == 7) 
+    ECDC0 <- readECDCweekly()
+  else 
+    ECDC0 <- readECDCdaily()
   if (verbose >= 1) reportDiffTime('load ECDC:',tim,'mins')
   tim = Sys.time()
   ECDC  <- ECDC0 %>% correctMissingLastDay() %>% 
-    addTotals3 %>% imputeRecovered %>%  extravars %>%
-    mutate(Country.Region = PSCR) %>%
-    addDoublingDaysPerCountry(variable = 'active_imputed') %>%
-    addDoublingDaysPerCountry(variable = 'confirmed') 
+    addTotals3 %>% imputeRecovered(lagrc = LAGRC%/% NrDays, lagrd = LAGRD%/%NrDays) %>%  extravars %>%
+    mutate(Country.Region = PSCR) 
+  #%>%
+   # addDoublingDaysPerCountry(variable = 'active_imputed') %>%
+    #addDoublingDaysPerCountry(variable = 'confirmed') 
+  ECDC2  <- ECDC2 %>% imputeRecovered %>%  extravars %>%
+    mutate(Country.Region = PSCR) 
   if (verbose >= 1) reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
   
   #tim = Sys.time()

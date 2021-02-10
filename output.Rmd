@@ -14,6 +14,11 @@ https://drive.google.com/drive/folders/1Yo0IW4awCIvWMP6jYVKpn3kLgEolse0e?usp=sha
 ```{r initialize, include=FALSE}
 verbose = 2
 source("loadData.R")
+ti = Sys.time()
+JHH <- JHH %>%  addDoublingDaysPerCountry(variable = 'confirmed') %>% 
+    addDoublingDaysPerCountry(variable = 'active_imputed') 
+if (verbose >= 1) reportDiffTime('adding the doubling days (twice) in JHH:',ti,'mins')
+  
 theLog = file("output.log", open = "wt")
 sink(theLog, type = "message")
 
