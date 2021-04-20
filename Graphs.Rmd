@@ -16,6 +16,7 @@ verbose <- 1
 theLog <- file( "Graphs.log", open = "wt")
 sink(theLog, type = c("output"))
 source("loadData.R")
+JHH<- reNewJHH()
 sink()
 ```
 
@@ -26,7 +27,6 @@ Graph and save lots of graphs on all regions present, paginated by size of the C
 ```{r graphs walkthrough, include=FALSE, echo=FALSE}
 #verbose <- 4
 if (verbose >= 1) message("results of" % % Sys.Date())
-#if (!exists("walk")) source("definitions.R") #should not be necessary after running previous cell?????
 if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Thursday") { 
   #do this only on thursdays after 12noon when ECDC published. 
   if (exists("timE")) print("last time this took" % % timE)
@@ -37,6 +37,7 @@ if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Thursday") {
 ```
 
 ```{r echo=FALSE}
+myGraphNrs
 if (exists("timJ")) print("last time this took" % % timJ)
 tim = Sys.time()
 walkThrough( lpdf = JHH, regions = JHH.Regios, graphlist = myGraphNrs, 

@@ -2,7 +2,7 @@
 # from graphit function in graphit.R, the following extracts:
 source("graphDanny.R")
 
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"), fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', facet  = FALSE, sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
+graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"), fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', VFPalette = FALSE, facet  = FALSE, sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
   
   lpdf <- as.data.frame(lpti[lpti$theDate >=  from & lpti$theDate <=  to & lpti$confirmed >=  minVal, ])
   lastdate <- max(lpdf$theDate)
@@ -81,11 +81,12 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
       fill = ifelse(nrIDs  == 1 | facet  == ID,   'variable' , 'mygroup')), 
       position  = position, alpha = posalpha)
     
-    VFpalette  <- if (nrgroups <= 2)  c("lawngreen", "cyan")  
-                  else c("red", "green", "black", "darkorange", "lawngreen")
+    if (VFPalette[1] == FALSE) VFPalette  <- if (nrgroups <= 2)  c("lawngreen", "cyan")  
+                  else if (nrgroups == 3) c("red", "green", "black", "darkorange", "lawngreen")
+                  else c("black", "gainsboro", "red",  "yellow", "green",  "darkgreen","darkorange") #lightgray, gainsboro
     
-    myplot <- myplot + scale_fill_manual(values  = VFpalette) + 
-                      scale_color_manual(values  = VFpalette)
+    myplot <- myplot + scale_fill_manual(values  = VFPalette) + 
+                      scale_color_manual(values  = VFPalette)
   } else {
     myplot <- myplot + #line plot
       geom_path(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) + #was line
@@ -118,7 +119,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     
     if ( intercept != FALSE & slope == FALSE ) myplot <- myplot + geom_hline( yintercept  = intercept, na.rm  = TRUE)  
     if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
-    if ((intercept | slope) != FALSE & (verbose >= 2)) message("graphi " ,intercept % % slope % % "intercept and slope")
+    if ((intercept | slope) != FALSE & (verbose >= 2)) message("graphi " ,"intercept" %: % intercept   %, % "and slope" %: %  slope)
     
     if (length(unique(lpdf$variable)) <= 6 ) 
       myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 

@@ -1,3 +1,8 @@
+
+#after an update of R: or regularly
+# copy ~\documents\ R\win-library\4.0 to R\win-library\4.1 if major upgrade
+#update.packages(checkBuilt=TRUE, ask=FALSE)
+
 #`%+%`<- function(x,y) {paste(x,y,sep = "")}
 `%#%` <- function(x,y) {paste(x,y,sep = "")}
 `%-%` <- function(x,y) {paste(x,y,sep = "-")}
@@ -52,8 +57,9 @@ getPackages <- function(x){
 options(tidyverse.quiet = TRUE)
 #suppressPackageStartupMessages({
 getPackages(c("lubridate",'rvest',"plyr","lubridate", "scales", "reshape2", "tidyverse",'profvis',
-              "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall", "reticulate")) 
-  #"plm",#"scales","ggplot2",
+              "RColorBrewer","ggthemes", "directlabels", "ggrepel","JuliaCall", "reticulate",
+              "naniar", "tsibble")) 
+  #"xts", "plm","scales","ggplot2",
 #})
 options(dplyr.summarise.inform = FALSE)
 

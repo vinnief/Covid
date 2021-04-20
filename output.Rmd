@@ -79,11 +79,11 @@ map_dfc(c('Kazakhstan','Belgium','Netherlands','Sweden'),
 ### Who is more affected among Kz, S, Nl, Be? 
 ```{r graph it}
 graph3Dard_fia(JHH, c('Kazakhstan','Belgium','Netherlands','Sweden'), scales = "fixed")
-graph3Dard_fia(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'), scales = "fixed")
-graph3Dard_fina(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'), scales = "fixed")
+graph3Dard_fia(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'), smoothn = 1, scales = "fixed")
+graph3Dard_fina(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'), smoothn = 1,  scales = "fixed")
 ```
 ```{r}
-graph3Dard_fina(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'), scales = "fixed")
+graph3Dard_fina(ECDC, c('Kazakhstan','Belgium','Netherlands','Sweden'),  smoothn = 1, scales = "fixed")
 ```
 
 ### Who do Kz, Nl, S, Be overtake?

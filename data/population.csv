@@ -65,6 +65,8 @@ Timor-Leste,TLS,1267972,
 Equatorial Guinea,GNQ,1308974,
 Estonia,EST,1320884,
 Trinidad and Tobago,TTO,1389858,
+"Wallis and Futuna,France",WAF,11558,
+"Saint Helena, Ascension and Tristan da Cunha,United Kingdom",SHATC,5834,
 Bahrain,BHR,1569439,
 Kosovo,XKX,1845300,
 Guinea-Bissau,GNB,1874309,
@@ -220,6 +222,7 @@ Pakistan,PAK,212215030,
 Indonesia,IDN,267663435,
 US,USA,327167434,
 USA,USA,327167434,
+United States, USA,327167434,
 Euro area,EMU,341783171,
 North America,NAC,364290258,
 Middle East & North Africa (IDA & IBRD countries),TMN,378327628,
@@ -265,7 +268,7 @@ IDA & IBRD total,IBT,6412522234,
 World,WLD,7594270356,
 Eritrea,ERI,5750433,
 Europe,EURo,746419440,
-"Australian Capital Territory,Australia",,419200
+"Australian Capital Territory,Australia",AU-ACT,419200
 "New South Wales,Australia",AU-NSW,8089526,
 "Queensland,Australia",AU-QLD,5095100
 "South Australia,Australia",AU-SA,1751693
@@ -273,8 +276,8 @@ Europe,EURo,746419440,
 "Victoria,Australia",AU-VIC,6594804,
 "Western Australia,Australia",AU-WA,2621680,
 "Northern Territory,Australia",AU-NT,245869,
-"Ontario,Canada",Q,14446515
-"Quebec,Canada",,8433301
+"Ontario,Canada",Ca-Ont,14446515
+"Quebec,Canada",Ca-Que,8433301
 "British Columbia,Canada",,5020302
 "Alberta,Canada",,4345737
 "Manitoba,Canada",,1360396

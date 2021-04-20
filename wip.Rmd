@@ -10,45 +10,52 @@ source('definitions.R')
 source("loadData.R")
 #kable(JHHUSStates)
 ```
-```{r}
-Belg <- ECDC[ECDC$Country.Region=="Belgium",] 
-View(Belg)
+```{r check vaccinations countries}
+vax <- readOwidvax() %>% rename(PSCR = location)
+names(vax)
+names(JHHTest)
+setdiff( vax$PSCR %>% unique , JHH$Province.State %>% unique)
+setdiff( JHH$PSCR %>% unique, vax$PSCR %>% unique)
 
+JHHtest<- JHH%>% filter(PSCR == "Belgium") %>% select(PSCR, confirmed, theDate)%>% 
+            merge(vax,  all.x = TRUE, by.x = c("PSCR", "theDate"),
+               by.y = c("PSCR", "theDate") , sort  = TRUE) %>%  
+            group_by(PSCR) %>% 
+            fill(people_fully_vaccinated, people_vaccinated, total_vaccinations,total_vaccinations_per_hundred,
+                 people_vaccinated_per_hundred, people_fully_vaccinated_per_hundred, 
+                 .direction = "down")  %>%  #na.locf is fill in tidyverse
+            mutate(  across(.cols = c("total_vaccinations", "people_vaccinated", "people_fully_vaccinated",
+                              "daily_vaccinations_raw" , 'daily_vaccinations','total_vaccinations_per_hundred', 
+                              'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred', 
+                              'daily_vaccinations_per_million'), .fns = ~ifelse(is.na(.x),0,.x))) %>% #impute zeros before Vaccinations started. 
+            View()
 
+JHH%>% filter(PSCR == "Taiwan*") %>% select(people_fully_vaccinated, people_vaccinated, total_vaccinations, theDate)%>% View
+popbelgie = 11422068
 ```
-### during browse in graphit:
-check why graph5ardcra_fyil crashes on JHH.Regios[[12]]
-```{r }
-
-lpdf %>% group_by(mygroup, PSCR) %>% summarize(howmany =  n())%>% View
-verbose <- 7 
-walkThrough( lpdf = JHH, regions = JHH.Regios, graphlist = "graph6Dardcra_fiyl", 
-             myFolderDate  = 'current', logy = T, ordre = 'RG') #crashes on recovered passengers in World12 with T, works with False. 20201209
+```{r}
+JHH %>% filter(PSCR =="Belgium") %>% pull(new_active_rate) %>% unique() %>% sort()
+JHH %>% graph1dnar_iyl(c("Belgium","Netherlands","France","Germany"),logy = FALSE, xvar = "theDate", from = "2020-10-10")
+```
+```{r}
+graph6Ddrausf_fiMa(countries = c("Belgium","Netherlands","Germany","United Kingdom","France","Malta","Israel","Russia","Chile"))
+```
+```{r}
+graphDdrasf_fiMa(countries = c("Belgium","Netherlands","Germany","United Kingdom","France","Malta","Israel","Russia","Chile"), scale = "free")
 ```
 ## a Danny Dorling plot: val by Delta val, for active_imputed. It shows vertical zig zags
 ```{r}
-graph1cd_finl(JHH, JHH.Regios$`JHH Europe2`, size =1, scales = "fixed", logy = T, logx = T, slope = deathRate) # savename = "Europe2",
-graph1cd_finl(JHH, JHH.Regios$`JHH Europe1`, size =1, scales = "fixed", slope = deathRate)
+graph1cd_finl(JHH, JHH.Regios$`JHH Europe2`, size =1, scales = "fixed", logy = T, logx = T, slope = FALSE) # savename = "Europe2",
+graph1cd_finl(JHH, JHH.Regios$`JHH Europe1`, size =1, scales = "fixed", slope = FALSE)
 graph1cd_finl(JHH, JHH.Regios$`JHH World1`, size = 1, scales = "fixed" , slope = deathRate)#, savename = "World1")
-lifecycle::last_warnings()
+=lifecycle::last_warnings()
 # there is an error in a subset where the index is a df instead of a vertor.
 ```
-
-
-```{r test graphdanny} 
-graphDanny(JHH %>% smoothem("net_active_imputed", n= 7), c("Texas,US", "France", "Germany"))
+```{r do deaths by new_deaths}
+graph1aa_fiMnl(JHH, countries = c("France","Serbia","Italy","Belgium", "Germany","United Kingdom"), xvar = "new_deaths_p_M", yvar ="deaths_p_M")
 
 ```
-```{r}
-verbose = 2
-graph1aa_finl(ECDC , "Germany")
-graphDanny(JHH, JHH.Regios$`JHH World2`) #to be deprecated
-graph1aa_finl(ECDC, ECDC.Regios$`ECDC World2`,labmeth = "dl_top.points")
-graph1aa_finl(ECDC, ECDC.Regios$`ECDC World1`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
-graph1aa_finl(JHH, JHH.Regios$`JHH World2`, smoothn = 7,labmeth = "dl_last.points", putlegend = FALSE)
-
-```
-```{r}
+```{r #check placement of in graph legend. }
 graphDanny(ECDC,  c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_bottom.polygons", putlegend = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE, facet = FALSE)
 graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 7, labmeth = "dl_last.points",putlegend = FALSE)

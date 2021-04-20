@@ -43,9 +43,9 @@ switch(.Platform$GUI,
        {myMessage <- myMessage % % "and the GUI is" % % .Platform$GUI })
     myMessage
 }
-myMessage <- getEnv() 
-if (verbose >= 2) message(myMessage)
-rm(myMessage)
+
+if (verbose >= 2) message(getEnv() )
+
 
 if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recursive = TRUE)
 
@@ -56,7 +56,7 @@ if (!dir.exists(myPlotPath %//% 'data')) dir.create(myPlotPath %//% 'data', recu
 # after 20200326:
 # c <- read.csv('https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_Covid19_confirmed_global.csv'
 
-#for the USA: 
+#for the United States: 
  #https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_Covid19_confirmed_US.csv
 #RAW: 
 #https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_Covid19_confirmed_US.csv
@@ -71,8 +71,8 @@ readJHHUS <- function(dataversion = "confirmed"){#deaths and recovered are the o
 }
 
 readTesting <- function(col_types = cols(
-      "Entity" = col_character(),
-      "ISO code" = col_character(),
+      Entity = col_character(),
+      `ISO code` = col_character(),
       "Date" = col_date(format = ""),
       "Source URL" = col_character(),
       "Source label" = col_character(),
@@ -85,7 +85,7 @@ readTesting <- function(col_types = cols(
       "7-day smoothed daily change per thousand" = col_double()
     )){
   testing <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/testing/covid-testing-all-observations.csv', 
-                      col_types=col_types)  %>%  
+                      col_types = col_types)  %>%  
     select(c('Entity', 'ISO code','Date', 'Cumulative total', 'Daily change in cumulative total',
              "Cumulative total per thousand", "Daily change in cumulative total per thousand"))  %>%  
     rename(theDate = "Date",
@@ -103,6 +103,7 @@ readTesting <- function(col_types = cols(
   testing$comment <- coco[,2]
   testing
 }
+
 
 readJHH <- function(dataversion = "confirmed"){#deaths and recovered are the other options. 
  filename <- paste('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_', 
@@ -126,8 +127,8 @@ wide2LongJHH <- function(wpdf, coltype = "date", values.name = "count", US = FAL
  lpdf$theDate <- as.Date(lpdf[, coltype], format = "X%m.%d.%y")# %>% # %y 2 digits %Y 4d year
                  # format(, "20%y-%m-%d") %>%  #add century, get rid of X
                 #  as.Date()   # convert to date again. 
- if (verbose >=2) message("Last JHH date:"& last(lpdf$theDate) )
- #lpdf$date <- NULL
+ #if (verbose >= 2) message("Last JHH date:"& max(lpdf$theDate) )
+ lpdf$date <- NULL
  return(lpdf)
 } 
 
@@ -260,16 +261,11 @@ correctnames <- function(df){
 }
 
 makeJHHUSStates <- function(){
- wc <- readJHHUS('confirmed') 
- #geo.location <- wc[, c("Combined_Key", "Country_Region", "Province_State", "Admin2", "UID", "Lat", "Long_")]
- wc <- correctnames(wc)
- #write.csv( geo.location, file = dataPath %#% "/" %#% "geo.location.US.csv", na = "")
- #rm(geo.location)
- # wc <- wc[, !names(wc) %in% c("Admin2" , "UID", "iso2", "iso3", "code3", "FIPS")]
+ wc <- readJHHUS('confirmed') %>%
+          correctnames()
  confirmed <- wide2LongJHH(wc, values.name = "confirmed", US = TRUE)
- wd <- readJHHUS("deaths")
- wd <- correctnames(wd)
- #wd <- wd[, !names(wd) %in% c("Admin2" , "UID", "iso2", "iso3", "code3", "FIPS")]
+ wd <- readJHHUS("deaths") %>%
+          correctnames()
  deaths <- wide2LongJHH(wd, values.name = "deaths", US = TRUE)
  lpdf <- merge(confirmed, deaths, all.x = TRUE, 
         by = c("Country.Region", "Province.State", "PSCR", "Combined_Key", "Lat", "Long", "theDate"), sort  = FALSE)
@@ -308,9 +304,9 @@ makeJHHcountries <- function() {
          by = c("Country.Region", "PSCR", "Province.State", "theDate", "Lat", "Long"), sort  = FALSE)
  lpdf <- merge(lpdf, deaths, all.x = TRUE, 
          by = c("Country.Region", "PSCR", "Province.State", "theDate", "Lat", "Long"), sort  = FALSE)
- lpdf[lpdf$PSCR  == "US", ]$PSCR <- as.character("USA") #to distinguish from the detailed data
- #levels(lpdf$Country.Region) <- c(levels(lpdf$Country.Region), "USA")
- lpdf[lpdf$PSCR  == "USA", "Country.Region"] <- "USA" 
+ lpdf[lpdf$PSCR  == "US", ]$PSCR <- as.character("United States") #to distinguish from the detailed data
+ #levels(lpdf$Country.Region) <- c(levels(lpdf$Country.Region), "United States")
+ lpdf[lpdf$PSCR  == "United States", "Country.Region"] <- "United States" 
  lpdf
 }
 
@@ -318,6 +314,8 @@ updateJHHFromWeb <- function(nameUS = "JHH_US.csv", namenonUS = "JHH_non_US.csv"
  
  CUS <-  makeJHHUS() %>% as_tibble()
  Cworld <-  makeJHHcountries() %>% as_tibble( )
+ print(sort( names(CUS) ))
+ print(sort( names(Cworld)))
  rbind.data.frame(Cworld, CUS)#, StringsAsFactors = FALSE)
  }
 
@@ -356,7 +354,7 @@ makeJHH <- function(name = "JHH", force = FALSE) {
 
 regios <- list(EFTA = c("EFTA", "Iceland", "Liechtenstein", "Switzerland", "Norway"), 
     Benelux = c("Benelux", "Belgium", "Netherlands", "Luxembourg"), 
-    US = c("USA" ,"US"), 
+    US = c("United States" ,"US"), 
     SouthWestAsia = c("South West Asia", "Afganistan", "Iran", "Irak", "Syria", "Lebanon", "Turkey", "Israel", "West Bank and Gaza", "Palestine"), 
     SouthEastAsia = c("South East Asia", "Indonesia", "Thailand", "Vietnam", "Laos", "Malaysia", "Cambodia", "Papua New Guinea", "Myanmar", "Burma", "Brunei", "Philippines", "Timor-Leste"), 
     SAsiaIO = c("South Asia & Indian Ocean", "India", "Pakistan", "Bangladesh", "Sri Lanka", "Comoros", "Maldives", "Madagascar", "Mauritius", "Seychelles", "Bhutan", "Nepal", "Mayotte", "Reunion"), 
@@ -374,7 +372,7 @@ regios <- c(list(
      AfricaSS = c("Africa South of Sahara", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo (Kinshasa)", "Congo (Brazzaville)", "Cote d'Ivoire", "Djibouti", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Kenya", "Lesotho", "Liberia", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Mozambique", "Namibia", "Niger", "Nigeria", "Rwanda", "Sao Tome and Principe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Uganda", "Zambia", "Zimbabwe"),
      North_Africa = c("Africa", "Algeria", "Egypt", "Libya", "Morocco",  "Tunisia", "Western Sahara")), 
      regios)
-regios <- c(list(EU = c("EU", regios$EU6[2:7], "Ireland", "Denmark", "Greece", "Spain", "Portugal", "Austria", "Sweden", "Finland", "Poland", "Hungary", "Slovakia", "Slovenia", "Czechia", "Estonia", "Lithuania", "Latvia", "Malta", "Cyprus", "Romania", "Bulgaria", "Croatia"), 
+regios <- c(list(`European Union` = c("European Union", regios$EU6[2:7], "Ireland", "Denmark", "Greece", "Spain", "Portugal", "Austria", "Sweden", "Finland", "Poland", "Hungary", "Slovakia", "Slovenia", "Czechia", "Estonia", "Lithuania", "Latvia", "Malta", "Cyprus", "Romania", "Bulgaria", "Croatia"), 
      Caribbean = c("Caribbean", 'Anguilla', "Antigua and Barbuda", "Bahamas" ,  "Barbados", "Bermuda", "Cayman Islands", "Cuba", "Dominica" , "Dominican Republic", "Grenada", "Haiti" , "Jamaica", "Saint Kitts and Nevis" , "Saint Vincent and the Grenadines", "Saint Lucia" , "Trinidad and Tobago", 'Aruba', 'Curacao', "Bonaire, Sint Eustatius and Saba", "British Virgin Islands", 'Guadeloupe', 'Martinique', 'Sint Maarten','St Martin', 'Saint Barthelemy', 'Turks and Caicos Islands', 'Montserrat')), 
      regios)
 
@@ -382,12 +380,12 @@ regios = c(list(
      other = c("Other", 'Diamond Princess', 'MS Zaandam', 'World'), 
      MSM  = c("MSM", "Netherlands", "Belgium", "United Kingdom", "Germany", "Malta", "Egypt", "Suriname", "China", "Vietnam", "Hungary", "Romania", "Kuwait", "Italy", "Ireland", "Iran", "Kazakstan", "Liberia", "Indonesia", "Ethiopia", "Nigeria", "Ghana", "Uganda", "South Africa", "Canada", "Spain", "France"), 
      Vincent = c("Some Selected Regions", "Belgium", "Germany", "Italy", "France", "Kazakhstan", "Indonesia", "Spain", "Netherlands", "Japan", "New York,US"), 
-     continents = c("Continents", "Europe", 'North America', "Africa", "South America", "Asia"), #"USA", "US", 
-     WestvsEast = c("WestvsEast", "USA", "United Kingdom", "Italy", "Iran", "Korea, South", "Germany", "France", "Spain", "Sweden", "Norway", "Belgium", "Netherlands", "Singapore", "Japan", "Taiwan*", "Denmark", "Hubei, China", "Hongkong, China", "Jiangsu, China", 'Indonesia'), 
+     continents = c("Continents", "Europe", 'North America', "Africa", "South America", "Asia"), #"United States", "US", 
+     WestvsEast = c("WestvsEast", "United States", "United Kingdom", "Italy", "Iran", "Korea, South", "Germany", "France", "Spain", "Sweden", "Norway", "Belgium", "Netherlands", "Singapore", "Japan", "Taiwan*", "Denmark", "Hubei, China", "Hongkong, China", "Jiangsu, China", 'Indonesia'), 
      MENA = c("MENA", "Marocco", "Algeria", "Tunesia", "Libia", "Egypt", "West Bank and Gaza", "Palestine", "Lebanon", "Syria", "Turkey", "Iraq", "Iran", "Afghanistan", "Jordan", "Saudi Arabia", "Kuwait", "Oman", "United Arab Emirates", "UAE", "Yemen", "Bahrain", "Qatar"), 
      South_America = c("South America", "Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Guyana", "Suriname", "French Guiana", "Venezuela", "Paraguay", "Peru" , "Uruguay", "Falkland Islands (Malvinas)"), 
      Europe = c("Europe", regios$EU[2:28], regios$EFTA[2:5], "United Kingdom", "Russia", "Ukraine", "Belarus", "Moldova", "Georgia", "Armenia", "Azerbaijan", "Andorra", "Monaco", "San Marino", "Vatican", "Holy See", "Albania", "North Macedonia", "Kosovo", "Montenegro", "Bosnia and Herzegovina", "Serbia", "Gibraltar", "Faroe Islands", "Isle of Man", "Channel Islands", "Greenland"), 
-     North_America = c("North America", "USA", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
+     North_America = c("North America", "United States", "Canada", "Mexico", "Saint Pierre and Miquelon", "Antilles", "Belize", "Guatemala", "Nicaragua", "Costa Rica", "Honduras", "El Salvador", "Panama", regios$Caribbean), 
      Africa = c("Africa", setdiff(c( regios$North_Africa, regios$AfricaSS), c("Sub Saharan Africa", "North Africa"))), 
      Oceania = c("Oceania", "Australia", "New Zealand", "Vanuatu", "Tuvalu", "Fiji", "Guam", "French Polynesia", "New Caledonia" )
      ), 
@@ -522,9 +520,9 @@ readFrance <- function () {
   
 }
 ### data from ECDC - World bank. 
-### https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide
+### https://opendata.ecdc.europa.eu/covid19/casedistribution/csv/data.csv
 readECDCdaily <- function(){ #deprecated: since 20201201 the ECDC provides weekly data
- lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na  = "" ,
+ lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv/data.csv", na  = "" ,
                   col_types = cols(
    dateRep = col_character(),
    day = col_double(),
@@ -561,6 +559,13 @@ readECDCdaily <- function(){ #deprecated: since 20201201 the ECDC provides weekl
      "missing values after 2020-02-01")}
  lpti
 }
+
+#https://opendata.ecdc.europa.eu/covid19/casedistribution/csv had daily cases until 20201214 (by mistake?) on 20210218
+
+#https://opendata.ecdc.europa.eu/covid19/nationalcasedeath/csv country,country_code,continent,population,indicator,weekly_count,year_week,rate_14_day,cumulative_count,source  #long format: indicator is "cases"or "deaths" needs converting to be like the other files. 
+
+#https://opendata.ecdc.europa.eu/covid19/subnationalcasedaily/csv
+#https://opendata.ecdc.europa.eu/covid19/agecasesnational/csv
 readECDCweekly <- function(){
   lpti <- read_csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na  = "" ,
                    col_types = cols(
@@ -670,7 +675,7 @@ makeDynRegions <- function(lpti = JHH, byVar = "active_imputed", gridsize = 5*6,
   nr = 1
   mylist = vector(mode  = "list", length  = 0)
   while (nrow(lpti) > gridsize) {
-    if (verbose >= 2) message(piecename %#% nr % % paste(lpti$PSCR[1:3], collapse = "/"))
+    if (verbose >= 3) message(piecename %#% nr % % paste(lpti$PSCR[1:3], collapse = "/"))
     minneeded <- lpti[[byVar]][1]/ratio
     piece <- c(piecename %#% nr, as.character(head(lpti[lpti[[byVar]] >= minneeded, ]$PSCR , gridsize) ))
     mylist[[piece[1]]] <- piece
@@ -703,7 +708,7 @@ provincializeJHH <- function(lpdf = JHH){
 makeRegioList <- function(lpti = JHH, piecename = "JHH"){
  c(  
   lpti  %>%  makeDynRegions(piecename = piecename % % 'World'), 
-  lpti  %>%  filter(PSCR %in% c("EU",regios$Europe) )  %>%  
+  lpti  %>%  filter(PSCR %in% c("European Union",regios$Europe) )  %>%  
    makeDynRegions(gridsize = 20, piecename = piecename % % 'Europe'), 
   lpti  %>%  filter(PSCR %in% c(regios$AsiaP))  %>%  makeDynRegions(piecename = piecename % % 'Asia'), 
   lpti  %>%  filter(PSCR %in% regios$NorthAmericaS)  %>%  makeDynRegions(piecename = piecename  % %  'North America'), 
@@ -726,7 +731,7 @@ addPopulation <- function(lpdf) {
   popUS[lpdf[grep(",US", lpdf$PSCR), ]$Province.State, "population"]
  popunknown <- unique(lpdf[is.na(lpdf$population), ]$PSCR)
 
- if (verbose >= 2 || length(popunknown) > 0) message("population unknown:"  % %  
+ if (verbose >= 1 || length(popunknown) > 0) message("population unknown:"  % %  
 
       ifelse(length(popunknown)  ==  0, 0, paste(popunknown, collapse = "; ")))
  lpdf
@@ -777,6 +782,9 @@ extravars <- function(lpdf, lagrc = 0, lagdc = 0){
   group_by(PSCR)  %>%  
   mutate( active           =  confirmed - deaths - recovered, 
       active_imputed       =  confirmed - deaths - recovered_imputed, 
+      untouched            = population - active - recovered - deaths - people_vaccinated, 
+      untouched_imputed    = population - active_imputed - recovered_imputed - deaths - people_vaccinated, 
+      people_single_vaccinated = people_vaccinated - people_fully_vaccinated,
       new_confirmed        =  (diff.sl(confirmed)), #mac
       net_active           =  (diff.sl(active)), #mac  # bug? why is the first element of net_active not NA and first element of new_confirmed is NA? 
       net_active_imputed   =  (diff.sl(active_imputed)), #mac
@@ -789,6 +797,12 @@ extravars <- function(lpdf, lagrc = 0, lagdc = 0){
       recovered_p_M        = p_M(recovered, population), 
       recovered_imputed_p_M= p_M(recovered_imputed, population), 
       deaths_p_M           = p_M(deaths  , population), 
+      untouched_p_M         = p_M(untouched, population),
+      people_vaccinated_p_M = p_M(people_vaccinated, population),
+      total_vaccinations_p_M  = p_M(total_vaccinations, population),
+      people_fully_vaccinated_p_M = p_M(people_fully_vaccinated, population),
+      people_single_vaccinated_p_M = people_vaccinated_p_M - people_fully_vaccinated_p_M,
+      untouched_imputed_p_M = p_M(untouched_imputed, population),
       new_confirmed_p_M    = p_M(new_confirmed, population), 
       net_active_p_M       = p_M(net_active  , population), 
       new_recovered_p_M    = p_M(new_recovered, population), 
@@ -802,7 +816,7 @@ extravars <- function(lpdf, lagrc = 0, lagdc = 0){
       recovered_per_deaths = frac(recovered, dplyr::lag(deaths, lagrc - lagdc)), 
       recovered_imputed_per_deaths  
                            = frac(recovered_imputed, dplyr::lag(deaths, lagrc - lagdc)), 
-      new_active_rate      =  round(new_confirmed/dplyr::lag(active_imputed, 1), 3) )
+      new_active_rate      =  round(new_confirmed/dplyr::lag(active_imputed, 1), 4) )
 }
 
 doublingLine <- function(lpti  = JHH, country, minVal, growthRate, 
@@ -1011,7 +1025,7 @@ addTotals3 <- function(lpti = ECDC, totregions , ID = 'Region'){
    lpti <- rbind(lpti, 
                  lpti1  %>%  
                    total(regio , ID = ID, varnames = varnames, newrow = regio))
- totCountries <- c(regios$EU, regios$CIS, regios$MENA, regios$AfricaSS)
+ totCountries <- c(regios$`European Union`, regios$CIS, regios$MENA, regios$AfricaSS)
  regio = regios$Benelux
  ECDC2 <<- lpti1  %>%  
    total(regio , ID = 'PSCR', varnames = varnames, newrow = regio)
@@ -1030,11 +1044,11 @@ addCountryTotals <- function(lpdf = JHH, varnames = c("confirmed","recovered", "
   lpti <- lpdf  %>% 
     filter(!(PSCR %in% existingTotals )) #
   rbind(lpti, 
-        lpti  %>%  totals(c("China","Australia", "Canada"), #,'US' #adds US but we have USA already. 
+        lpti  %>%  totals(c("China","Australia", "Canada"), #,'US' #adds US but we have United States already. 
                         ID = "Country.Region", varnames = varnames, needAggreg = FALSE))
 }
 
-addRegionTotals <- function(lpdf = JHH, totRegions = c("South_America", "Asia", "Africa", "Europe", "EU",'North_America',"World"), 
+addRegionTotals <- function(lpdf = JHH, totRegions = c("South_America", "Asia", "Africa", "Europe", "European Union",'North_America',"World"), 
                             varnames = c("confirmed","recovered", "deaths","population") ){
   existingTotals <- c("China","Australia","Canada",'US')
   #newTotals <- 
@@ -1042,7 +1056,7 @@ addRegionTotals <- function(lpdf = JHH, totRegions = c("South_America", "Asia", 
   #just to be sure, that if i do it twice i dont get double counts. 
   #And omit US as country and US states. 
   if ( 'Country.Region' %in% names(lpti))   #Indirect test for JHH
-    lpti <- lpti  %>%  filter(!(Country.Region == "US")) #get rid of the US individual states as well as we have USA in JHH
+    lpti <- lpti  %>%  filter(!(Country.Region == "US")) #get rid of the US individual states as well as we have United States in JHH
   #lpti <- lpti  %>%  filter( ! PSCR %in% existingTotals ) #avoid double counting
   World <- unique(lpti[['PSCR']])
   
@@ -1057,17 +1071,56 @@ addRegionTotals <- function(lpdf = JHH, totRegions = c("South_America", "Asia", 
   lpdf
 }
 
+readOwidvax <- function(){
+  vax <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv', #vaccinations-by-manufacturer
+                  col_types = cols(
+                    location = col_character(),
+                    iso_code = col_character(),
+                    date = col_date(format = ""),
+                    total_vaccinations = col_double(),
+                    people_vaccinated = col_double(),
+                    people_fully_vaccinated = col_double(),
+                    daily_vaccinations_raw = col_double(),
+                    daily_vaccinations = col_double(),
+                    total_vaccinations_per_hundred = col_double(),
+                    people_vaccinated_per_hundred = col_double(),
+                    people_fully_vaccinated_per_hundred = col_double(),
+                    daily_vaccinations_per_million= col_double()
+                  ))  %>%  
+    select(c("location","iso_code","date","total_vaccinations", "people_vaccinated", "people_fully_vaccinated","daily_vaccinations_raw" , 'daily_vaccinations','total_vaccinations_per_hundred', 'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred', 'daily_vaccinations_per_million'
+    ))  %>%  
+    rename(theDate = "date",
+           ISOcode  = "iso_code") 
+  vax
+}
+
+addVax <- function(lpdf = JHH, ID = "PSCR"){
+  vax <- readOwidvax() %>% rename(PSCR = location)
+  merge(lpdf, vax,  all.x = TRUE, by.x = c(ID, "theDate"),
+               by.y = c("PSCR", "theDate") , sort  = TRUE) %>%  #sorting is needed, otherwise all the ones with missing vaccinations get put at the end, and therefore imputed maximal vaccinations. 
+    group_by(PSCR) %>% 
+    fill(people_fully_vaccinated, people_vaccinated, total_vaccinations,total_vaccinations_per_hundred,
+         people_vaccinated_per_hundred, people_fully_vaccinated_per_hundred, 
+         .direction = "down")  %>%  #na.locf is fill in tidyverse
+    mutate(  across(.cols = c("total_vaccinations", "people_vaccinated", "people_fully_vaccinated",
+                              "daily_vaccinations_raw" , 'daily_vaccinations','total_vaccinations_per_hundred', 
+                              'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred', 
+                              'daily_vaccinations_per_million'), 
+                    .fns = ~ifelse(is.na(.x),0,.x))) #impute zeros before Vaccinations started. 
+}
+
 loadJHH <- function() {
   ti <-  Sys.time()
   JHH <- makeJHH(force = TRUE) 
   if (verbose >= 1) reportDiffTime('loading and melting JHH:',ti,'secs')
-  JHHExtra<<- JHH[JHH$PSCR == "Repatriated Travellers,Canada", ]
-  JHH0 <- JHH[JHH$PSCR != "Repatriated Travellers,Canada", ]
+  JHHOmit<<- JHH[JHH$PSCR == "Repatriated Travellers,Canada", ]
+  JHH <- JHH[JHH$PSCR != "Repatriated Travellers,Canada", ]
   regios <<- c(list(World = c('World', unique(JHH[['PSCR']]))), provincializeJHH(JHH), regios) 
   ti <-  Sys.time()
-  JHH <- JHH0 %>%
+  JHH <- JHH %>%
     addPopulation() %>% addCountryTotals() %>% addRegionTotals() %>%
-    addRegions( Regiolist = regios) %>% arrange(PSCR,theDate) %>%
+    addRegions( Regiolist = regios) %>% addVax() %>% 
+    arrange(PSCR,theDate) %>%
     imputeRecovered() %>% extravars()#
   if (verbose >= 1) reportDiffTime('adding population, totals, imputations, and daily vars in JHH:',ti,'secs')
   
@@ -1078,8 +1131,17 @@ loadJHH <- function() {
   
   JHH.Regios <<- makeRegioList(JHH)
   writeWithCounters(JHH,name = "Covid19JHH")
+  #writeWithCounters(JHHUSStates, "Covid19JHHUSCounties")
   JHH
 } 
+reNewJHH <- function() {
+  #load JHH if data is stale
+  if (!exists('JHH') || (max(JHH$theDate) < Sys.Date() - 1)) {
+    JHH <<- loadJHH()
+  }
+  if (verbose >= 1) message("JHH data loaded, latest date:" % % max(JHH$theDate))
+  JHH
+}
 
 #same with ECDC
 loadECDCdaily <- function() {
@@ -1104,12 +1166,13 @@ loadECDCdaily <- function() {
   ECDC.Regios <<- makeDynRegions( ECDC, piecename = 'ECDC World')
   ECDC
 }
-loadECDC <- function(NrDays=7) {
+loadECDC <- function(NrDays = 7) {
   tim = Sys.time()
   if (NrDays == 7) 
     ECDC0 <- readECDCweekly()
-  else 
+  else if (NrDays == 1 )
     ECDC0 <- readECDCdaily()
+  else errorCondition("Either weekly (7) or daily (1) data, other frequency is not avaiable. And Daily data runs until 20201214 only")
   if (verbose >= 1) reportDiffTime('load ECDC:',tim,'mins')
   tim = Sys.time()
   ECDC  <- ECDC0 %>% correctMissingLastDay() %>% 
@@ -1118,8 +1181,9 @@ loadECDC <- function(NrDays=7) {
   #%>%
    # addDoublingDaysPerCountry(variable = 'active_imputed') %>%
     #addDoublingDaysPerCountry(variable = 'confirmed') 
+  #delete next row: is test. 
   ECDC2  <- ECDC2 %>% imputeRecovered %>%  extravars %>%
-    mutate(Country.Region = PSCR) 
+    mutate(Country.Region = PSCR) #this is for testing benelux? 
   if (verbose >= 1) reportDiffTime('correct, add totals, imputations, vars, doubling days in ECDC:',tim,'mins')
   
   #tim = Sys.time()
@@ -1348,13 +1412,13 @@ graph1cd_finl <- function(lpti = JHH, countries, xvar= "new_confirmed", yvars = 
                 slope = slope, ...)
 }
 
-graph1Da_finl <- function(lpdf = JHH, countries, facet = 'PSCR', smoothn = 7, ...){
+graphDa_finl <- function(lpdf = JHH, countries, facet = 'PSCR', smoothn = 7, ...){
   graphit(lpdf, countries, xvar = 'theDate', 
           yvars = c("net_active_imputed"), facet = facet, putlegend = TRUE, smoothn = smoothn, ...)
 }
-graph1Da_fil <- function(lpdf = JHH, countries, logy = FALSE,  facet = 'PSCR', ...){
+graphDa_fil <- function(lpdf = JHH, countries, logy = FALSE,  facet = 'PSCR', ...){
   graphit(lpdf, countries, xvar = 'theDate', yvars = c("active_imputed"), 
-          , facet = facet, ...)
+          facet = facet, ...)
 }
 
 graph1dr_iyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
@@ -1362,14 +1426,19 @@ graph1dr_iyl <- function(lpdf = JHH, countries, logy = TRUE, ...){
           logy  = logy, logx  = TRUE, ...)
 }
 
-graph1Drr_il <- function(lpdf = JHH, countries, myFolderType  = '', ...){
+graph1Dr_il <- function(lpdf = JHH, countries, myFolderType  = '', ...){
   graphit(lpdf, countries, xvar = "theDate", 
           yvars = c('recovered_imputed_per_confirmed'), 
           myFolderType = myFolderType %#%"recovery rate", 
           putlegend = FALSE , ...   )
 }
 
-graph3Dard_fia <- function(lpdf = JHH, countries, yvars = c('active_imputed', 'recovered_imputed', 'deaths'), ...){
+graph1dnar_iyl <- function(lpdf  = JHH, countries, minVal = 10, xvar = 'day', logy = FALSE, smoothn = 7,  ...){
+  graphit(lpdf, c(countries), minVal, xvar = xvar,  smoothn = smoothn,
+          yvars = c('new_active_rate'), logy = logy, intercept = stableRate, ...) 
+}
+
+graphDard_fia <- function(lpdf = JHH, countries, yvars = c('active_imputed', 'recovered_imputed', 'deaths'), ...){
  graphit(lpdf, countries, xvar = "theDate", area  = TRUE, facet  = 'PSCR', 
      yvars = yvars,  ...) 
 }
@@ -1378,6 +1447,20 @@ graph3Dard_fia <- function(lpdf = JHH, countries, yvars = c('active_imputed', 'r
 graph3Dard_fina <- function(lpdf = JHH, countries, smoothn = 7,...){
  graph3Dard_fia(lpdf, countries, smoothn = smoothn,
      yvars = c('net_active_imputed', 'new_recovered_imputed', 'new_deaths'), ...) 
+}
+
+graphDdrasf_fiMa <- function(lpdf = JHH, countries,
+    yvars = c( "deaths_p_M",  "recovered_imputed_p_M", "active_imputed_p_M", "people_single_vaccinated_p_M","people_fully_vaccinated_p_M"),
+    VFPalette = c("black",  "yellow", "red", "lightblue", "green",  "darkgreen","darkorange"),...){
+  graph6Ddrausf_fia(lpdf, countries, yvars = yvars,VFPalette = VFPalette, ...)
+}
+
+graph6Ddrausf_fia <- function(lpdf = JHH, countries,yvars = c( "deaths",   "recovered_imputed", "active_imputed", "untouched_imputed",  "people_single_vaccinated","people_fully_vaccinated" ),VFPalette = c("black",  "yellow", "red", "lightblue", "green",  "darkgreen","darkorange"), ...){
+  graphit(lpdf, countries, yvars = yvars, area = TRUE, facet  = 'PSCR',  VFPalette = VFPalette, ...) #gainsboro
+}
+
+graph6Ddrausf_fiMa <- function(lpdf = JHH, countries,yvars = c( "deaths_p_M",  "recovered_imputed_p_M", "active_imputed_p_M", "untouched_imputed_p_M", "people_single_vaccinated_p_M","people_fully_vaccinated_p_M"), ...){
+  graph6Ddrausf_fia(lpdf, countries, yvars = yvars,...)
 }
 
 
@@ -1409,7 +1492,7 @@ graph6Dardcra_fiMnyl <- function(lpdf = JHH, countries, yvars =
   graph6Dardcra_finyl(lpdf, countries, yvars = yvars, ...)
 }
 
-graph1Dc_fnl <- function(lpdf = JHH, countries,  facet = 'PSCR', smoothn = 7, ...){
+graphDc_fnl <- function(lpdf = JHH, countries,  facet = 'PSCR', smoothn = 7, ...){
  graphit(lpdf, countries, xvar = 'theDate', 
          yvars = c("new_confirmed"), facet = facet, putlegend = TRUE, smoothn = smoothn, ...)
 }
@@ -1428,11 +1511,6 @@ graphDggnar_fiyl <- function(lpdf = JHH, countries, logy = TRUE, facet = 'PSCR',
  graphit(lpdf, countries, xvar = 'theDate', smoothn = smoothn, 
          yvars = c('active_imputed_growthRate', 'confirmed_growthRate', "new_active_rate"), 
          logy = logy, intercept  = stableRate, facet = facet, ...)
-}
-
-graph1dnar_iyl <- function(lpdf  = JHH, countries, minVal = 10, logy = TRUE, smoothn = 7,  ...){
-  graphit(lpdf, c(countries), minVal, xvar = 'day',  smoothn = smoothn,
-          yvars = c('new_active_rate'), logy = logy, intercept = stableRate, ...) 
 }
 
 graphDgnar_fiyl <- function(lpdf = JHH, countries, logy = TRUE, facet = 'PSCR', smoothn = 7, ...){

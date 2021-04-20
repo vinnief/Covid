@@ -1,25 +1,20 @@
 # Loads latest data, first JHH then ECDC then testing
 
 (source("definitions.R"))# make sure we have our definitions. 
-theLog = file("loadData.log", open = "wt")
-sink(theLog, type = "message")# , append = T)
+#theLog = file("loadData.log", open = "wt")
+#sink(theLog, type = "message")# , append = T)
 
 if (verbose >= 1) message(Sys.time() % % "loading the data from the web and transforming into useful data format. Please wait a few minutes. ")
 
 #load ECDC if the data is stale
-if (!exists('ECDC') || (max(ECDC$theDate) < Sys.Date() ) ) {
-  ECDC <- loadECDC(1)  
-  writeWithCounters(ECDC, name = "Covid19ECDC")
-}
-if (verbose >= 1) message("ECDC data loaded, latest date:" % % max(ECDC$theDate))
+#if (!exists('ECDC') || (max(ECDC$theDate) < Sys.Date() ) ) {
+ # ECDC <- loadECDC(7)  
+ # writeWithCounters(ECDC, name = "Covid19ECDC")
+#}
+#if (verbose >= 1) message("ECDC data loaded, latest date:" % % max(ECDC$theDate))
 
-#load JHH if data is stale
-if (!exists('JHH') || (max(JHH$theDate) < Sys.Date() - 1)) {
-  JHH <- loadJHH()
-  writeWithCounters(JHH,name = "Covid19JHH") 
-  writeWithCounters(JHHUSStates, "Covid19JHHUSCounties")
-}
-if (verbose >= 1) message("JHH data loaded, latest date:" % % max(JHH$theDate))
+JHH<- reNewJHH()
+#vax<- readOwidvax()
 
 #load Belgian data per municipality
 #Belgium <- readBelgium() %>% imputeRecovered() %>% extravars()
