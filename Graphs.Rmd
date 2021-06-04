@@ -5,46 +5,68 @@ date: "March-Dec 2020"
 output: html_document
 ---
 # Graphs
-
 ```{r init}
 knitr::opts_chunk$set(echo = TRUE)  # only do this in Rstudio
-
 ```
-
 ```{r load the data, include=FALSE, echo=FALSE}
 verbose <- 1
-theLog <- file( "Graphs.log", open = "wt")
-sink(theLog, type = c("output"))
-source("loadData.R")
-JHH<- reNewJHH()
-sink()
+message(Sys.time())
+source("loadData.R")  
 ```
 
+## From 2021-03-01 until now
+Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
+
+JHH Graphs. 
+```{r echo=FALSE}
+message(Sys.time())
+message(myGraphNrs)
+if (exists("timJ2021")) print("doing things from 202101 -> now, last time this took" % % timJ2021)
+tim = Sys.time()
+walkThrough( lpdf = JHH,  graphList = myGraphNrs, #regions = JHH.Regios[Europe],
+             myFolderDate  = 'current', from = "2021/01/01",
+             slope = FALSE, sortVar = "active_imputed")
+timJ2021 <- reportDiffTime('JHH graphs',tim,units = 'mins')
+timJ2021
+```
 ## From 2020-01-01 until now
 Graph and save lots of graphs on all regions present, paginated by size of the Covid impact (total confirmed cases), and on each page, territory graphs are sorted by decreasing value of the first graphed variable on the latest date in that territory.
 
+JHH Graphs. 
+```{r echo=FALSE}
+message(Sys.time())
+message(myGraphNrs)
+if (exists("timJ")) print("last time this took" % % timJ)
+tim = Sys.time()
+walkThrough( lpdf = JHH,  graphList = myGraphNrs[5:14]
+             , regions = JHH.Regios,
+             myFolderDate  = '2020-now')
+timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
+timJ
+```
+This needs speeding up. 
+```{r with log extreemely slow: an hour per graph at least. }
+walkThrough(JHH, graphList = "graphfcd_fiMnyl", 
+   regions = 
+     (JHH %>% makeDynRegions(byVar = "people_fully_vaccinated_p_M", piecename = "World"))[1:4],
+            myFolderDate = "current", from = '2021/01/01', logy="log2")#, sortVar = "people_fully_vaccinated_p_M")
+```
 
-```{r graphs walkthrough, include=FALSE, echo=FALSE}
+ECDC graphs. Note: since they changed format, this doesnt work anymore. need to read in the data otherwise. 
+```{r ECDC graphs walkthrough, include=FALSE, echo=FALSE}
 #verbose <- 4
 if (verbose >= 1) message("results of" % % Sys.Date())
 if ( weekdays( Sys.Date() , abbreviate = FALSE) == "Thursday") { 
   #do this only on thursdays after 12noon when ECDC published. 
   if (exists("timE")) print("last time this took" % % timE)
   tim = Sys.time()
-  walkThrough(lpdf = ECDC,regions = ECDC.Regios, graphlist = myGraphNrs,  smoothn=1, myFolderDate  = 'current', ordre = 'RG') 
+  walkThrough(lpdf = ECDC,regions = ECDC.Regios, graphlist = myGraphNrs,  smoothn=1, myFolderDate  = 'current') 
   timE <- reportDiffTime('ECDC graphs',tim, units = 'mins')
 }
 ```
-
-```{r echo=FALSE}
-myGraphNrs
-if (exists("timJ")) print("last time this took" % % timJ)
-tim = Sys.time()
-walkThrough( lpdf = JHH, regions = JHH.Regios, graphlist = myGraphNrs, 
-             myFolderDate  = 'current', ordre = 'RG')
-timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
+```{r}
+timJ
 ```
-
 ## Covid19 Development during last month only.
 ```{r one month, include=FALSE, eval=FALSE}
 
@@ -54,20 +76,18 @@ if (!dir.exists(myPlotPath%//%yearmo)) {#uses lubridate
   walkThrough(lpdf = JHH, regions = JHH.Regios, graphlist = myGraphNrs, 
               from = floor_date(lastmonth, 'month'), 
               to = ceiling_date(lastmonth, 'month')-1, 
-              myFolderDate = yearmo, 
-              ordre = 'RG')
+              myFolderDate = yearmo)
   walkThrough(lpdf = ECDC, graphlist = myGraphNrs, 
               from = floor_date(lastmonth, 'month'), 
               to = ceiling_date(lastmonth, 'month')-1, 
-              myFolderDate = yearmo, 
-              ordre = 'RG')
+              myFolderDate = yearmo)
   }
 ```
 
 ## Do all months up to today
 ```{r all months, include=FALSE, eval=FALSE}
 verbose = 1
-makeHistoryGraphs(JHH, regions = JHH.Regios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'), ordre = 'GR')  
+makeHistoryGraphs(JHH, regions = JHH.Regios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 makeHistoryGraphs(ECDC, regions = ECDC.Regios, fromDates = seq(as.Date('2020-01-01'),Sys.Date(),  by = '1 month'))  
 
 ```

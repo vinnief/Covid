@@ -1,40 +1,39 @@
 # ## graphit future version. 
 # from graphit function in graphit.R, the following extracts:
-source("graphDanny.R")
+#source("graphDanny.R")
 
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"), fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', VFPalette = FALSE, facet  = FALSE, sorted  = TRUE, smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
-  
+graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"),  fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', VFPalette = FALSE, facet  = FALSE, sorted  = TRUE, sortVar = yvars[1], smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
+  if( verbose >= 7) message("graphit sortVar" % % sortVar)
   lpdf <- as.data.frame(lpti[lpti$theDate >=  from & lpti$theDate <=  to & lpti$confirmed >=  minVal, ])
   lastdate <- max(lpdf$theDate)
   if (typeof(to)  == "character") to = as.Date(to, format = "%Y-%m-%d")
   if (missing(countries)) {
     countries <- unique(lpdf[[returnID]])
-    if (length(countries > 40)) return(message('too many countries, you wont see anything. Please select less countries'))
+    if (length(countries > 60)) return(message('too many countries, you wont see anything. Please select less countries'))
   } else countries <- findIDnames(lpdf, testIDnames = countries, searchID = ID, 
                                   fuzzy = fuzzy, returnID = returnID) #}
   ID <- returnID
   if (verbose >= 8) {message("graphi territories at start"); message(countries)}
   lpdf <- lpdf[lpdf[[ID]] %in% countries,] 
   if (verbose >= 9) {message('graphi countrydata' );message(head(lpdf))}
-  
-  y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy, "(log)", "")
+  if (max(lpdf[,yvars], na.rm = TRUE) <= 1000) logy = FALSE
+  y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy!=F, logy, "")
   if (str_length(y_lab) > 70) 
-    y_lab <- paste(initials(sort(yvars)), collapse = "&")  % %  
-    ifelse(logy, "(log)", "")
+    y_lab <- paste(initials(sort(yvars)), collapse = "&")  % % ifelse(logy!=F, logy, "")
   x_lab <- ifelse(xvar=="theDate","date", xvar)
   mytitle <- savename % % y_lab % % "by" % % x_lab % %  "for" % % minVal %#% "+"  % %  "confirmed"
   myFilename <- "C19" % % mytitle
   
-  if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  6) {message('graphi'  % %  mytitle  % % " No data")} ) }
+  if (nrow(lpdf)  ==  0 ) {return( if (verbose >=  7) {message('graphi'  % %  mytitle  % % " No data")} ) }
   mytitle <- "C19" % % format(min(ungroup(lpdf)$theDate), format  = "%Y%m%d")  %#% '-' %#%  
     format(lastdate, format  = "%Y%m%d")  % %  mytitle
-  #return(mytitle)
-  
+  if (verbose >=6) message("variable for sorting" %: %sortVar)
+  if (max(lpdf[[xvar]], na.rm = TRUE) <= 1000) logx = FALSE
   lpdf <- lpdf %>% 
            dataprep( ID  = ID, minVal  = minVal, xvar  = xvar, yvars  = yvars,
-                   logx  = logx, logy  = logy, sorted  = sorted,  
+                   logx  = logx, logy  = logy, sorted  = sorted, sortVar = sortVar, 
                    smoothvars= smoothvars, smoothn = smoothn)
-  if (verbose >= 7) {message('graphi columns left');message( names(lpdf))}
+  if (verbose >= 8) {message('graphi columns left');message( names(lpdf))}
   if (nrow(lpdf)  == 0 | all(is.na(lpdf[, xvar])) | all(is.na(lpdf[, yvars])))
     return(if (verbose >= 2) message('graphi'  % %  
                                      mytitle % % "Too little data to graph. Maybe lower the mininum value, take more territories?"))
@@ -50,7 +49,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   else if(facet  == ID) lpdf$mygroup <- lpdf$variable
   #switch(facet, "variable" = !!ID, !!ID = variable, PSCR %, % variable)
   
-  if (verbose >= 7) {message('graphi summary pdf:');message(summary(lpdf))}
+  if (verbose >= 9) {message('graphi summary pdf:');message(summary(lpdf))}
   
   lines_only <- lpdf %>% select(!!ID,mygroup) %>% group_by_at(c(1,2)) %>% 
     filter(n() > 1) 
@@ -81,12 +80,17 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
       fill = ifelse(nrIDs  == 1 | facet  == ID,   'variable' , 'mygroup')), 
       position  = position, alpha = posalpha)
     
-    if (VFPalette[1] == FALSE) VFPalette  <- if (nrgroups <= 2)  c("lawngreen", "cyan")  
-                  else if (nrgroups == 3) c("red", "green", "black", "darkorange", "lawngreen")
-                  else c("black", "gainsboro", "red",  "yellow", "green",  "darkgreen","darkorange") #lightgray, gainsboro
-    
-    myplot <- myplot + scale_fill_manual(values  = VFPalette) + 
-                      scale_color_manual(values  = VFPalette)
+    if (VFPalette[1] == FALSE) 
+      VFPalette  <- ifelse(nrgroups <= 2,
+                           c("lawngreen", "cyan"),
+                           ifelse(nrgroups == 3, 
+                                  c("red", "green", "black", "darkorange", "lawngreen"),
+                                  c("black", "gainsboro", "red",  "yellow", "green",  "darkgreen","darkorange") #lightgray, gainsboro
+                           ) )
+    myGuide <- ifelse(putlegend, "legend", FALSE) #todo: replace all guide = ... with guide = myGuide
+    #case_when(condition ~ value, condition~ value, TRUE ~ default_value)
+    myplot <- myplot + scale_fill_manual(values  = VFPalette, guide = ifelse(putlegend, "legend", FALSE)) + 
+                      scale_color_manual(values  = VFPalette, guide = ifelse(putlegend, "legend", FALSE))
   } else {
     myplot <- myplot + #line plot
       geom_path(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) + #was line
@@ -119,27 +123,32 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     
     if ( intercept != FALSE & slope == FALSE ) myplot <- myplot + geom_hline( yintercept  = intercept, na.rm  = TRUE)  
     if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
-    if ((intercept | slope) != FALSE & (verbose >= 2)) message("graphi " ,"intercept" %: % intercept   %, % "and slope" %: %  slope)
+    if ((intercept | slope) != FALSE & (verbose >= 7)) message("graphi " ,"intercept" %: % intercept   %, % "and slope" %: %  slope)
     
     if (length(unique(lpdf$variable)) <= 6 ) 
-      myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6)) #shape = "\u2620" #bug? 
+      myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6), 
+                                            guide = ifelse(putlegend, "legend", FALSE)) #shape = "\u2620" #bug? 
     
-    #scale_fill_gradient(low="green",high="darkgreen")   
+    #scale_fill_gradient(low="green",high="darkgreen", guide = ifelse(putlegend, "legend", FALSE))   
     #https://stackoverflow.com/questions/50183484/how-do-i-change-the-fill-color-for-a-computed-variable-in-geom-bar/50194250#50194250
     if (nrgroups == 1) {
       myscale_color <- scale_color_gradient( low = "blue", high = "red", 
-                                          guide =  "legend") #colorbar would be for continuous colors
+                                             guide = ifelse(putlegend, "legend", FALSE)) 
+      #colorbar would be for continuous colors
     }else if (nrgroups <= 6) {
-      myscale_color <- scale_color_manual(values = c("red", "darkgreen", "black",
-                                                     "orange", "lawngreen", "tomato"), 
+      palette = ifelse(VFPalette, VFPalette,c("red", "darkgreen", "black",
+                                              "orange", "lawngreen", "tomato"))
+      myscale_color <- scale_color_manual(values = VFPalette, 
                                           guide = ifelse(putlegend, "legend", FALSE))
     }else if (nrgroups < 13) {
-      palette = ifelse(nrgroups < 8, "Dark2", "Paired") 
-      myscale_color <- scale_color_brewer(palette = palette)
+      palette = ifelse(VFPalette, VFPalette, ifelse(nrgroups < 8, "Dark2", "Paired") )
+      myscale_color <- scale_color_brewer(palette = palette, guide = ifelse(putlegend, "legend", FALSE))
     } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
     myplot <- myplot + myscale_color 
   } 
- if (verbose >= 8) {message("after drop_na, before faceting ") ;browser()}
+ if (verbose >= 9) {message("after drop_na, before faceting ") 
+   #;browser()
+   }
   if (!isFALSE(facet)) {
     myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), 
                                   strip.position = "bottom",
@@ -152,7 +161,9 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   
   breaks <- breaks_log(n = 5, base = 10) #rep(c( 1, 5), 21)*10^rep((-10:10), each = 2)
   minor_breaks <- rep( 1:5, 21)*(10^rep(-10:10, each = 5))
-  if ( logy  !=  FALSE) myplot <- myplot + scale_y_continuous(trans = 'log10', breaks  = breaks, minor_breaks  = minor_breaks, labels = label_number_si()) + annotation_logticks() 
+  if (logy == TRUE) logy = 'log10'
+  if (logy != FALSE) myplot <- myplot + scale_y_continuous(trans = logy, breaks  = breaks, minor_breaks  = minor_breaks, labels = label_number_si()) + annotation_logticks() 
+  
   if (xvar  == "theDate") 
     myplot <- myplot + scale_x_date(labels  = date_format("%d-%m"), expand = c(xexpand, 0)) 
   else
@@ -183,7 +194,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     myPath <- myPlotPath %#% ifelse(myFolderType  !=  "", ""%//% myFolderType , "")
     if (!dir.exists(myPath)) dir.create(myPath, recursive  = TRUE)
     on.exit(while (!is.null(dev.list())) dev.off() )
-    if (verbose >=2) message("file path length: " % % str_length(myPath %//% myFilename %#% ".png"))
+    if (verbose >=9) message("file path length: " % % str_length(myPath %//% myFilename %#% ".png"))
     if (verbose >= 3) message("myPath" %: % myPath %//% myFilename %#% ".png" % % length(myPath %//% myFilename %#% ".png"))
     png(filename  = myPath %//% myFilename %#% ".png", width  = 1600, height  = 900)
     print(myplot)

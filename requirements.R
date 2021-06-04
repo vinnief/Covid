@@ -37,13 +37,12 @@ getPackages <- function(x){
   theLog = file(logFileName, open = "wt")
   sink(theLog, type = "message")# , append = T)
   on.exit({
-    message(class(theLog) ," is the Class of the Log ", logFileName,# At this moment i should close the message sink. but that gives an error. 
-            "\nSink.number = ",
-            sink.number( type = "message"))
+    # At this moment i should close the message sink. but that gives an error.
     sink( type = "message"); 
     if (isOpen(theLog)) close(theLog)
     } 
     )
+  message(Sys.time())
   lapply(x,function(i){
     #  require returns TRUE invisibly if it was able to load package
     if ( !require( i , character.only = TRUE, quietly = !verbose ) ) {

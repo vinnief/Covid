@@ -8,43 +8,12 @@ multigrep<- function( searchlist,inlist,ignorecase=FALSE){
 multigrep(testcountries,unique(alldata$Country.Region),ignorecase=TRUE)
 #this one finds exact names when needed
 
-correctMissingLastDay1 <- function(lpti = ECDC){
-  maxDate <- max(lpti$Date)
-  lpti <- lpti %>% group_by(PSCR) 
-  missingPSCR <- setdiff( unique(lpti$PSCR) ,
-                          lpti %>% filter(Date == maxDate) %>% pull(PSCR) )
-  for (myPSCR in missingPSCR) {
-    for (myDate in #maxDate 
-         (max(as.Date(filter(lpti,PSCR == myPSCR)$Date, format = '%Y-%m-%d')) + 1):as.Date(maxDate, format = '%Y-%m-%d')
-    ) {
-      missingRow <- 
-        lpti %>% filter(PSCR == myPSCR & Date == max(Date)) %>% mutate(Date = as.Date(myDate, origin = '1970-01-01'))
-      #print(missingRow)
-      lpti <- rbind(lpti,missingRow)
-    }} 
-  lpti
+sortbyvar <- function(lpti, sortVar = 'active_imputed', ID = 'PSCR', ...){
+  lpti[[ID]] <- lpti %>%  sortIDlevels(sortVar = sortVar, ID = ID, ...) 
+  lpti <- lpti[order(lpti[[ID]], lpti[[sortVar]]), ]  
 }
 
-imputeRecovered<- function(lpdf=JHH,lagrc=22,lagrd=15,dothese=FALSE,redo=FALSE){
-#lpdf<- pdata.frame(lpdf,index=c("PSCR", "Date"),stringsAsFactors=FALSE)
-if(!('recovered' %in% names(lpdf))) lpdf$recovered<- as.numeric(NA)
-if(any(dothese)) lpdf$recovered_old<- lpdf$recovered
-if (!"imputed"%in% names(lpdf))lpdf$imputed<-FALSE
-rowstodo<- drop(is.na(lpdf$recovered)|dothese|(redo&lpdf$imputed))
-if (verbose>=2) print("Imputing recovered for:"%+%
-                        paste(unique(lpdf[rowstodo,][["Country.Region"]]),collapse=" / "))
-if (sum(rowstodo)==0)return(lpdf)
-#lpdf[rowstodo,"imputed"]<- TRUE
-attr(lpdf,"imputed")<- "lagrc=22, lagdc=15"
-lpdf<- lpdf%>% group_by(PSCR)%>% 
-  mutate_cond( rowstodo,imputed=TRUE )%>%      
-  mutate_cond( rowstodo,recovered = #max(recovered,
-                 dplyr::lag(confirmed,lagrc)-  dplyr::lag(deaths,lagrd)) ##{{}} ipv !! ? 
-#,na.rm=TRUE)
-#lpdf[rowstodo,"recovered"]<-  dplyr::lag(lpdf[rowstodo,"confirmed"],lagrc)- 
-#                           dplyr::lag(lpdf[rowstodo,"deaths"],lagrd)
-#lpdf
-}
+
 totals2 <- function(lpdf, rows = "", # before used only for county to state totalling. deprecated 
                     ID = "Country.Region", varnames = c("confirmed", "deaths") ){
   if (rows[1]  == "") rows = unique(lpdf[, ID])

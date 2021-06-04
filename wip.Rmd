@@ -8,30 +8,83 @@ source('definitions.R')
 ```
 ```{r}
 source("loadData.R")
-#kable(JHHUSStates)
+JHH[JHH$PSCR %in% JHH.Regios$`JHH World15` , ] %>% select (PSCR, theDate, deaths,recovered) %>% view
 ```
+```{r}
+walkThrough(lpdf = JHH, graphList = "graph1dr_iyl", regions = JHH.Regios$`JHH World17`)
+walkThrough(lpdf = JHH, graphList = "graph1dr_iyl", regions = JHH.Regios$`JHH World16`, logx=TRUE) # St Kitts and Nevis
+walkThrough(lpdf = JHH, graphList = "graph1dr_iyl", regions = JHH.Regios ,#$`JHH World15`,
+            logx=TRUE)
+graph1dr_iyl(JHH, c("Hong Kong,China"))
+graph1sc_fMnl(JHH, c( "Peru"))
+
+walkThrough(lpdf = JHH, graphList = "graph1sc_fMnl", regions = JHH.Regios,#$`JHH World15`,
+            myFolderDate  = 'random', from = 2021/01/01, slope = FALSE) #logx=TRUE
+```
+```{r}
+graphfcd_fiMnyl(JHH, c("Belgium","Israel"), logy = F)
+graphfcd_fiMnyl(JHH, c("Belgium","Israel"), logy = 'arcsinh', logx=T)
+graphfcd_fiMnyl(JHH, c("Belgium","Netherlands","France","Israel","United Kingdom"), logy = F)
+graphfcd_fiMnyl(JHH,c('United Arab Emirates', "Israel",'Kuwait','Chile','Mongolia', 'Slovakia','Ireland',' Hungary','Czechia','Bosnia i Herzegovina', 'North Macedonia','United Kingdom'), logy=F)
+JHH %>% filter(!is.na(people_fully_vaccinated_p_M)) %>% filter(people_fully_vaccinated>=1) %>% 
+  walkThrough( graphList = "graphfcd_fiMnyl", regions = JHH.Regios,
+            myFolderDate  = 'Current')
+
+JHH$Country.Region %>% unique %>% sort # , fixed = T)
+```
+```{r}
+graphfcd_fiMnyl(JHH, c("Bangladesh", "Belgium","Bosnia & Herzegovina","Chile", "Czechia", "France", "Hungary", "Ireland", "Israel", "Kuwait", 'Mongolia', "Nepal","Netherlands", "North Macedonia", "Slovakia", 'United Arab Emirates', "United Kingdom"), logy = "log2", from ='2021/05/01')
+graphfcd_fiMnyl(JHH, c( "Bangladesh", "Belgium","Bosnia & Herzegovina","Chile", "Czechia", "France", "Hungary", "Ireland", "Israel", "Kuwait", 'Mongolia', "Nepal","Netherlands", "North Macedonia", "Slovakia", 'United Arab Emirates', "United Kingdom"), logy = F, from ='2021/01/01')
+
+```
+```{r}
+walkThrough(JHH, graphList = "graphfcd_fiMnyl", 
+   regions = 
+     (JHH %>% makeDynRegions(byVar = "people_fully_vaccinated_p_M", piecename = "World"))[1:4],
+            myFolderDate = "current", from = '2021/01/01', logy="log2")#, sortVar = "people_fully_vaccinated_p_M")
+walkThrough(lpdf = JHH, graphList = "graph1vc_fhMnl", regions = JHH.Regios,
+            myFolderDate  = 'random', from = 2021/01/01)
+walkThrough(lpdf = JHH, graphList = "graph1fc_fhMnl",# regions = JHH.Regios,
+            myFolderDate  = 'random', from = 2021/01/01)
+```
+
+
+```{r regios}
+graph6Ddrausf_fiMa(JHH, "France",ID = "Country.Region")
+graph6Ddrausf_fiMa(JHH, "United Kingdom",ID = "Country.Region")
+graph3Dard_fina(JHH, "Denmark",ID = "Country.Region")
+```
+```{r}
+regiosP <<- makeRegiosP(JHH)
+setdiff(JHH$PSCR %>% unique, flatten_chr(regiosP))
+setdiff( flatten_chr(regiosP), JHH$PSCR %>% unique)
+JHH$Country.Region %>% unique
+JHH %>% filter(Region == "World" ) %>% select(PSCR,Country.Region,Province.State) %>% unique
+
+JHH%>% filter(Region == "Benelux")
+graph6Ddrausf_fia(JHH, "Benelux",ID = "Region", sortVar = "active_imputed_p_M")
+verbose = 7
+source("definitions.R")
+graph6Ddrausf_fia( JHH ,regiosP$Benelux, xvar = "theDate" , sortVar = "people_vaccinated_p_M", sorted = TRUE)
+graph5Ddrasf_fiMa( JHH ,regiosP$Benelux, xvar = "theDate" , sortVar = "people_vaccinated_p_M", sorted = TRUE)
+walkThrough(graphList = "graph5Ddrasf_fiMa", lpdf = JHH, regions = JHH.Regios,   myFolderDate  = 'current', ordre = 'RG')
+sink()
+names(JHH)
+colors() #%>% grepl("gray", fixed = TRUE)
+```
+
+
 ```{r check vaccinations countries}
 vax <- readOwidvax() %>% rename(PSCR = location)
 names(vax)
-names(JHHTest)
 setdiff( vax$PSCR %>% unique , JHH$Province.State %>% unique)
 setdiff( JHH$PSCR %>% unique, vax$PSCR %>% unique)
 
-JHHtest<- JHH%>% filter(PSCR == "Belgium") %>% select(PSCR, confirmed, theDate)%>% 
-            merge(vax,  all.x = TRUE, by.x = c("PSCR", "theDate"),
-               by.y = c("PSCR", "theDate") , sort  = TRUE) %>%  
-            group_by(PSCR) %>% 
-            fill(people_fully_vaccinated, people_vaccinated, total_vaccinations,total_vaccinations_per_hundred,
-                 people_vaccinated_per_hundred, people_fully_vaccinated_per_hundred, 
-                 .direction = "down")  %>%  #na.locf is fill in tidyverse
-            mutate(  across(.cols = c("total_vaccinations", "people_vaccinated", "people_fully_vaccinated",
-                              "daily_vaccinations_raw" , 'daily_vaccinations','total_vaccinations_per_hundred', 
-                              'people_vaccinated_per_hundred', 'people_fully_vaccinated_per_hundred', 
-                              'daily_vaccinations_per_million'), .fns = ~ifelse(is.na(.x),0,.x))) %>% #impute zeros before Vaccinations started. 
-            View()
-
 JHH%>% filter(PSCR == "Taiwan*") %>% select(people_fully_vaccinated, people_vaccinated, total_vaccinations, theDate)%>% View
 popbelgie = 11422068
+
+walkThrough( lpdf = JHH,  graphList = myGraphNrs, #regions = JHH.Regios,
+             myFolderDate  = 'test1', ordre = 'RG')
 ```
 ```{r}
 JHH %>% filter(PSCR =="Belgium") %>% pull(new_active_rate) %>% unique() %>% sort()
@@ -43,14 +96,7 @@ graph6Ddrausf_fiMa(countries = c("Belgium","Netherlands","Germany","United Kingd
 ```{r}
 graphDdrasf_fiMa(countries = c("Belgium","Netherlands","Germany","United Kingdom","France","Malta","Israel","Russia","Chile"), scale = "free")
 ```
-## a Danny Dorling plot: val by Delta val, for active_imputed. It shows vertical zig zags
-```{r}
-graph1cd_finl(JHH, JHH.Regios$`JHH Europe2`, size =1, scales = "fixed", logy = T, logx = T, slope = FALSE) # savename = "Europe2",
-graph1cd_finl(JHH, JHH.Regios$`JHH Europe1`, size =1, scales = "fixed", slope = FALSE)
-graph1cd_finl(JHH, JHH.Regios$`JHH World1`, size = 1, scales = "fixed" , slope = deathRate)#, savename = "World1")
-=lifecycle::last_warnings()
-# there is an error in a subset where the index is a df instead of a vertor.
-```
+
 ```{r do deaths by new_deaths}
 graph1aa_fiMnl(JHH, countries = c("France","Serbia","Italy","Belgium", "Germany","United Kingdom"), xvar = "new_deaths_p_M", yvar ="deaths_p_M")
 
@@ -85,27 +131,43 @@ graph1aa_finl(JHH, c("Belgium","Netherlands","Sweden"), smoothn  = 1, labmeth = 
               putlegend = FALSE)
  
 ```
-
-
 ```{r}
-sink()
-myGraphNrs
-```
-```{r test walkthrough on ECDC}
-Graphlist1 = c( "graph1Da_finl",        "graph1dnar_iyl",       "graph1dr_iyl" )
-Graphlist2 = c("graph1Drr_il", "graph2aa_inl", "graph2crd_il", "graph2dac_iyl" )
-Graphlist3 = c("graph3Dard_fia", "graph3Dard_fina", "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl")
-Graphlist4 = c("graph6Dardcra_finyl",  "graph6Dardcra_fiyl")
-myGraphNrs = "graph1aa_finl"
-verbose = 6
 
-walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = myGraphNrs, myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = c('graph6Dardcra_fiyl', 'graph6Dardcra_finyl', "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl","graph1cd_finl" ,"graph3Dard_fia","graph3Dard_fina", "graph1aa_finl", "graph1aa_fiMnl"), myFolderDate  = 'current', ordre = 'RG')
-walkThrough( lpdf = ECDC, regions = ECDC.Regios, graphlist = c("graph1Da_fil"   ,"graph1Da_finl",  "graph1Dc_fnl",   "graph1dnar_iyl", "graph1dr_iyl" ), myFolderDate  = 'current', ordre = 'RG')
-```
+test<- makeUSPlaces()%>% mutate(PSCR = Place %,% Region )
+View(test)
+unique(test$Country)
+names(test)
+#test<- test  %>% mutate(PSCR = Place %,% Region%,% Country )
+test<- test  %>% 
+  addPopulation() %>% #addCountryTotals() %>% addRegionTotals() %>%
+    addRegions( Regiolist = regios) %>% addVax() %>% 
+  imputeRecovered() %>% extravars() 
+test.Regions <- makeDynRegions(test, piecename = "USA")
+graph1aa_finl(test, test$PSCR %>% unique %>% head)
+walkThrough(test, regions = test.Regions, graphList = "graph1aa_finl")
+``` 
 ```{r}
-sink(type = "output")
-setdiff(myGraphNrs, c('graph6Dardcra_fiyl', 'graph6Dardcra_finyl', "graph6Dardcra_fiMnyl", "graph6Dardcra_fiMyl","graph1cd_finl" ,"graph3Dard_fia","graph3Dard_fina", "graph1aa_finl", "graph1aa_fiMnl"))
+t<- makeCovidData("regions")
+t %>% head(20) %>% view
+```
+```{r coviddata git web data test}
+test<- makeCovidData(typeOfPlace = "regions") 
+test %>% head(101) %>% view
+nrow(t)
+test<- test  %>% 
+  addPopulation() %>% #addCountryTotals() %>% addRegionTotals() %>%
+  #  addRegions( Regiolist = regios) %>% 
+  addVax() %>% 
+  imputeRecovered() %>% extravars() 
+test.Regions <- makeDynRegions(test, piecename = paste(keyVars,collapse = ", ") )
+graph1aa_finl(test, test$PSCR %>% unique %>% head)
+walkThrough(test, regions = test.Regions, graphList = "graph1aa_finl")
+
+
+test<- makeCovidData("countries") 
+test %>%  head(10) %>% view
+test<- makeCovidData(typeOfPlace = "places")
+test %>% head(10)
 ```
 # to trace the nested calls leading to an error, use: 
 traceback()
@@ -117,71 +179,7 @@ JHH[JHH$Country.Region %in% c("Netherlands","Belgium") & JHH$theDate>= "2020-10-
   mutate( data = map(data, function(d) smoothem.tib(d,vars = "net_active_imputed", n = 6))) %>% 
   unnest(data)
 ```
-```{r}
 
-graph1aa_finl(JHH, countries = c("Netherlands","Belgium"))
-graph1aa_fiMnl(JHH, countries = c("Netherlands","Belgium"))
-#graph1aa_finl(JHH,c("Netherlands"),ID="Country.Region")
-graph1aa_finl(JHH,c("Aruba,Netherlands","Curacao,Netherlands","Sint Maarten,Netherlands"),ID="PSCR")
-graphdanny(JHH , c("France", "Germany"))
-graphdanny(JHH , c( "Germany"), smoothn  = 7)
-
-graphOnRegion(lpdf = JHH, JHHRegios$MSM, "graph1aa_finl", saveit = TRUE)
-```
-
-```{r}
-print(graph2aa_inl(JHH,c( "Netherlands"))%>% tail )
-graph1Da_fil(ECDC, "Belgium", saveit = TRUE)
-```
-```{r}
-source("graphit.R")
-source("graphdanny.R")
-verbose = 2
-graphdanny(JHH, "France", labmeth = "repel_label")
-graphdanny(JHH, "France", smoothn = 7,labmeth = "repel_label")
-graphdanny(JHH , c("France","Spain", "Italy", "Germany"), smoothn  = FALSE,labmeth = "repel_label")
-graphdanny(JHH , c("Spain", "Italy"), smoothn  = 7,)
-graph6Dardcra_finyl(JHH, "Belgium", smoothn = 7)
-graph3Dard_fina(JHH, "Belgium", smoothn = 7)
-
-```
-
-```{r test labels}
-regios$Vincent <- list("Vincent", "Belgium","France","Germany","Netherlands")
-#unchanged: 
-source("definitions.R")
-graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), putlegend = FALSE)
-source("graphit.R") 
-graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), putlegend = FALSE)
-graphit(JHH, regios$Vincent, xvar = 'day', logx = FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'dl_points', putlegend = FALSE)
-
-graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'dl_last.points', putlegend = TRUE)
-```
-
-
-```{r smoothed}
-graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'),  smoothn= 7, labmeth = 'dl_last.points', putlegend = TRUE)
-
-graphit(JHH, regios$Vincent, xvar = 'day', logx =  FALSE , logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'repel_label', putlegend = FALSE)
-graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'repel_text')
-graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'dl_polygon')
-graphit(JHH, regios$Vincent, xvar = 'day', logx =    FALSE, logy = TRUE, from = "2020-08-01",
-          yvars = c('new_confirmed'), labmeth = 'dl_bumpup', putlegend = TRUE)
-JHH%>% select(new_confirmed, theDate) %>% filter( PSCR %in% regios$Vincent) %>% filter(theDate == max(theDate))
-```
-
-```{r}
-
-
-```
 
 ```{r very verbose and warnings become errors}
 options(warn = 2)

@@ -1,0 +1,10 @@
+```{r coviddata git web data test}
+names(keyVars) <- keyVars
+  lpdf$PSCR <- paste( map_df(keyVars, ~ lpdf[,.x]), collapse = ",")
+  #lpdf$place %,% lpdf$Region
+  lpdf
+map_df(keyVars, ~ lpdf[,.]) %>% view
+lpdf %>% head %>% view
+t<- makeCovidData(typeOfPlace = "regions") %>% View
+t1<- makeCovidData("countries") %>% view
+```
