@@ -221,6 +221,23 @@ total <- function(lpdf = JHH, rows = "", ID = "PSCR" ,
       recovered = ifelse(!'recovered' %in% varnames, NA, 
                          sum(recovered, na.rm = TRUE)),
       deaths = sum(deaths, na.rm = TRUE),
+      total_vaccinations  = ifelse(!'recovered' %in% varnames, NA, 
+                                   sum(total_vaccinations, na.rm = TRUE)),
+      people_vaccinated     = ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(people_vaccinated, na.rm = TRUE)),
+      people_fully_vaccinated = ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(people_fully_vaccinated, na.rm = TRUE)),
+      daily_vaccinations_raw  = ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(daily_vaccinations_raw, na.rm = TRUE)),
+      daily_vaccinations      = ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(daily_vaccinations, na.rm = TRUE)),
+      total_vaccinations_per_hundred= ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(total_vaccinations_per_hundred, na.rm = TRUE)),
+      people_vaccinated_per_hundred= ifelse(!'recovered' %in% varnames, NA, 
+                                       sum(people_vaccinated_per_hundred, na.rm = TRUE)),
+      people_fully_vaccinated_per_hundred= ifelse(!'recovered' %in% varnames, NA, 
+                                  sum(people_fully_vaccinated_per_hundred, na.rm = TRUE)),
+      
       Lat = ifelse(!"Lat" %in% names(lpdf), NA, mean(Lat)) , 
       Long = ifelse(!"Long" %in% names(lpdf), NA, mean(Long)),
       population = ifelse(!"population" %in% names(lpdf), NA,
@@ -503,7 +520,7 @@ readBelgiumMuni <- function(){
       mutate(theDate = as.Date(DATE), 
              PSCR = TX_DESCR_NL,
              year = year(theDate),
-             month = month(theDate),
+             month = as.factor(month(theDate)),
              monthday = day(theDate), 
              confirmed = cumsum(CASES),
              population = 1)%>%
@@ -722,11 +739,14 @@ sortIDlevels <- function(lpdf, sortVar  = "active_imputed", ID  = "PSCR", ondate
 }
 
 makeDynRegions <- function(lpti = JHH, byVar = "active_imputed", gridsize = 5*6, piecename = 'Chunk', maxRatio = 5) {
-  lpti <- lpti %>%  group_by(PSCR)  %>%  
-    filter( theDate  == max(theDate)) %>%  ungroup  #%>% 
+  lpti <- lpti %>%  group_by(PSCR)  %>%  #bug filter (byVar = max(abs(byVar)))
+    #filter( .data[[byVar]] == max(.data[[byVar]])) %>%  # gives errors. plus the sorting later will not be correct. 
+    filter( theDate  == max(theDate)) %>%  
+    ungroup  #%>% 
     #select( PSCR, confirmed, active_imputed) %>%  
     #arrange(desc(active_imputed)) 
     #   arrange(desc(!!enquo(byVar)) ) !! does not work. {{}} neither.
+  lpti[[byVar]]<- abs(lpti[[byVar]])
   lpti <- lpti[order(-lpti[[byVar]]), , drop = FALSE]  
   
   nr = 1
@@ -834,7 +854,7 @@ extravars <- function(lpdf, lagrc = 0, lagdc = 0){
  options(warn = -1)
  on.exit(options(warn = tempwarn))
  if (!"year" %in% names(lpdf)) lpdf$year <- year(lpdf$theDate)
- if (!"month" %in% names(lpdf)) lpdf$month <- month(lpdf$theDate)
+ if (!"month" %in% names(lpdf)) lpdf$month <- as.factor(month(lpdf$theDate))
  if (!"monthday" %in% names(lpdf)) lpdf$monthday <- day(lpdf$theDate)
  lpdf <- lpdf  %>%  ungroup  %>%  
   arrange(PSCR, theDate)  %>% 
@@ -1188,7 +1208,7 @@ loadJHH <- function() {
   ti <-  Sys.time()
   JHH <- JHH %>%
     addPopulation() %>% addCountryTotals() %>% addRegionTotals() %>%
-    addRegions( Regiolist = regios) %>% addVax() %>% 
+    addRegions( Regiolist = regiosP) %>% addVax() %>% 
     arrange(PSCR,theDate) %>%
     imputeRecovered() %>% extravars()#
   if (verbose >= 1) reportDiffTime('adding population, totals, imputations, and daily vars in JHH:',ti,'secs')
@@ -1416,14 +1436,14 @@ dataprep <- function(lpdf = JHH, minVal = 1, ID = "PSCR",
   if (smoothvars[1] != FALSE)
     lpdf <- lpdf %>%  smoothem.lpti(varNames = smoothvars, n = smoothn)
   eps <-  1e-5
-  if (logy %in% c(10,2,TRUE)){ #get rid of negative and zeros for the log
+  if (logy %in% c("log10","log2","log", TRUE)){ #get rid of negative and zeros for the log
       for (varname in yvars) {
       if (sum((!is.na(lpdf[, varname])) & lpdf[, varname] <=  eps) > 0) 
         #if all NAs, one row replaces zero rows -> error!
         lpdf[(!is.na(lpdf[, varname])) & lpdf[, varname] <=  eps, varname] <- 1  #NA?  
     } }
   #if (max(lpdf,[xvar] ) <= 1000) logx = FALSE
-  if (logx %in% c(10,2,TRUE)) lpdf[lpdf[[xvar]] <= eps, xvar] <- 1 #was 1, NA
+  if (logx %in% c("log10","log2","log", TRUE)) lpdf[lpdf[[xvar]] <= eps, xvar] <- 1 #was 1, NA
   if (sorted) {
     if (sortVar == "") sortVar = yvars[1]
     if (verbose>= 6) message("dataprep sortVar" % % sortVar)
@@ -1468,11 +1488,14 @@ rm(list = ls(pattern = "graph[[:digit:]]"))
 graph1aa_finl <- function(lpti = JHH, countries, xvar = 'net_active_imputed', 
                           yvars = c('active_imputed'), # sortVar = "active_imputed", 
                           facet = 'PSCR', sortVar = yvars[1],
+                          #VFPalette = "Spectral", 
+                          shape = "month",
                           smoothvars = xvar, smoothn = 7, labmeth = "dl_top.qp",
                           slope = 20, putlegend = T, ...){
   #if(substring(sortVar,1,4) == "net_") sortVar <- substring(sortVar, 5)
   graphit(lpti, countries, xvar = xvar, facet = facet,
-          yvars = yvars, sortVar = sortVar,
+          yvars = yvars, sortVar = sortVar, #VFPalette = VFPalette, 
+          shape = shape,
           smoothvars = smoothvars,  
           smoothn = smoothn, slope = slope, labmeth = labmeth, putlegend = putlegend,
           ...)
@@ -1481,9 +1504,12 @@ graph1aa_finl <- function(lpti = JHH, countries, xvar = 'net_active_imputed',
 graph1aa_fiMnl <- function(lpti = JHH, countries,
                            xvar = 'net_active_imputed_p_M', 
                            yvars = c('active_imputed_p_M'), sortVar = yvars,
-                           smoothvars = xvar, #"net_active_imputed_p_M",
+                           smoothvars = xvar, 
+                           #VFPalette = "blue", 
+                           shape = "month",
                            ...){
   graph1aa_finl(lpti, countries, xvar = xvar, yvars = yvars, sortVar = sortVar,
+                shape = shape,
                 smoothvars = smoothvars, ...)
 }
 
@@ -1530,18 +1556,20 @@ graphDr_il <- function(lpdf = JHH, countries, myFolderType  = '', ...){
 
 graph1fc_fhMnl <- function(lpti = JHH, countries, xvar = 'people_fully_vaccinated_per_hundred',
                            yvars = c('new_confirmed_p_M'), sortVar = xvar, 
-                           smoothvars = yvars, smoothn = 7, facet = FALSE, putlegend = F, ...){
+                           VFPalette = c("purple","darkgreen"), shape = "month",
+                           smoothvars = yvars, smoothn = 7, facet = "PSCR", putlegend = F, ...){
   graphit(lpti, countries, xvar = xvar, facet = facet,
-          yvars = yvars, sortVar = sortVar,
+          yvars = yvars, sortVar = sortVar, VFPalette = VFPalette, shape = shape,
           smoothvars = smoothvars,  
           smoothn = smoothn,  putlegend = putlegend,
           ...)
 }
-graphsc_fMnl <- function(lpti = JHH, countries,  xvar = 'people_single_vaccinated_p_M', 
-                          yvars = c('new_confirmed_p_M'), sortVar = xvar, 
+graphsc_fMnl <- function(lpti = JHH, countries, xvar = 'people_single_vaccinated_per_hundred', 
+                          yvars = c('new_confirmed_p_M'), sortVar = xvar,
+                         VFPalette = c("purple","darkgreen"), shape = "month",
                           smoothvars = yvars, smoothn = 7, facet = F, putlegend = T,...){
   graphit(lpti, countries, xvar = xvar, facet = facet,
-          yvars = yvars, sortVar = sortVar,
+          yvars = yvars, sortVar = sortVar, VFPalette = VFPalette, shape = shape,
           smoothvars = smoothvars,  
           smoothn = smoothn,  putlegend = putlegend,
           ...)
@@ -1549,9 +1577,10 @@ graphsc_fMnl <- function(lpti = JHH, countries,  xvar = 'people_single_vaccinate
 
 graph1vc_fhMnl <- function(lpti = JHH, countries,  xvar = 'people_vaccinated_per_hundred', 
                            yvars = c('new_confirmed_p_M'), sortVar = xvar, 
-                           smoothvars = yvars, smoothn = 7, facet = F, putlegend = T,...){
+                           shape = "month",
+                           smoothvars = yvars, smoothn = 7, facet = "PSCR", putlegend = T,...){
   graphit(lpti, countries, xvar = xvar, facet = facet,
-          yvars = yvars, sortVar = sortVar,
+          yvars = yvars, sortVar = sortVar, shape = shape,
           smoothvars = smoothvars,  
           smoothn = smoothn,  putlegend = putlegend,
           ...)
@@ -1565,7 +1594,7 @@ graphdnar_iyl <- function(lpdf  = JHH, countries, minVal = 10, xvar = 'day', log
 
 graphDard_fia <- function(lpdf = JHH, countries, yvars = c('active_imputed', 'recovered_imputed', 'deaths'), ...){
  graphit(lpdf, countries, xvar = "theDate", area  = TRUE, facet  = 'PSCR', 
-     yvars = yvars,  ...) 
+     yvars = yvars,  shape = "month", ...) 
 }
 
 #new --
@@ -1813,7 +1842,7 @@ walkThrough <- function(lpdf = ECDC, regions= ECDC.Regios, graphList=myGraphNrs 
                        switch(EXPR = 1 + grepl("M", myGraph, fixed=TRUE),  "", "_p_M") 
       )
       if (misreg) 
-        {maxRatio <- ifelse (grepl("y",myGraph, fixed = TRUE), 50,5 )
+        {maxRatio <- ifelse (grepl("y",myGraph, fixed = TRUE), 50, 5 )
         regions <<- makeRegioList(lpdf, byVar = byVar , maxRatio = maxRatio) #, piecename = "lpdf help here needed" % % "World")     
       }
       if (verbose >= 6) message(regions)

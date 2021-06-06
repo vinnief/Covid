@@ -23,7 +23,8 @@ message(Sys.time())
 message(myGraphNrs)
 if (exists("timJ2021")) print("doing things from 202101 -> now, last time this took" % % timJ2021)
 tim = Sys.time()
-walkThrough( lpdf = JHH,  graphList = myGraphNrs, #regions = JHH.Regios[Europe],
+walkThrough( lpdf = JHH,  graphList = myGraphNrs[7:14], 
+             #regions = JHH.Regios[12:14],#$Europe,
              myFolderDate  = 'current', from = "2021/01/01",
              slope = FALSE, sortVar = "active_imputed")
 timJ2021 <- reportDiffTime('JHH graphs',tim,units = 'mins')
@@ -38,8 +39,8 @@ message(Sys.time())
 message(myGraphNrs)
 if (exists("timJ")) print("last time this took" % % timJ)
 tim = Sys.time()
-walkThrough( lpdf = JHH,  graphList = myGraphNrs[5:14]
-             , regions = JHH.Regios,
+walkThrough( lpdf = JHH,  graphList = myGraphNrs[1:14]
+             , regions = JHH.Regios$`JHH Europe1`,
              myFolderDate  = '2020-now')
 timJ <- reportDiffTime('JHH graphs',tim,units = 'mins')
 timJ

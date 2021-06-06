@@ -1,7 +1,7 @@
 ---
 title: "__Covid Trendlines__"
 author: "VF"
-date: "March- July 2020"
+date: "March 2020- July 2021"
 output: 
   html_document: 
     fig_caption: yes
@@ -69,7 +69,7 @@ source('definitions.R')
 
 to load the data: (s bit slow as it needs to prepare after loading)
 ```{r}
-``` {r }
+
 source('loadData.R') #do this as little as needed. but at least once every day, before the chunks below!
 ```
 ```
@@ -77,7 +77,7 @@ To do one page with (a)ctive, (r)ecovered, (d)eaths,
 (f)acet per PSCR, using (i)mputed recoveries, (a)rea graphs, 
 not saving to disk but showing on screen:
 ```{r}
-``` {r}
+
 graphOnRegion(lpdf = JHH, myRegion = JHHRegios$`JHH World2`, myGraph='graph3Dard_fia', saveit = FALSE) 
 ``` 
 ```

@@ -2,7 +2,7 @@
 # from graphit function in graphit.R, the following extracts:
 #source("graphDanny.R")
 
-graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"),  fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', VFPalette = FALSE, facet  = FALSE, sorted  = TRUE, sortVar = yvars[1], smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
+graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate", yvars  = c("active", "recovered", "deaths", "confirmed"),  fuzzy  = FALSE, logx  = FALSE, logy  = FALSE, intercept  = FALSE, slope = FALSE, myFolderDate  = 'random', myFolderType  = "", savename  = "", putlegend = TRUE, size = 1, returnID  = "PSCR", area  = FALSE, position  = 'stack', VFPalette = FALSE, shape = 'variable', facet  = FALSE, sorted  = TRUE, sortVar = yvars[1], smoothvars = yvars, smoothn = FALSE, labmeth = 'dl_last.points', scales = "fixed", from = '2019-12-01', to  = Sys.Date()){
   if( verbose >= 7) message("graphit sortVar" % % sortVar)
   lpdf <- as.data.frame(lpti[lpti$theDate >=  from & lpti$theDate <=  to & lpti$confirmed >=  minVal, ])
   lastdate <- max(lpdf$theDate)
@@ -16,7 +16,9 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   if (verbose >= 8) {message("graphi territories at start"); message(countries)}
   lpdf <- lpdf[lpdf[[ID]] %in% countries,] 
   if (verbose >= 9) {message('graphi countrydata' );message(head(lpdf))}
+  message(yvars)
   if (max(lpdf[,yvars], na.rm = TRUE) <= 1000) logy = FALSE
+  if(logy==T) logy <- "log10"
   y_lab <- paste(sort(yvars), collapse = " & ") % % ifelse(logy!=F, logy, "")
   if (str_length(y_lab) > 70) 
     y_lab <- paste(initials(sort(yvars)), collapse = "&")  % % ifelse(logy!=F, logy, "")
@@ -65,11 +67,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   nrIDs <- length(unique(lpdf[, ID]))
   myplot <- ggplot(lpdf, 
                    aes_string(y = "count", x = xvar, group = 'mygroup', 
-                              color = #ifelse(nrIDs  == 1 | facet  == ID,  
-                                          #   ifelse(nrgroups == 1, 'theDate', 'variable') , 
-                                      #        ID))
-                              ifelse(nrgroups == 1, 
-                                     'month', 
+                          color = ifelse(nrgroups == 1, 'month', 
                                      ifelse(nrIDs >1 & facet !=ID, ID, 'variable'))
                    ), na.action = na.omit)
   xexpand = 0
@@ -81,12 +79,10 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
       position  = position, alpha = posalpha)
     
     if (VFPalette[1] == FALSE) 
-      VFPalette  <- ifelse(nrgroups <= 2,
-                           c("lawngreen", "cyan"),
-                           ifelse(nrgroups == 3, 
-                                  c("red", "green", "black", "darkorange", "lawngreen"),
-                                  c("black", "gainsboro", "red",  "yellow", "green",  "darkgreen","darkorange") #lightgray, gainsboro
-                           ) )
+      if (nrgroups <=2) VFPalette  <- c("lawngreen", "cyan") 
+    else if (nrgroups == 3) VFPalette  <-  c("red", "green", "black", "darkorange", "lawngreen")
+    else if (nrgroups <= 9)  VFPalette  <- c("black", "gainsboro", "red",  "yellow", "green",  "darkgreen","darkorange", 'lightgray')
+    else stop("not enough colors specified")
     myGuide <- ifelse(putlegend, "legend", FALSE) #todo: replace all guide = ... with guide = myGuide
     #case_when(condition ~ value, condition~ value, TRUE ~ default_value)
     myplot <- myplot + scale_fill_manual(values  = VFPalette, guide = ifelse(putlegend, "legend", FALSE)) + 
@@ -94,7 +90,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
   } else {
     myplot <- myplot + #line plot
       geom_path(data = lpdf_lines_only, alpha = 0.3, size = size*0.7) + #was line
-      geom_point(size = size, aes_string(  shape = 'variable')) 
+      geom_point(size = size, aes_string(  shape = shape)) 
     if (!putlegend | facet == FALSE) 
       {#browser()
       #myplot = myplot +        geom_text(data = subset(lpdf, monthday == 1), aes_string(label = 'month', color = 'mygroup', x = xvar, y = 'count'), hjust = -1)
@@ -125,30 +121,29 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     if (slope != FALSE) myplot <- myplot + geom_abline( intercept  = intercept, slope = slope, na.rm  = TRUE)  
     if ((intercept | slope) != FALSE & (verbose >= 7)) message("graphi " ,"intercept" %: % intercept   %, % "and slope" %: %  slope)
     
-    if (length(unique(lpdf$variable)) <= 6 ) 
-      myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 6), 
+    #if (shape == "variable" & length(unique(lpdf$variable)) <= 6 ) 
+      myplot <- myplot + scale_shape_manual(values  = c(0, 1, 3, 2, 1, 0, 10, 5, 4, 6, 7,8), 
                                             guide = ifelse(putlegend, "legend", FALSE)) #shape = "\u2620" #bug? 
     
     #scale_fill_gradient(low="green",high="darkgreen", guide = ifelse(putlegend, "legend", FALSE))   
     #https://stackoverflow.com/questions/50183484/how-do-i-change-the-fill-color-for-a-computed-variable-in-geom-bar/50194250#50194250
     if (nrgroups == 1) {
-      myscale_color <- scale_color_gradient( low = "blue", high = "red", 
-                                             guide = ifelse(putlegend, "legend", FALSE)) 
-      #colorbar would be for continuous colors
+      if(VFPalette[1] == F) VFPalette <-  "Paired" #VFPalette <- c("blue", "red")
+      #myscale_color <- scale_color_gradient( low = VFPalette[1], high = VFPalette[2], 
+                                             #guide = ifelse(putlegend, "legend", FALSE))
+      myscale_color <- scale_color_brewer(palette = VFPalette, guide = ifelse(putlegend, "legend", FALSE))
     }else if (nrgroups <= 6) {
-      palette = ifelse(VFPalette, VFPalette,c("red", "darkgreen", "black",
-                                              "orange", "lawngreen", "tomato"))
+      if(VFPalette[1] == F) VFPalette <- c("red", "darkgreen", "black",
+                                              "orange", "lawngreen", "tomato")
       myscale_color <- scale_color_manual(values = VFPalette, 
                                           guide = ifelse(putlegend, "legend", FALSE))
     }else if (nrgroups < 13) {
-      palette = ifelse(VFPalette, VFPalette, ifelse(nrgroups < 8, "Dark2", "Paired") )
-      myscale_color <- scale_color_brewer(palette = palette, guide = ifelse(putlegend, "legend", FALSE))
+      if(VFPalette[1] == F) VFPalette <- ifelse(nrgroups < 8, "Dark2", "Paired") 
+      myscale_color <- scale_color_brewer(palette = VFPalette, guide = ifelse(putlegend, "legend", FALSE))
     } else myscale_color <- scale_color_discrete(guide = ifelse(putlegend, "legend", FALSE))
     myplot <- myplot + myscale_color 
   } 
- if (verbose >= 9) {message("after drop_na, before faceting ") 
-   #;browser()
-   }
+ if (verbose >= 9) {message("after drop_na, before faceting ")    }
   if (!isFALSE(facet)) {
     myplot <- myplot + facet_wrap(as.formula(paste("~", facet)), 
                                   strip.position = "bottom",
@@ -186,7 +181,7 @@ graphit <- function(lpti, countries, minVal  = 1, ID  = "PSCR", xvar  = "theDate
     myFolderType <- myFolderDate %//% 
       ifelse(myFolderType  == "",  sort(initials(yvars)) % % 'by' % % x_lab,  myFolderType) %#% 
       ifelse (area,   " area plot","") %#%
-      ifelse(logy, ' log scale',"") %#%
+      ifelse(logy == FALSE,"", " "%#%logy) %#%
       ifelse(facet  == FALSE,  " all-in-one", "")
     if (verbose >=  4) message("graphi making plot"  % %  myFolderType %#% "/" %#% mytitle)
     myplot <- myplot + theme(text = element_text(size  = 20), 
